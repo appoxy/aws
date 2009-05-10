@@ -98,6 +98,11 @@ module RightAws
       def connection
         @connection || raise(ActiveSdbError.new('Connection to SDB is not established'))
       end
+      def close
+        if @connection
+          @connection.fin
+        end
+      end
       # Create a new handle to an Sdb account. All handles share the same per process or per thread
       # HTTP connection to Amazon Sdb. Each handle is for a specific account.
       # The +params+ are passed through as-is to RightAws::SdbInterface.new
@@ -106,7 +111,8 @@ module RightAws
       #      :port         => 443                  # Amazon service port: 80 or 443(default)
       #      :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
       #      :signature_version => '0'             # The signature version : '0' or '1'(default)
-      #      :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+      #      DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+      #      :connection_mode  => :default               # options are :single, :multi (same as old multi_thread=>true), :pool, :per_request
       #      :logger       => Logger Object        # Logger instance: logs to STDOUT if omitted 
       #      :nil_representation => 'mynil'}       # interpret Ruby nil as this string value; i.e. use this string in SDB to represent Ruby nils (default is the string 'nil')
 
@@ -686,7 +692,7 @@ module RightAws
       #
       def []=(attribute, values)
         attribute = attribute.to_s
-        @attributes[attribute] = attribute == 'id' ? values.to_s : values.to_a.uniq
+        @attributes[attribute] = attribute == 'id' ? values.to_s : [*values].uniq
       end
 
       # Reload attributes from SDB. Replaces in-memory attributes.

@@ -69,7 +69,7 @@ module RightAws
            aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'], 
            params)
     end
-    
+
     #-----------------------------------------------------------------
     #      Requests
     #-----------------------------------------------------------------
@@ -108,9 +108,12 @@ module RightAws
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     def request_info(request, parser)  #:nodoc:
-      thread = @params[:multi_thread] ? Thread.current : Thread.main
-      thread[:sdb_connection] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
-      request_info_impl(thread[:sdb_connection], @@bench, request, parser)
+#      thread = @params[:multi_thread] ? Thread.current : Thread.main
+#      thread[:sdb_connection] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
+      http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
+      ret = request_info_impl(http_conn, @@bench, request, parser)
+      http_conn.finish
+      ret
     end
 
     # Prepare attributes for putting.
