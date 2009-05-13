@@ -26,7 +26,7 @@ require "right_aws"
 module RightAws
 
   class SdbInterface < RightAwsBase
-    
+
     include RightAwsBaseInterface
 
     DEFAULT_HOST      = 'sdb.amazonaws.com'
@@ -61,12 +61,12 @@ module RightAws
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       @nil_rep = params[:nil_representation] ? params[:nil_representation] : DEFAULT_NIL_REPRESENTATION
       params.delete(:nil_representation)
-      init({ :name             => 'SDB', 
-             :default_host     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).host   : DEFAULT_HOST, 
-             :default_port     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).port   : DEFAULT_PORT, 
-             :default_protocol => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).scheme : DEFAULT_PROTOCOL }, 
-           aws_access_key_id     || ENV['AWS_ACCESS_KEY_ID'], 
-           aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'], 
+      init({ :name             => 'SDB',
+             :default_host     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).host   : DEFAULT_HOST,
+             :default_port     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).port   : DEFAULT_PORT,
+             :default_protocol => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).scheme : DEFAULT_PROTOCOL },
+           aws_access_key_id     || ENV['AWS_ACCESS_KEY_ID'],
+           aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
            params)
     end
 
@@ -99,7 +99,7 @@ module RightAws
         request = Net::HTTP::Get.new("#{service}?#{service_params}")
       end
       # prepare output hash
-      { :request  => request, 
+      { :request  => request,
         :server   => @params[:server],
         :port     => @params[:port],
         :protocol => @params[:protocol] }
@@ -108,12 +108,28 @@ module RightAws
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     def request_info(request, parser)  #:nodoc:
-#      thread = @params[:multi_thread] ? Thread.current : Thread.main
-#      thread[:sdb_connection] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
-      http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
-      ret = request_info_impl(http_conn, @@bench, request, parser)
-      http_conn.finish
+      ret = nil
+      conn_mode = @params[:connection_mode]
+      if conn_mode == :per_request
+        http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
+        ret = request_info_impl(http_conn, @@bench, request, parser)
+        http_conn.finish
+      elsif conn_mode == :per_thread || conn_mode == :single
+        thread = conn_mode == :per_thread ? Thread.current : Thread.main
+        thread[:sdb_connection] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
+        http_conn =  thread[:sdb_connection]
+        ret = request_info_impl(http_conn, @@bench, request, parser)
+      end
       ret
+    end
+
+    def close_connection
+      conn_mode = @params[:connection_mode]
+      if conn_mode == :per_thread || conn_mode == :single
+        thread = conn_mode == :per_thread ? Thread.current : Thread.main
+        thread[:sdb_connection].finish
+        thread[:sdb_connection] = nil
+      end
     end
 
     # Prepare attributes for putting.
@@ -142,7 +158,7 @@ module RightAws
       end
       result
     end
-    
+
     # Use this helper to manually escape the fields in the query expressions. 
     # To escape the single quotes and backslashes and to wrap the string into the single quotes.
     # 
@@ -151,13 +167,13 @@ module RightAws
     def escape(value)
       %Q{'#{value.to_s.gsub(/(['\\])/){ "\\#{$1}" }}'} if value
     end
-    
+
     # Convert a Ruby language value to a SDB value by replacing Ruby nil with the user's chosen string representation of nil.
     # Non-nil values are unaffected by this filter.
     def ruby_to_sdb(value)
       value.nil? ? @nil_rep : value
     end
-    
+
     # Convert a SDB value to a Ruby language value by replacing the user's chosen string representation of nil with Ruby nil.
     # Values are unaffected by this filter unless they match the nil representation exactly.
     def sdb_to_ruby(value)
@@ -245,7 +261,7 @@ module RightAws
     rescue Exception
       on_exception
     end
-    
+
     # Create new SDB domain at Amazon.
     # 
     # Returns a hash: { :box_usage, :request_id } on success or an exception on error.
@@ -286,7 +302,7 @@ module RightAws
     rescue Exception
       on_exception
     end
-    
+
     # Add/Replace item attributes.
     # 
     # Params:
@@ -336,7 +352,7 @@ module RightAws
     rescue Exception
       on_exception
     end
-    
+
     # Retrieve SDB item's attribute(s).
     # 
     # Returns a hash:
@@ -398,10 +414,10 @@ module RightAws
     rescue Exception
       on_exception
     end
-    
-    
+
+
     # QUERY:
- 
+
     # Perform a query on SDB.
     # 
     # Returns a hash:
@@ -460,7 +476,7 @@ module RightAws
     rescue Exception
       on_exception
     end
-    
+
     # Perform a query and fetch specified attributes.
     # If attributes are not specified then fetches the whole list of attributes.
     #
@@ -697,5 +713,5 @@ module RightAws
     end
 
   end
-  
+
 end
