@@ -344,7 +344,7 @@ module RightAws
           return parser.result
         end
       else
-        benchblock.service.add!{ response = @connection.requ  q est(request) }
+        benchblock.service.add!{ response = @connection.request(request) }
           # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
