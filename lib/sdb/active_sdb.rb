@@ -121,7 +121,7 @@ module RightAws
       end
 
       def close_connection
-        @connection.close_connection
+        @connection.close_connection unless @connection.nil?
       end
     end
     

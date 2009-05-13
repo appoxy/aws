@@ -127,8 +127,10 @@ module RightAws
       conn_mode = @params[:connection_mode]
       if conn_mode == :per_thread || conn_mode == :single
         thread = conn_mode == :per_thread ? Thread.current : Thread.main
-        thread[:sdb_connection].finish
-        thread[:sdb_connection] = nil
+        if !thread[:sdb_connection].nil?
+          thread[:sdb_connection].finish
+          thread[:sdb_connection] = nil
+        end
       end
     end
 
