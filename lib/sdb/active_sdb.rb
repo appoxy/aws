@@ -120,7 +120,7 @@ module RightAws
         @connection = RightAws::SdbInterface.new(aws_access_key_id, aws_secret_access_key, params)
       end
 
-      def def close_connection
+      def close_connection
         @connection.close_connection
       end
     end
