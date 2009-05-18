@@ -253,66 +253,23 @@ module RightAws
           connection.delete_domain(domain)
         end
         
-        # Perform a find request.
-        #  
-        # Single record: 
-        # 
-        #  Client.find(:first)
-        #  Client.find(:first, :conditions=> [ "['name'=?] intersection ['wife'=?]", "Jon", "Sandy"])
-        #  
-        # Bunch of records: 
-        # 
-        #  Client.find(:all)
-        #  Client.find(:all, :limit => 10)
-        #  Client.find(:all, :conditions=> [ "['name'=?] intersection ['girlfriend'=?]", "Jon", "Judy"])
-        #  Client.find(:all, :conditions=> [ "['name'=?]", "Sandy"], :limit => 3)
-        #  
-        # Records by ids:
-        # 
-        #  Client.find('1')
-        #  Client.find('1234987b4583475347523948')
-        #  Client.find('1','2','3','4', :conditions=> [ "['toys'=?]", "beer"])
         #
-        # Find helpers: RightAws::ActiveSdb::Base.find_by_... and RightAws::ActiveSdb::Base.find_all_by_...
-        # 
-        #  Client.find_by_name('Matias Rust')
-        #  Client.find_by_name_and_city('Putin','Moscow')
-        #  Client.find_by_name_and_city_and_post('Medvedev','Moscow','president')
-        #
-        #  Client.find_all_by_author('G.Bush jr')
-        #  Client.find_all_by_age_and_gender_and_ethnicity('34','male','russian')
-        #  Client.find_all_by_gender_and_country('male', 'Russia', :auto_load => true, :order => 'name desc')
-        #
-        # Returned records have to be +reloaded+ to access their attributes.
-        # 
-        #  item = Client.find_by_name('Cat')  #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7"}, @new_record=false>
-        #  item.reload                        #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7", "name"=>["Cat"], "toys"=>["Jons socks", "clew", "mice"]}, @new_record=false>
-        #
-        # Continue listing:
-        #  # initial listing
-        #  Client.find(:all, :limit => 10)
-        #  # continue listing
-        #  begin
-        #    Client.find(:all, :limit => 10, :next_token => Client.next_token)
-        #  end while Client.next_token
-        #
-        #  Sort oder:
-        #    Client.find(:all, :order => 'gender')
-        #    Client.find(:all, :order => 'name desc')
-        #
-        #  Attributes auto load (be carefull - this may take lot of time for a huge bunch of records):
-        #    Client.find(:first)                      #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7"}, @new_record=false>
-        #    Client.find(:first, :auto_load => true)  #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7", "name"=>["Cat"], "toys"=>["Jons socks", "clew", "mice"]}, @new_record=false>
-        #
-        # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?UsingQuery.html
+        # See select(), original find with QUERY syntax is deprecated so now find and select are synonyms.
         #
         def find(*args)
+          select(args)
+
+=begin
+
           options = args.last.is_a?(Hash) ? args.pop : {}
           case args.first
             when :all   then find_every    options
             when :first then find_initial  options
             else             find_from_ids args, options
           end
+
+=end
+
         end
 
         # Perform a SQL-like select request.
@@ -569,10 +526,19 @@ module RightAws
 
         # Misc
 
-        def method_missing(method, *args) # :nodoc:
+         def method_missing(method, *args) # :nodoc:
           if method.to_s[/^(find_all_by_|find_by_|select_all_by_|select_by_)/]
+            # get rid of the find ones, only select now
+            to_send_to = $1
+            attributes = method.to_s[$1.length..method.to_s.length]
+#            puts 'attributes=' + attributes
+            if to_send_to[0...4] == "find"
+              to_send_to = "select" + to_send_to[4..to_send_to.length]
+#              puts 'CONVERTED ' + $1 + " to " + to_send_to
+            end
+
             options = args.last.is_a?(Hash) ? args.pop : {}
-            __send__($1, method, args, options)
+            __send__(to_send_to, attributes, args, options)
           else
             super(method, *args)
           end
@@ -930,7 +896,7 @@ module RightAws
         attrs = {}
         attributes.each do |attribute, values|
           attribute = attribute.to_s
-          attrs[attribute] = attribute == 'id' ? values.to_s : values.to_a.uniq
+          attrs[attribute] = attribute == 'id' ? values.to_s : [*values].uniq
           attrs.delete(attribute) if values.blank?
         end
         attrs
