@@ -33,56 +33,56 @@ module RightAws
   # = RightAws::ActiveSdb -- RightScale SDB interface (alpha release)
   # The RightAws::ActiveSdb class provides a complete interface to Amazon's Simple
   # Database Service.
-  # 
+  #
   # ActiveSdb is in alpha and does not load by default with the rest of RightAws.  You must use an additional require statement to load the ActiveSdb class.  For example:
-  # 
+  #
   #   require 'right_aws'
   #   require 'sdb/active_sdb'
-  #   
-  # Additionally, the ActiveSdb class requires the 'uuidtools' gem; this gem is not normally required by RightAws and is not installed as a 
+  #
+  # Additionally, the ActiveSdb class requires the 'uuidtools' gem; this gem is not normally required by RightAws and is not installed as a
   # dependency of RightAws.
   #
   # Simple ActiveSdb usage example:
   #
-  #  class Client < RightAws::ActiveSdb::Base 
+  #  class Client < RightAws::ActiveSdb::Base
   #  end
-  #  
+  #
   #  # connect to SDB
   #  RightAws::ActiveSdb.establish_connection
-  #  
+  #
   #  # create domain
   #  Client.create_domain
-  #  
+  #
   #  # create initial DB
   #  Client.create 'name' => 'Bush',     'country' => 'USA',    'gender' => 'male',   'expiration' => '2009', 'post' => 'president'
-  #  Client.create 'name' => 'Putin',    'country' => 'Russia', 'gender' => 'male',   'expiration' => '2008', 'post' => 'president' 
+  #  Client.create 'name' => 'Putin',    'country' => 'Russia', 'gender' => 'male',   'expiration' => '2008', 'post' => 'president'
   #  Client.create 'name' => 'Medvedev', 'country' => 'Russia', 'gender' => 'male',   'expiration' => '2012', 'post' => 'president'
   #  Client.create 'name' => 'Mary',     'country' => 'USA',    'gender' => 'female', 'hobby' => ['patchwork', 'bundle jumping']
   #  Client.create 'name' => 'Mary',     'country' => 'Russia', 'gender' => 'female', 'hobby' => ['flowers', 'cats', 'cooking']
   #  sandy_id = Client.create('name' => 'Sandy', 'country' => 'Russia', 'gender' => 'female', 'hobby' => ['flowers', 'cats', 'cooking']).id
-  #  
+  #
   #  # find all Bushes in USA
   #  Client.find(:all, :conditions => ["['name'=?] intersection ['country'=?]",'Bush','USA']).each do |client|
   #    client.reload
   #    puts client.attributes.inspect
   #  end
-  #  
+  #
   #  # find all Maries through the world
   #  Client.find_all_by_name_and_gender('Mary','female').each do |mary|
   #    mary.reload
   #    puts "#{mary[:name]}, gender: #{mary[:gender]}, hobbies: #{mary[:hobby].join(',')}"
   #  end
-  #  
+  #
   #  # find new russian president
   #  medvedev = Client.find_by_post_and_country_and_expiration('president','Russia','2012')
   #  if medvedev
   #    medvedev.reload
   #    medvedev.save_attributes('age' => '42', 'hobby' => 'Gazprom')
   #  end
-  #  
+  #
   #  # retire old president
   #  Client.find_by_name('Putin').delete
-  #  
+  #
   #  # Sandy disappointed in 'cooking' and decided to hide her 'gender' and 'country' ()
   #  sandy = Client.find(sandy_id)
   #  sandy.reload
@@ -93,7 +93,7 @@ module RightAws
   #  Client.delete_domain
   #
   class ActiveSdb
-    
+
     module ActiveSdbConnect
       def connection
         @connection || raise(ActiveSdbError.new('Connection to SDB is not established'))
@@ -124,9 +124,9 @@ module RightAws
         @connection.close_connection unless @connection.nil?
       end
     end
-    
+
     class ActiveSdbError < RuntimeError ; end
-    
+
     class << self
       include ActiveSdbConnect
 
@@ -138,49 +138,49 @@ module RightAws
         connection.list_domains[:domains]
       end
 
-      # Create new domain. 
+      # Create new domain.
       # Raises no errors if the domain already exists.
-      # 
+      #
       #  RightAws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41d5-91f4-3ed390a3d3b2", :box_usage=>"0.0055590278"}
       #
       def create_domain(domain_name)
         connection.create_domain(domain_name)
       end
 
-      # Remove domain from SDB. 
+      # Remove domain from SDB.
       # Raises no errors if the domain does not exist.
-      # 
+      #
       #  RightAws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41c6-91f4-3ed390a3d3b2", :box_usage=>"0.0055590001"}
       #
       def delete_domain(domain_name)
         connection.delete_domain(domain_name)
       end
     end
-    
+
     class Base
-      
+
       class << self
         include ActiveSdbConnect
-        
+
         # next_token value returned by last find: is useful to continue finding
         attr_accessor :next_token
-      
+
         # Returns a RightAws::SdbInterface object
         #
         #  class A < RightAws::ActiveSdb::Base
         #  end
-        #  
+        #
         #  class B < RightAws::ActiveSdb::Base
         #  end
-        #  
+        #
         #  class C < RightAws::ActiveSdb::Base
         #  end
         #
         #  RightAws::ActiveSdb.establish_connection 'key_id_1', 'secret_key_1'
-        #  
+        #
         #  C.establish_connection 'key_id_2', 'secret_key_2'
         #
-        #  # A and B uses the default connection, C - uses its own 
+        #  # A and B uses the default connection, C - uses its own
         #  puts A.connection  #=> #<RightAws::SdbInterface:0xb76d6d7c>
         #  puts B.connection  #=> #<RightAws::SdbInterface:0xb76d6d7c>
         #  puts C.connection  #=> #<RightAws::SdbInterface:0xb76d6ca0>
@@ -197,7 +197,7 @@ module RightAws
         #  class Client < RightAws::ActiveSdb::Base
         #  end
         #  puts Client.domain  #=> 'client'
-        #  
+        #
         #  # if 'ActiveSupport' is loaded then class name being tableized
         #  require 'activesupport'
         #  class Client < RightAws::ActiveSdb::Base
@@ -222,7 +222,7 @@ module RightAws
         end
 
         # Change the default domain name to user defined.
-        # 
+        #
         #  class Client < RightAws::ActiveSdb::Base
         #    set_domain_name :foreign_clients
         #  end
@@ -233,7 +233,7 @@ module RightAws
 
         # Create domain at SDB.
         # Raises no errors if the domain already exists.
-        # 
+        #
         #  class Client < RightAws::ActiveSdb::Base
         #  end
         #  Client.create_domain  #=> {:request_id=>"6fc652a0-0000-41d5-91f4-3ed390a3d3b2", :box_usage=>"0.0055590278"}
@@ -244,7 +244,7 @@ module RightAws
 
         # Remove domain from SDB.
         # Raises no errors if the domain does not exist.
-        # 
+        #
         #  class Client < RightAws::ActiveSdb::Base
         #  end
         #  Client.delete_domain  #=> {:request_id=>"e14d90d3-0000-4898-9995-0de28cdda270", :box_usage=>"0.0055590278"}
@@ -252,12 +252,12 @@ module RightAws
         def delete_domain
           connection.delete_domain(domain)
         end
-        
+
         #
         # See select(), original find with QUERY syntax is deprecated so now find and select are synonyms.
         #
         def find(*args)
-          select(args)
+          select(*args)
 
 =begin
 
@@ -314,7 +314,7 @@ module RightAws
         #
         #  Sort oder:
         #  If :order=>'attribute' option is specified then result response (ordered by 'attribute') will contain only items where attribute is defined (is not null).
-        #  
+        #
         #    Client.select(:all)                         # returns all records
         #    Client.select(:all, :order => 'gender')     # returns all records ordered by gender where gender attribute exists
         #    Client.select(:all, :order => 'name desc')  # returns all records ordered by name in desc order where name attribute exists
@@ -323,6 +323,7 @@ module RightAws
         #
         def select(*args)
           options = args.last.is_a?(Hash) ? args.pop : {}
+#           puts 'first=' + args.first.to_s
           case args.first
             when :all   then sql_select(options)
             when :first then sql_select(options.merge(:limit => 1)).first
@@ -448,7 +449,7 @@ module RightAws
           # request items
           query_result = self.connection.query(domain, query_expression, options[:max_number_of_items], @next_token)
           @next_token = query_result[:next_token]
-          items = query_result[:items].map do |name| 
+          items = query_result[:items].map do |name|
             new_item = self.new('id' => name)
             new_item.mark_as_old
             reload_if_exists(record) if options[:auto_load]
@@ -511,7 +512,7 @@ module RightAws
           end
         end
 
-        # find_by helpers 
+        # find_by helpers
         def find_all_by_(format_str, args, options) # :nodoc:
           fields = format_str.to_s.sub(/^find_(all_)?by_/,'').split('_and_')
           conditions = fields.map { |field| "['#{field}'=?]" }.join(' intersection ')
@@ -567,12 +568,12 @@ module RightAws
         end
 
       end
-      
+
       public
 
       # instance attributes
-      attr_accessor :attributes 
-      
+      attr_accessor :attributes
+
       # item name
       attr_accessor :id
 
@@ -583,7 +584,7 @@ module RightAws
       #  puts item.inspect   #=> #<Client:0xb77a2698 @new_record=true, @attributes={"name"=>["Jon"], "toys"=>["girls", "beer", "pub"]}>
       #  item.save           #=> {"name"=>["Jon"], "id"=>"c03edb7e-e45c-11dc-bede-001bfc466dd7", "toys"=>["girls", "beer", "pub"]}
       #  puts item.inspect   #=> #<Client:0xb77a2698 @new_record=false, @attributes={"name"=>["Jon"], "id"=>"c03edb7e-e45c-11dc-bede-001bfc466dd7", "toys"=>["girls", "beer", "pub"]}>
-      #  
+      #
       def initialize(attrs={})
         @attributes = uniq_values(attrs)
         @new_record = true
@@ -592,20 +593,20 @@ module RightAws
       # Create and save new Item instance.
       # +Attributes+ is a hash: { attribute1 => values1, ..., attributeN => valuesN }.
       #
-      #  item = Client.create('name' => 'Cat', 'toys' => ['Jons socks', 'mice', 'clew']) 
+      #  item = Client.create('name' => 'Cat', 'toys' => ['Jons socks', 'mice', 'clew'])
       #  puts item.inspect   #=> #<Client:0xb77a0a78 @new_record=false, @attributes={"name"=>["Cat"], "id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7", "toys"=>["Jons socks", "mice", "clew"]}>
-      #  
+      #
       def self.create(attributes={})
         item = self.new(attributes)
         item.save
         item
       end
-      
+
       # Returns an item id. Same as: item['id'] or item.attributes['id']
       def id
         @attributes['id']
       end
-      
+
       # Sets an item id.
       def id=(id)
         @attributes['id'] = id.to_s
@@ -618,7 +619,7 @@ module RightAws
       def attributes
         @attributes.dup
       end
-      
+
       # Allows one to set all the attributes at once by passing in a hash with keys matching the attribute names.
       # if '+id+' attribute is not set in new attributes has then it being derived from old attributes.
       #
@@ -637,7 +638,7 @@ module RightAws
         self.attributes
       end
 
-      def connection 
+      def connection
         self.class.connection
       end
 
@@ -645,9 +646,9 @@ module RightAws
       def domain
         self.class.domain
       end
-      
+
       # Returns the values of the attribute identified by +attribute+.
-      # 
+      #
       #  puts item['Cat'].inspect  #=> ["Jons socks", "clew", "mice"]
       #
       def [](attribute)
@@ -655,7 +656,7 @@ module RightAws
       end
 
       # Updates the attribute identified by +attribute+ with the specified +values+.
-      # 
+      #
       #  puts item['Cat'].inspect  #=> ["Jons socks", "clew", "mice"]
       #  item['Cat'] = ["Whiskas", "chicken"]
       #  puts item['Cat'].inspect  #=> ["Whiskas", "chicken"]
@@ -666,10 +667,10 @@ module RightAws
       end
 
       # Reload attributes from SDB. Replaces in-memory attributes.
-      # 
+      #
       #  item = Client.find_by_name('Cat')  #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7"}, @new_record=false>
       #  item.reload                        #=> #<Client:0xb77d0d40 @attributes={"id"=>"2937601a-e45d-11dc-a75f-001bfc466dd7", "name"=>["Cat"], "toys"=>["Jons socks", "clew", "mice"]}, @new_record=false>
-      #  
+      #
       def reload
         raise_on_id_absence
         old_id = id
@@ -686,10 +687,10 @@ module RightAws
       # Reload a set of attributes from SDB. Adds the loaded list to in-memory data.
       # +attrs_list+ is an array or comma separated list of attributes names.
       # Returns a hash of loaded attributes.
-      # 
+      #
       # This is not the best method to get a bunch of attributes because
       # a web service call is being performed for every attribute.
-      # 
+      #
       #  item = Client.find_by_name('Cat')
       #  item.reload_attributes('toys', 'name')   #=> {"name"=>["Cat"], "toys"=>["Jons socks", "clew", "mice"]}
       #
@@ -713,7 +714,7 @@ module RightAws
 
       # Stores in-memory attributes to SDB.
       # Adds the attributes values to already stored at SDB.
-      # Returns a hash of stored attributes. 
+      # Returns a hash of stored attributes.
       #
       #  sandy = Client.new(:name => 'Sandy') #=> #<Client:0xb775a7a8 @attributes={"name"=>["Sandy"]}, @new_record=true>
       #  sandy['toys'] = 'boys'
@@ -763,8 +764,8 @@ module RightAws
 
       # Store in-memory attributes to SDB.
       # Replaces the attributes values already stored at SDB by in-memory data.
-      # Returns a hash of stored attributes. 
-      # 
+      # Returns a hash of stored attributes.
+      #
       #  sandy = Client.new(:name => 'Sandy')  #=> #<Client:0xb775a7a8 @attributes={"name"=>["Sandy"]}, @new_record=true>
       #  sandy['toys'] = 'boys'
       #  sandy.put
@@ -777,11 +778,19 @@ module RightAws
       #
       # compare to +put+ method
       def save
+        pre_save2
+        connection.put_attributes(domain, id, @attributes, :replace)
+        apres_save2
+        @attributes
+      end
+
+      def pre_save2
         @attributes = uniq_values(@attributes)
         prepare_for_update
-        connection.put_attributes(domain, id, @attributes, :replace)
-        mark_as_old
-        @attributes
+      end
+
+      def apres_save2
+         mark_as_old
       end
 
       # Replaces the attributes at SDB by the given values.
@@ -808,7 +817,7 @@ module RightAws
       # Remove specified values from corresponding attributes.
       # +attrs+ is a hash: { attribute1 => values1, ..., attributeN => valuesN }.
       #
-      #  sandy = Client.find_by_name 'Sandy' 
+      #  sandy = Client.find_by_name 'Sandy'
       #  sandy.reload
       #  puts sandy.inspect                                #=> #<Client:0xb77b48fc @new_record=false, @attributes={"name"=>["Sandy"], "id"=>"b2832ce2-e461-11dc-b13c-001bfc466dd7", "toys"=>["boys", "kids", "patchwork"]}>
       #  puts sandy.delete_values('toys' => 'patchwork')   #=> { 'toys' => ['patchwork'] }
@@ -836,8 +845,8 @@ module RightAws
       # Removes specified attributes from the item.
       # +attrs_list+ is an array or comma separated list of attributes names.
       # Returns the list of deleted attributes.
-      # 
-      #  sandy = Client.find_by_name 'Sandy' 
+      #
+      #  sandy = Client.find_by_name 'Sandy'
       #  sandy.reload
       #  puts sandy.inspect                   #=> #<Client:0xb7761d28 @new_record=false, @attributes={"name"=>["Sandy"], "id"=>"b2832ce2-e461-11dc-b13c-001bfc466dd7", "toys"=>["boys", "kids", "patchwork"}>
       #  puts sandy.delete_attributes('toys') #=> ['toys']
@@ -855,14 +864,14 @@ module RightAws
       end
 
       # Delete the Item entirely from SDB.
-      # 
-      #  sandy = Client.find_by_name 'Sandy' 
+      #
+      #  sandy = Client.find_by_name 'Sandy'
       #  sandy.reload
       #  sandy.inspect       #=> #<Client:0xb7761d28 @new_record=false, @attributes={"name"=>["Sandy"], "id"=>"b2832ce2-e461-11dc-b13c-001bfc466dd7", "toys"=>["boys", "kids", "patchwork"}>
       #  puts sandy.delete
-      #  sandy.reload      
+      #  sandy.reload
       #  puts sandy.inspect  #=> #<Client:0xb7761d28 @attributes={}, @new_record=false>
-      # 
+      #
       def delete
         raise_on_id_absence
         connection.delete_attributes(domain, id)
@@ -873,7 +882,7 @@ module RightAws
         @id
       end
 
-      # Returns true if this object hasn‘t been saved yet.      
+      # Returns true if this object hasn‘t been saved yet.
       def new_record?
         @new_record
       end
@@ -882,16 +891,16 @@ module RightAws
         @new_record = false
       end
 
-    private    
-    
+    private
+
       def raise_on_id_absence
         raise ActiveSdbError.new('Unknown record id') unless id
       end
-      
+
       def prepare_for_update
         @attributes['id'] = self.class.generate_id if @attributes['id'].blank?
       end
-      
+
       def uniq_values(attributes=nil) # :nodoc:
         attrs = {}
         attributes.each do |attribute, values|

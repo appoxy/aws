@@ -222,8 +222,11 @@ module RightAws
         @params[:service]  ||= service_info[:default_service]
         @params[:protocol] ||= service_info[:default_protocol]
       end
-      @params[:multi_thread] ||= defined?(AWS_DAEMON)
-      @params[:connection_mode] ||= @params[:multi_thread] ? :per_thread : :default
+      if !@params[:multi_thread].nil? && @params[:connection_mode].nil? # user defined this
+        @params[:connection_mode] = @params[:multi_thread] ? :per_thread : :single
+      end
+#      @params[:multi_thread] ||= defined?(AWS_DAEMON)
+      @params[:connection_mode] ||= :default
       @params[:connection_mode] = :per_request if @params[:connection_mode] == :default
       @logger = @params[:logger]
       @logger = RAILS_DEFAULT_LOGGER if !@logger && defined?(RAILS_DEFAULT_LOGGER)
@@ -259,7 +262,7 @@ module RightAws
         function = function.to_sym
         # get rid of requestId (this bad boy was added for API 2008-08-08+ and it is uniq for every response)
         response = response.sub(%r{<requestId>.+?</requestId>}, '')
-        response_md5 = MD5.md5(response).to_s
+        response_md5 =Digest::MD5.hexdigest(response).to_s
         # check for changes
         unless @cache[function] && @cache[function][:response_md5] == response_md5
           # well, the response is new, reset cache data

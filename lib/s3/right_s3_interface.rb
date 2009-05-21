@@ -80,7 +80,7 @@ module RightAws
       s3_headers = {}
       headers.each do |key, value|
         key = key.downcase
-        s3_headers[key] = value.to_s.strip if key[/^#{AMAZON_HEADER_PREFIX}|^content-md5$|^content-type$|^date$/o]
+        s3_headers[key] = value.join( "" ).strip if key[/^#{AMAZON_HEADER_PREFIX}|^content-md5$|^content-type$|^date$/o]
       end
       s3_headers['content-type'] ||= ''
       s3_headers['content-md5']  ||= ''
@@ -1130,8 +1130,8 @@ module RightAws
       end
       def tagend(name)
         case name
-        when 'LastModified' : @result[:last_modified] = @text
-        when 'ETag'         : @result[:e_tag]         = @text
+        when 'LastModified' then @result[:last_modified] = @text
+        when 'ETag'         then @result[:e_tag]         = @text
         end
       end
     end
