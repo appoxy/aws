@@ -30,8 +30,8 @@ module RightAws
     include RightAwsBaseInterface
 
     DEFAULT_HOST      = 'sdb.amazonaws.com'
-    DEFAULT_PORT      = 80
-    DEFAULT_PROTOCOL  = 'http'
+    DEFAULT_PORT      = 443
+    DEFAULT_PROTOCOL  = 'https'
     API_VERSION       = '2007-11-07'
     DEFAULT_NIL_REPRESENTATION = 'nil'
 
