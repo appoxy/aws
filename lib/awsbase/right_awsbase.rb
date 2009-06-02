@@ -329,7 +329,8 @@ module RightAws
                   @error_handler = nil
                   return check_result 
                 end
-                raise AwsError.new(@last_errors, @last_response.code, @last_request_id)
+                request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
+                raise AwsError.new(@last_errors, @last_response.code, @last_request_id, request_text_data)
               end
             rescue Exception => e
               blockexception = e
@@ -361,7 +362,8 @@ module RightAws
             @error_handler = nil
             return check_result 
           end
-          raise AwsError.new(@last_errors, @last_response.code, @last_request_id)
+          request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
+          raise AwsError.new(@last_errors, @last_response.code, @last_request_id, request_text_data)
         end
       end
     rescue
@@ -408,12 +410,18 @@ module RightAws
     
     # Response HTTP error code
     attr_reader :http_code
+
+    # The request URL and input values
+    attr_reader :request_data
     
-    def initialize(errors=nil, http_code=nil, request_id=nil)
+    def initialize(errors=nil, http_code=nil, request_id=nil, request_data=nil)
       @errors      = errors
       @request_id  = request_id
       @http_code   = http_code
-      super(@errors.is_a?(Array) ? @errors.map{|code, msg| "#{code}: #{msg}"}.join("; ") : @errors.to_s)
+      @request_data = request_data
+      msg = @errors.is_a?(Array) ? @errors.map{|code, msg| "#{code}: #{msg}"}.join("; ") : @errors.to_s
+      msg += "\nREQUEST(#{@request_data})" unless @request_data.nil?
+      super(msg)
     end
     
     # Does any of the error messages include the regexp +pattern+?
