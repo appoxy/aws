@@ -30,8 +30,8 @@ module RightAws
     include RightAwsBaseInterface
     
     DEFAULT_HOST           = 's3.amazonaws.com'
-    DEFAULT_PORT           = 443
-    DEFAULT_PROTOCOL       = 'https'
+    DEFAULT_PORT           = 80
+    DEFAULT_PROTOCOL       = 'http'
     DEFAULT_SERVICE        = '/'
     REQUEST_TTL            = 30
     DEFAULT_EXPIRES_AFTER  =   1 * 24 * 60 * 60 # One day's worth of seconds

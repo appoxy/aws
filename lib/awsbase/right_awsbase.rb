@@ -410,15 +410,11 @@ module RightAws
     
     # Response HTTP error code
     attr_reader :http_code
-
-    # The request URL and input values
-    attr_reader :request_data
     
-    def initialize(errors=nil, http_code=nil, request_id=nil, request_data=nil)
+    def initialize(errors=nil, http_code=nil, request_id=nil)
       @errors      = errors
       @request_id  = request_id
       @http_code   = http_code
-      @request_data = request_data
       msg = @errors.is_a?(Array) ? @errors.map{|code, msg| "#{code}: #{msg}"}.join("; ") : @errors.to_s
       msg += "\nREQUEST(#{@request_data})" unless @request_data.nil?
       super(msg)
