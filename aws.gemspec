@@ -6,11 +6,27 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "RightScale"]
-  s.date = %q{2009-06-06}
+  s.date = %q{2009-06-16}
   s.description = %q{AWS Library for amazon web services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
     "README.txt"
+  ]
+  s.files = [
+    "lib/acf/right_acf_interface.rb",
+     "lib/awsbase/benchmark_fix.rb",
+     "lib/awsbase/right_awsbase.rb",
+     "lib/awsbase/support.rb",
+     "lib/ec2/right_ec2.rb",
+     "lib/right_aws.rb",
+     "lib/s3/right_s3.rb",
+     "lib/s3/right_s3_interface.rb",
+     "lib/sdb/active_sdb.rb",
+     "lib/sdb/right_sdb_interface.rb",
+     "lib/sqs/right_sqs.rb",
+     "lib/sqs/right_sqs_gen2.rb",
+     "lib/sqs/right_sqs_gen2_interface.rb",
+     "lib/sqs/right_sqs_interface.rb"
   ]
   s.has_rdoc = true
   s.homepage = %q{http://github.com/appoxy/aws/}
