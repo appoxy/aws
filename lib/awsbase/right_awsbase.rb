@@ -699,7 +699,7 @@ module RightAws
       #   params[:xml_lib] - library name: 'rexml' | 'libxml'
     def parse(xml_text, params={})
         # Get response body
-      xml_text = xml_text.body unless xml_text.is_a?(String)
+       xml_text = xml_text.body.force_encoding("UTF-8") unless xml_text.is_a?(String)
       @xml_lib = params[:xml_lib] || @xml_lib
         # check that we had no problems with this library otherwise use default
       @xml_lib = DEFAULT_XML_LIBRARY unless @@supported_xml_libs.include?(@xml_lib)
