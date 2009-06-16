@@ -45,16 +45,21 @@ module RightAws
     #
     # Params:
     #    { :server       => 'sdb.amazonaws.com'  # Amazon service host: 'sdb.amazonaws.com'(default)
-    #      :port         => 443                  # Amazon service port: 80 or 443(default)
-    #      :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
+    #      :port         => 443                  # Amazon service port: 80(default) or 443
+    #      :protocol     => 'https'              # Amazon service protocol: 'http'(default) or 'https'
     #      :signature_version => '0'             # The signature version : '0' or '1'(default)
-    #      :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+    #      DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+    #      :connection_mode  => :default         # options are :default (will use best known option, may change in the future)
+    #                                                  :per_request (opens and closes a connection on every request to SDB)
+    #                                                  :single (same as old multi_thread=>false)
+    #                                                  :per_thread (same as old multi_thread=>true)
+    #                                                  :pool (uses a connection pool with a maximum number of connections - NOT IMPLEMENTED YET)
     #      :logger       => Logger Object        # Logger instance: logs to STDOUT if omitted
     #      :nil_representation => 'mynil'}       # interpret Ruby nil as this string value; i.e. use this string in SDB to represent Ruby nils (default is the string 'nil')
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=> #<RightSdb:0xa6b8c27c>
+    #  sdb = RightAws::SdbInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:connection_mode => :per_request, :logger => Logger.new('/tmp/x.log')}) #=> #<RightSdb:0xa6b8c27c>
     #
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/
     #
@@ -264,6 +269,41 @@ module RightAws
     rescue Exception
       on_exception
     end
+
+     # Retrieve a list of SDB domains from Amazon.
+    #
+    # Returns a hash:
+    #   { :domains     => [domain1, ..., domainN],
+    #     :next_token => string || nil,
+    #     :box_usage   => string,
+    #     :request_id  => string }
+    #
+    # Example:
+    #
+    #  sdb = RightAws::SdbInterface.new
+    #  sdb.list_domains  #=> { :box_usage  => "0.0000071759",
+    #                          :request_id => "976709f9-0111-2345-92cb-9ce90acd0982",
+    #                          :domains    => ["toys", "dolls"]}
+    #
+    # If a block is given, this method yields to it.  If the block returns true, list_domains will continue looping the request.  If the block returns false,
+    # list_domains will end.
+    #
+    #   sdb.list_domains(10) do |result|   # list by 10 domains per iteration
+    #     puts result.inspect
+    #     true
+    #   end
+    #
+    # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_ListDomains.html
+    #
+    def domain_metadata(domain_name)
+     link   = generate_request("DomainMetadata", 'DomainName' => domain_name)
+     result = request_info(link, QSdbDomainMetadataParser.new)
+     return result
+   rescue Exception
+     on_exception
+    end
+
+
 
     # Create new SDB domain at Amazon.
     #
@@ -646,13 +686,32 @@ module RightAws
       end
       def tagend(name)
         case name
-        when 'NextToken'  then @result[:next_token] =  @text
-        when 'DomainName' then @result[:domains]    << @text
-        when 'BoxUsage'   then @result[:box_usage]  =  @text
-        when 'RequestId'  then @result[:request_id] =  @text
+            when 'NextToken'  then @result[:next_token] =  @text
+            when 'DomainName' then @result[:domains]    << @text
+            when 'BoxUsage'   then @result[:box_usage]  =  @text
+            when 'RequestId'  then @result[:request_id] =  @text
         end
       end
     end
+
+     class QSdbDomainMetadataParser < RightAWSParser #:nodoc:
+      def reset
+        @result = {}
+      end
+      def tagend(name)
+        case name
+            when 'Timestamp'  then @result[:timestamp] = @text
+            when 'ItemCount' then @result[:item_count] = @text.to_i
+            when 'AttributeValueCount'   then @result[:attribute_value_count]  =  @text.to_i
+            when 'AttributeNameCount'  then @result[:attribute_name_acount] =  @text.to_i
+            when 'ItemNamesSizeBytes'  then @result[:item_names_size_bytes] =  @text.to_i
+            when 'AttributeValuesSizeBytes'  then @result[:attributes_values_size_bytes] =  @text.to_i
+            when 'AttributeNamesSizeBytes'  then @result[:attributes_names_size_bytes] =  @text.to_i
+
+        end
+      end
+    end
+
 
     class QSdbSimpleParser < RightAWSParser #:nodoc:
       def reset
@@ -660,8 +719,8 @@ module RightAws
       end
       def tagend(name)
         case name
-        when 'BoxUsage'  then @result[:box_usage]  =  @text
-        when 'RequestId' then @result[:request_id] =  @text
+            when 'BoxUsage'  then @result[:box_usage]  =  @text
+            when 'RequestId' then @result[:request_id] =  @text
         end
       end
     end
@@ -673,10 +732,10 @@ module RightAws
       end
       def tagend(name)
         case name
-        when 'Name'      then @last_attribute_name = @text
-        when 'Value'     then (@result[:attributes][@last_attribute_name] ||= []) << @text
-        when 'BoxUsage'  then @result[:box_usage]  =  @text
-        when 'RequestId' then @result[:request_id] =  @text
+            when 'Name'      then @last_attribute_name = @text
+            when 'Value'     then (@result[:attributes][@last_attribute_name] ||= []) << @text
+            when 'BoxUsage'  then @result[:box_usage]  =  @text
+            when 'RequestId' then @result[:request_id] =  @text
         end
       end
     end
@@ -687,10 +746,10 @@ module RightAws
       end
       def tagend(name)
         case name
-        when 'ItemName'  then @result[:items]      << @text
-        when 'BoxUsage'  then @result[:box_usage]  =  @text
-        when 'RequestId' then @result[:request_id] =  @text
-        when 'NextToken' then @result[:next_token] =  @text
+            when 'ItemName'  then @result[:items]      << @text
+            when 'BoxUsage'  then @result[:box_usage]  =  @text
+            when 'RequestId' then @result[:request_id] =  @text
+            when 'NextToken' then @result[:next_token] =  @text
         end
       end
     end
