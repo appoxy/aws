@@ -1,3 +1,12 @@
+# Why the Fork?
+
+This is a forked version of RightScale's AWS library and we forked it because:
+
+1. RightScale wouldn't fix critical bugs that were reported in their forums.
+1. It didn't work with Ruby 1.9 - this version does
+1. RightScale doesn't have the source hosted for the community
+1. We needed fixes and changes for [http://code.google.com/p/simple-record/ SimpleRecord] and didn't want to wait for RightScale to do it.
+
 = RightScale Amazon Web Services Ruby Gems
 
 Published by RightScale, Inc. under the MIT License.

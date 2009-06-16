@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = %q{AWS Library for amazon web services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
-    "README.txt"
+    "README.markdown"
   ]
   s.files = [
     "lib/acf/right_acf_interface.rb",
