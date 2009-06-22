@@ -28,8 +28,8 @@ module RightAws
     
     API_VERSION       = "2007-05-01"
     DEFAULT_HOST      = "queue.amazonaws.com"
-    DEFAULT_PORT      = 443
-    DEFAULT_PROTOCOL  = 'https'
+    DEFAULT_PORT      = 80
+    DEFAULT_PROTOCOL  = 'http'
     REQUEST_TTL       = 30
     DEFAULT_VISIBILITY_TIMEOUT = 30
 

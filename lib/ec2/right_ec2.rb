@@ -71,8 +71,8 @@ module RightAws
     API_VERSION       = "2008-12-01"
     DEFAULT_HOST      = "ec2.amazonaws.com"
     DEFAULT_PATH      = '/'
-    DEFAULT_PROTOCOL  = 'https'
-    DEFAULT_PORT      = 443
+    DEFAULT_PROTOCOL  = 'http'
+    DEFAULT_PORT      = 80
     
     # Default addressing type (public=NAT, direct=no-NAT) used when launching instances.
     DEFAULT_ADDRESSING_TYPE =  'public'
