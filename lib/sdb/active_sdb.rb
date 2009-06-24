@@ -777,9 +777,16 @@ module RightAws
       #  sandy.reload                          #=> {"name"=>["Sandy"], "id"=>"b2832ce2-e461-11dc-b13c-001bfc466dd7", "toys"=>["kids"]}
       #
       # compare to +put+ method
-      def save
+      def save(*params)
         pre_save2
-        connection.put_attributes(domain, id, @attributes, :replace)
+        atts_to_save = @attributes.dup
+        options = params.first.is_a?(Hash) ? params.pop : {}
+        if options[:except]
+            options[:except].each do |e|
+                atts_to_save.delete(e).inspect
+            end
+        end
+        connection.put_attributes(domain, id, atts_to_save, :replace)
         apres_save2
         @attributes
       end
