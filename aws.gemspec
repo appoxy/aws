@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{aws}
-  s.version = "1.11.19"
+  s.version = "1.11.20"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "RightScale"]
-  s.date = %q{2009-06-16}
+  s.date = %q{2009-06-24}
   s.description = %q{AWS Library for amazon web services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -24,8 +24,6 @@ Gem::Specification.new do |s|
      "lib/sdb/active_sdb.rb",
      "lib/sdb/right_sdb_interface.rb",
      "lib/sqs/right_sqs.rb",
-     "lib/sqs/right_sqs_gen2.rb",
-     "lib/sqs/right_sqs_gen2_interface.rb",
      "lib/sqs/right_sqs_interface.rb"
   ]
   s.has_rdoc = true
