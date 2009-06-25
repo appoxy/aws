@@ -23,15 +23,21 @@ class TestCredentials
     @@aws_secret_access_key = newval
   end
 
+  require 'yaml'
   def self.get_credentials
-    Dir.chdir do
+    #Dir.chdir do
       begin
-        Dir.chdir('./.rightscale') do 
-          require 'testcredentials'
+        Dir.chdir('.rightscale') do 
+          credentials = YAML::load(File.open("testcredentials.yml"))
+          puts credentials.inspect
+            self.aws_access_key_id = credentials["access_key"]
+            self.aws_secret_access_key = credentials["secret_key"]
+            puts 'akey=' + self.aws_access_key_id
         end
       rescue Exception => e
         puts "Couldn't chdir to ~/.rightscale: #{e.message}"
+          raise e
       end
-    end
+    #end
   end
 end
