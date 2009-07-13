@@ -552,10 +552,10 @@ module RightAws
           order      = options[:order]      ? " ORDER BY #{options[:order]}"                     : ''
           limit      = options[:limit]      ? " LIMIT #{options[:limit]}"                        : ''
           # mix sort by argument (it must present in response)
-          #unless order.blank?
-          #  sort_by, sort_order = sort_options(options[:order])
-            # TR - this shouldn't be added anymore in new selectconditions << (conditions.blank? ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
-          #end
+          unless order.blank?
+            sort_by, sort_order = sort_options(options[:order])
+            conditions << (conditions.blank? ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
+          end
           "SELECT #{select} FROM #{from}#{conditions}#{order}#{limit}"
         end
 
