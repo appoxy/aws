@@ -332,7 +332,6 @@ module RightAws
                             sql_select(options.merge(:limit => 1)).first
                         when :count then
                             res = sql_select(options.merge(:count => true))
-                            puts 'res=' + res.inspect
                             res
                         else
                             select_from_ids args, options
