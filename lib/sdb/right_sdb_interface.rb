@@ -206,12 +206,15 @@ module RightAws
     #
     def query_expression_from_array(params) #:nodoc:
       return '' if params.blank?
-      query = params.shift.to_s
+      query = params[0].to_s
+      i = 1
       query.gsub(/(\\)?(\?)/) do
         if $1 # if escaped '\?' is found - replace it by '?' without backslash
           "?"
         else  # well, if no backslash precedes '?' then replace it by next param from the list
-          escape(params.shift)
+          ret = escape(params[i])
+            i+=1
+            ret
         end
       end
     end
