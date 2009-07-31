@@ -7,6 +7,10 @@ This is a forked version of RightScale's AWS library and we forked it because:
 1. RightScale doesn't have the source hosted for the community
 1. We needed fixes and changes for [http://code.google.com/p/simple-record/ SimpleRecord] and didn't want to wait for RightScale to do it.
 
+= Discussion Group
+
+http://groups.google.com/group/ruby-aws
+
 = RightScale Amazon Web Services Ruby Gems
 
 Published by RightScale, Inc. under the MIT License.

@@ -330,6 +330,10 @@ module RightAws
                             sql_select(options)
                         when :first then
                             sql_select(options.merge(:limit => 1)).first
+                        when :count then
+                            res = sql_select(options.merge(:count => true))
+                            puts 'res=' + res.inspect
+                            res
                         else
                             select_from_ids args, options
                     end
@@ -375,10 +379,16 @@ module RightAws
                 end
 
                 def sql_select(options) # :nodoc:
+                    count = options[:count] || false
+                    #puts 'count? ' + count.to_s
                     @next_token = options[:next_token]
                     select_expression = build_select(options)
                     # request items
                     query_result = self.connection.select(select_expression, @next_token)
+                    #puts 'QR=' + query_result.inspect
+                    if count
+                        return query_result[:items][0]["Domain"]["Count"][0].to_i
+                    end
                     @next_token = query_result[:next_token]
                     items = query_result[:items].map do |hash|
                         id, attributes = hash.shift
@@ -551,6 +561,8 @@ module RightAws
 
                 def build_select(options) # :nodoc:
                     select     = options[:select]    || '*'
+                    select     = options[:count] ? "count(*)" : select
+                    #puts 'select=' + select.to_s
                     from       = options[:from]      || domain
                     conditions = options[:conditions] ? " WHERE #{build_conditions(options[:conditions])}" : ''
                     order      = options[:order]      ? " ORDER BY #{options[:order]}"                     : ''
