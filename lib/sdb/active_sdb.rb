@@ -258,19 +258,19 @@ module RightAws
                 # See select(), original find with QUERY syntax is deprecated so now find and select are synonyms.
                 #
                 def find(*args)
-                    select(*args)
-
-=begin
-
-          options = args.last.is_a?(Hash) ? args.pop : {}
-          case args.first
-            when :all   then find_every    options
-            when :first then find_initial  options
-            else             find_from_ids args, options
-          end
-
-=end
-
+                      options = args.last.is_a?(Hash) ? args.pop : {}
+#           puts 'first=' + args.first.to_s
+                    case args.first
+                        when :all   then
+                            sql_select(options)
+                        when :first then
+                            sql_select(options.merge(:limit => 1)).first
+                        when :count then
+                            res = sql_select(options.merge(:count => true))
+                            res
+                        else
+                            select_from_ids args, options
+                    end
                 end
 
                 # Perform a SQL-like select request.
@@ -323,19 +323,7 @@ module RightAws
                 # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?UsingSelect.html
                 #
                 def select(*args)
-                    options = args.last.is_a?(Hash) ? args.pop : {}
-#           puts 'first=' + args.first.to_s
-                    case args.first
-                        when :all   then
-                            sql_select(options)
-                        when :first then
-                            sql_select(options.merge(:limit => 1)).first
-                        when :count then
-                            res = sql_select(options.merge(:count => true))
-                            res
-                        else
-                            select_from_ids args, options
-                    end
+                    find(*args)
                 end
 
                 def generate_id # :nodoc:

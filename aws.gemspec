@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{aws}
-  s.version = "1.11.28"
+  s.version = "1.11.29"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "RightScale"]
-  s.date = %q{2009-07-31}
+  s.date = %q{2009-08-01}
   s.description = %q{AWS Library for amazon web services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
