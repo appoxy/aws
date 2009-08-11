@@ -45,13 +45,14 @@ require 'sqs/right_sqs_interface'
 require 'sqs/right_sqs'
 require 'sdb/right_sdb_interface'
 require 'acf/right_acf_interface'
+require 'elb/right_elb_interface'
 
 
 module RightAws #:nodoc:
   module VERSION #:nodoc:
     MAJOR = 1
     MINOR = 11
-    TINY  = 9
+    TINY  = 30
 
     STRING = [MAJOR, MINOR, TINY].join('.')
   end

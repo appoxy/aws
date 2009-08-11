@@ -13,11 +13,11 @@ begin
     require 'jeweler'
     Jeweler::Tasks.new do |gem|
         gem.name = "aws"
-        gem.summary = "AWS Library for amazon web services."
+        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services."
         gem.email = "travis@appoxy.com"
         gem.homepage = "http://github.com/appoxy/aws/"
-        gem.description = "AWS Library for amazon web services."
-        gem.authors = ["Travis Reeder", "RightScale"]
+        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services."
+        gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
         gem.files = FileList['lib/**/*.rb']
     end
 rescue LoadError
