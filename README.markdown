@@ -1,38 +1,47 @@
-# Why the Fork?
+# Appoxy AWS Library
 
-This is a forked version of RightScale's AWS library and we forked it because:
+The Appoxy AWS gem is a forked version of RightScale's AWS library.
 
-1. RightScale wouldn't fix critical bugs that were reported in their forums.
+## Why the Fork?
+
+1. RightScale wasn't fixing critical bugs that were reported in their forums.
 1. It didn't work with Ruby 1.9 - this version does
 1. RightScale doesn't have the source hosted for the community
 1. We needed fixes and changes for [http://code.google.com/p/simple-record/ SimpleRecord] and didn't want to wait for RightScale to do it.
+1. We needed Elastic Load Balancing support
 
-= Discussion Group
+## Discussion Group
 
 http://groups.google.com/group/ruby-aws
 
-= RightScale Amazon Web Services Ruby Gems
+## RightScale Amazon Web Services Ruby Gems
 
 Published by RightScale, Inc. under the MIT License.
 For information about RightScale, see http://www.rightscale.com
 
-== DESCRIPTION:
+## INSTALL:
 
-The RightScale AWS gems have been designed to provide a robust, fast, and secure interface to Amazon EC2, EBS, S3, SQS, SDB, and CloudFront. 
-These gems have been used in production by RightScale since late 2006 and are being maintained to track enhancements made by Amazon. 
+`sudo gem install right_aws`
+
+
+## DESCRIPTION:
+
+The RightScale AWS gems have been designed to provide a robust, fast, and secure interface to Amazon EC2, EBS, S3, SQS, SDB, and CloudFront.
+These gems have been used in production by RightScale since late 2006 and are being maintained to track enhancements made by Amazon.
 The RightScale AWS gems comprise:
 
-- RightAws::Ec2 -- interface to Amazon EC2 (Elastic Compute Cloud) and the
-  associated EBS (Elastic Block Store)
+- RightAws::Ec2 -- interface to Amazon EC2 (Elastic Compute Cloud) and the associated EBS (Elastic Block Store)
 - RightAws::S3 and RightAws::S3Interface -- interface to Amazon S3 (Simple Storage Service)
 - RightAws::Sqs and RightAws::SqsInterface -- interface to first-generation Amazon SQS (Simple Queue Service) (API version 2007-05-01)
 - RightAws::SqsGen2 and RightAws::SqsGen2Interface -- interface to second-generation Amazon SQS (Simple Queue Service) (API version 2008-01-01)
 - RightAws::SdbInterface and RightAws::ActiveSdb -- interface to Amazon SDB (SimpleDB)
 - RightAws::AcfInterface -- interface to Amazon CloudFront, a content distribution service
+- RightAws::ElbInterface -- interface to Amazon Load Balancing service
 
-== FEATURES:
 
-- Full programmmatic access to EC2, EBS, S3, SQS, SDB, and CloudFront.
+## FEATURES:
+
+- Full programmmatic access to EC2, EBS, S3, SQS, SDB, ELB, and CloudFront.
 - Complete error handling: all operations check for errors and report complete
   error information by raising an AwsError.
 - Persistent HTTP connections with robust network-level retry layer using
@@ -55,7 +64,7 @@ The RightScale AWS gems comprise:
 - Interoperability with any cloud running Eucalyptus (http://eucalyptus.cs.ucsb.edu)
 - Test suite (requires AWS account to do "live" testing).
 
-== THREADING:
+## THREADING:
 
 All RightScale AWS interfaces offer two threading options:
 1. Use a single persistent HTTP connection per process.
@@ -82,7 +91,7 @@ By default, EC2/S3/SQS/SDB/ACF interface instances are created in single-threade
 "params[:multi_thread]" to "true" in the initialization arguments to use
 multithreaded mode.
 
-== GETTING STARTED:
+## GETTING STARTED:
 
 * For EC2 read RightAws::Ec2 and consult the Amazon EC2 API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=87
@@ -101,7 +110,7 @@ multithreaded mode.
 * For CloudFront (ACF) read RightAws::AcfInterface and consult the Amazon CloudFront API documentation at 
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=213
 
-== KNOWN ISSUES:
+## KNOWN ISSUES:
 
 - 7/08: A user has reported that uploads of large files on Windows may be broken on some
   Win platforms due to a buggy File.lstat.size.  Use the following monkey-patch at your own risk, 
@@ -142,7 +151,7 @@ multithreaded mode.
   RightAws::SqsInterface will fail with the message:
   "AWS.SimpleQueueService.QueueDeletedRecently: You must wait 60 seconds after deleting a queue before you can create another with the same name."
   
-== REQUIREMENTS:
+## REQUIREMENTS:
 
 RightAws requires REXML and the right_http_connection gem.
 If libxml and its Ruby bindings (distributed in the libxml-ruby gem) are
@@ -151,9 +160,6 @@ present, RightAws can be configured to use them:
 Any error with the libxml installation will result in RightAws failing-safe to
 REXML parsing.
 
-== INSTALL:
-
-sudo gem install right_aws
 
 == LICENSE:
 
