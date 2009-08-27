@@ -115,6 +115,7 @@ module RightAws
             #                                                  :pool (uses a connection pool with a maximum number of connections - NOT IMPLEMENTED YET)
             #      :logger       => Logger Object        # Logger instance: logs to STDOUT if omitted
             #      :nil_representation => 'mynil'}       # interpret Ruby nil as this string value; i.e. use this string in SDB to represent Ruby nils (default is the string 'nil')
+            #      :service_endpoint	=> '/'		 # Set this to /mdb/request.mgwsi for usage with M/DB
 
             def establish_connection(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
                 @connection = RightAws::SdbInterface.new(aws_access_key_id, aws_secret_access_key, params)
