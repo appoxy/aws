@@ -464,8 +464,8 @@ module RightAws
         # Retrieve object data and attributes from Amazon. 
         # Returns a +String+. 
         #
-      def get(headers={})
-        response = @bucket.s3.interface.get(@bucket.name, @name, headers)
+      def get(headers={}, &block)
+        response = @bucket.s3.interface.get(@bucket.name, @name, headers, &block)
         @data    = response[:object]
         @headers, @meta_headers = self.class.split_meta(response[:headers])
         refresh(false)
