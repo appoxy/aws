@@ -41,7 +41,7 @@ module RightAws
     # Escape a string accordingly Amazon rulles
     # http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?REST_RESTAuth.html
     def self.amz_escape(param)
-        return CGI.escape(param).gsub("%7E", "~").gsub("+", "%20") # from: http://umlaut.rubyforge.org/svn/trunk/lib/aws_product_sign.rb
+        return CGI.escape(param.to_s).gsub("%7E", "~").gsub("+", "%20") # from: http://umlaut.rubyforge.org/svn/trunk/lib/aws_product_sign.rb
       #param.to_s.gsub(/([^a-zA-Z0-9._~-]+)/n) do
       #  '%' + $1.unpack('H2' * $1.size).join('%').upcase
       #end
