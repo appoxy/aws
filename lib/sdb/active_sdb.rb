@@ -106,7 +106,7 @@ module RightAws
             #    { :server       => 'sdb.amazonaws.com'  # Amazon service host: 'sdb.amazonaws.com'(default)
             #      :port         => 443                  # Amazon service port: 80 or 443(default)
             #      :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
-            #      :signature_version => '0'             # The signature version : '0' or '1'(default)
+            #      :signature_version => '2'             # The signature version : '0', '1' or '2' (default)
             #      DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
             #      :connection_mode  => :default         # options are :default (will use best known option, may change in the future)
             #                                                  :per_request (opens and closes a connection on every request to SDB)
@@ -391,7 +391,7 @@ module RightAws
                     fields = format_str.to_s.sub(/^select_(all_)?by_/, '').split('_and_')
                     conditions = fields.map { |field| "#{field}=?" }.join(' AND ')
                     options[:conditions] = [conditions, *args]
-                    select(:all, options)
+                    find(:all, options)
                 end
 
                 def select_by_(format_str, args, options) # :nodoc:

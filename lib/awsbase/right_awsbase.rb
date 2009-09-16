@@ -25,6 +25,7 @@
 module RightAws
   require 'digest/md5'
   require 'pp'
+  require 'cgi'
 
   class AwsUtils #:nodoc:
     @@digest1   = OpenSSL::Digest::Digest.new("sha1")
@@ -40,9 +41,10 @@ module RightAws
     # Escape a string accordingly Amazon rulles
     # http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?REST_RESTAuth.html
     def self.amz_escape(param)
-      param.to_s.gsub(/([^a-zA-Z0-9._~-]+)/n) do
-        '%' + $1.unpack('H2' * $1.size).join('%').upcase
-      end
+        return CGI.escape(param).gsub("%7E", "~").gsub("+", "%20") # from: http://umlaut.rubyforge.org/svn/trunk/lib/aws_product_sign.rb
+      #param.to_s.gsub(/([^a-zA-Z0-9._~-]+)/n) do
+      #  '%' + $1.unpack('H2' * $1.size).join('%').upcase
+      #end
     end
 
     # Set a timestamp and a signature version

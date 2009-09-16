@@ -30,9 +30,9 @@ module RightAws
     include RightAwsBaseInterface
 
     DEFAULT_HOST      = 'sdb.amazonaws.com'
-    DEFAULT_PORT      = 80
-    DEFAULT_PROTOCOL  = 'http'
-    API_VERSION       = '2007-11-07'
+    DEFAULT_PORT      = 443
+    DEFAULT_PROTOCOL  = 'https'
+    API_VERSION       = '2009-04-15'
     DEFAULT_NIL_REPRESENTATION = 'nil'
 
     @@bench = AwsBenchmarkingBlock.new
@@ -47,7 +47,7 @@ module RightAws
     #    { :server       => 'sdb.amazonaws.com'  # Amazon service host: 'sdb.amazonaws.com'(default)
     #      :port         => 443                  # Amazon service port: 80(default) or 443
     #      :protocol     => 'https'              # Amazon service protocol: 'http'(default) or 'https'
-    #      :signature_version => '0'             # The signature version : '0' or '1'(default)
+    #      :signature_version => '2'             # The signature version : '0', '1' or '2' (default)
     #      DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
     #      :connection_mode  => :default         # options are :default (will use best known option, may change in the future)
     #                                                  :per_request (opens and closes a connection on every request to SDB)
