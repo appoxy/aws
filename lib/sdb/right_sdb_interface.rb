@@ -32,6 +32,7 @@ module RightAws
     DEFAULT_HOST      = 'sdb.amazonaws.com'
     DEFAULT_PORT      = 443
     DEFAULT_PROTOCOL  = 'https'
+    DEFAULT_ENDPOINT  = '/'
     API_VERSION       = '2009-04-15'
     DEFAULT_NIL_REPRESENTATION = 'nil'
 
@@ -56,6 +57,7 @@ module RightAws
     #                                                  :pool (uses a connection pool with a maximum number of connections - NOT IMPLEMENTED YET)
     #      :logger       => Logger Object        # Logger instance: logs to STDOUT if omitted
     #      :nil_representation => 'mynil'}       # interpret Ruby nil as this string value; i.e. use this string in SDB to represent Ruby nils (default is the string 'nil')
+    #      :service_endpoint	=> '/'		 # Set this to /mdb/request.mgwsi for usage with M/DB # 
     #
     # Example:
     #
@@ -69,7 +71,8 @@ module RightAws
       init({ :name             => 'SDB',
              :default_host     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).host   : DEFAULT_HOST,
              :default_port     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).port   : DEFAULT_PORT,
-             :default_protocol => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).scheme : DEFAULT_PROTOCOL },
+             :default_protocol => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).scheme : DEFAULT_PROTOCOL,
+             :service_endpoint => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).path   : DEFAULT_ENDPOINT },
            aws_access_key_id     || ENV['AWS_ACCESS_KEY_ID'],
            aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
            params)
@@ -83,7 +86,7 @@ module RightAws
       params.delete_if {|key,value| value.nil? }
       #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
       # prepare service data
-      service = '/'
+      service = @params[:service_endpoint]
       service_hash = {"Action"         => action,
                       "AWSAccessKeyId" => @aws_access_key_id,
                       "Version"        => API_VERSION }
