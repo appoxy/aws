@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{aws}
-  s.version = "1.11.34"
+  s.version = "1.11.35"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-  s.date = %q{2009-09-16}
+  s.date = %q{2009-09-25}
   s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
      "lib/awsbase/right_awsbase.rb",
      "lib/awsbase/support.rb",
      "lib/ec2/right_ec2.rb",
+     "lib/ec2/right_mon_interface.rb",
      "lib/elb/right_elb_interface.rb",
      "lib/right_aws.rb",
      "lib/s3/right_s3.rb",
