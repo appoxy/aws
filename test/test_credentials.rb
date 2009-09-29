@@ -27,7 +27,8 @@ class TestCredentials
   def self.get_credentials
     #Dir.chdir do
       begin
-        Dir.chdir('.rightscale') do 
+          puts Dir.chdir
+        Dir.chdir('.amazon') do
           credentials = YAML::load(File.open("testcredentials.yml"))
           puts credentials.inspect
             self.aws_access_key_id = credentials["access_key"]
@@ -35,7 +36,7 @@ class TestCredentials
             puts 'akey=' + self.aws_access_key_id
         end
       rescue Exception => e
-        puts "Couldn't chdir to ~/.rightscale: #{e.message}"
+        puts "Couldn't chdir to ~/.amazon: #{e.message}"
           raise e
       end
     #end

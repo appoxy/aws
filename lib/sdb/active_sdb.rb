@@ -262,6 +262,8 @@ module RightAws
                       options = args.last.is_a?(Hash) ? args.pop : {}
 #           puts 'first=' + args.first.to_s
                     case args.first
+                        when nil then
+                            raise "Invalid parameters passed to find: nil."
                         when :all   then
                             sql_select(options)
                         when :first then
@@ -358,6 +360,7 @@ module RightAws
                         # if a bunch of records was requested then return check that we found all of them
                         # and return as an array
                         unless args.size == result.size
+                            # todo: might make sense to return the array but with nil values in the slots where an item wasn't found?
                             id_list = args.map{|i| "'#{i}'"}.join(',')
                             raise ActiveSdbError.new("Couldn't find all #{name} with IDs (#{id_list}) (found #{result.size} results, but was looking for #{args.size})")
                         else

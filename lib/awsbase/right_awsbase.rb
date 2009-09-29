@@ -96,9 +96,10 @@ module RightAws
             #  '%' + $1.unpack('H2' * $1.size).join('%').upcase
             #end
             e = CGI.escape(param.to_s)
+            e = e.gsub("%7E", "~")
             e = e.gsub("+", "%20")
             e = e.gsub("*", "%2A")
-            e = e.gsub("%7E", "~")
+
         end
 
 

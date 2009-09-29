@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
+require '../test_credentials'
 
 class TestSdb < Test::Unit::TestCase
   
