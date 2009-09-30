@@ -14,14 +14,17 @@ The Appoxy AWS gem is a forked version of RightScale's AWS library.
 
 http://groups.google.com/group/ruby-aws
 
-## RightScale Amazon Web Services Ruby Gems
+## Issue Tracker
 
-Published by RightScale, Inc. under the MIT License.
-For information about RightScale, see http://www.rightscale.com
+http://appoxy.lighthouseapp.com/projects/38441-aws/overview
+
+## Appoxy Amazon Web Services Ruby Gems
+
+Published by Appoxy LLC, under the MIT License. Special thanks to RightScale from which this project is forked.
 
 ## INSTALL:
 
-`sudo gem install right_aws`
+gem install appoxy-aws
 
 
 ## DESCRIPTION:
@@ -37,6 +40,7 @@ The RightScale AWS gems comprise:
 - RightAws::SdbInterface and RightAws::ActiveSdb -- interface to Amazon SDB (SimpleDB)
 - RightAws::AcfInterface -- interface to Amazon CloudFront, a content distribution service
 - RightAws::ElbInterface -- interface to Amazon Load Balancing service
+- RightAws::MonInterface -- interface to Amazon CloudWatch monitoring service
 
 
 ## FEATURES:
@@ -88,7 +92,7 @@ Note that due to limitations in the I/O of the Ruby interpreter you
 may not get the degree of parallelism you may expect with the multi-threaded setting.
 
 By default, EC2/S3/SQS/SDB/ACF interface instances are created in single-threaded mode.  Set
-"params[:multi_thread]" to "true" in the initialization arguments to use
+params[:connection_mode] to :multi_thread in the initialization arguments to use
 multithreaded mode.
 
 ## GETTING STARTED:

@@ -52,8 +52,8 @@ module RightAws
     #      DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
     #      :connection_mode  => :default         # options are :default (will use best known option, may change in the future)
     #                                                  :per_request (opens and closes a connection on every request to SDB)
-    #                                                  :single (same as old multi_thread=>false)
-    #                                                  :per_thread (same as old multi_thread=>true)
+    #                                                  :single - one connection shared across app (same as old multi_thread=>false)
+    #                                                  :per_thread - one connection per ruby thread (same as old multi_thread=>true)
     #                                                  :pool (uses a connection pool with a maximum number of connections - NOT IMPLEMENTED YET)
     #      :logger       => Logger Object        # Logger instance: logs to STDOUT if omitted
     #      :nil_representation => 'mynil'}       # interpret Ruby nil as this string value; i.e. use this string in SDB to represent Ruby nils (default is the string 'nil')
