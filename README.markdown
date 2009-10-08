@@ -24,7 +24,14 @@ Published by Appoxy LLC, under the MIT License. Special thanks to RightScale fro
 
 ## INSTALL:
 
-gem install appoxy-aws
+ONE TIME: Be sure to add the new gemcutter source:
+
+- gem install gemcutter
+- gem tumble
+
+THEN (if you already have http://gemcutter.org in your sources and it MUST be above rubyforge.org):
+
+gem install aws uuidtools http_connection
 
 
 ## DESCRIPTION:
