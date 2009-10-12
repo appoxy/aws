@@ -19,6 +19,8 @@ begin
         gem.description = "AWS Ruby Library for interfacing with Amazon Web Services."
         gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
         gem.files = FileList['lib/**/*.rb']
+        gem.add_dependency 'uuidtools'
+        gem.add_dependency 'http_connection'
     end
 rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"

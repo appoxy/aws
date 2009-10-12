@@ -26,12 +26,12 @@ Published by Appoxy LLC, under the MIT License. Special thanks to RightScale fro
 
 ONE TIME: Be sure to add the new gemcutter source:
 
-- gem install gemcutter
-- gem tumble
+    gem install gemcutter
+    gem tumble
 
-THEN (if you already have http://gemcutter.org in your sources and it MUST be above rubyforge.org):
+THEN (you should have http://gemcutter.org in your sources and it MUST be above rubyforge.org):
 
-gem install aws uuidtools http_connection
+    gem install aws
 
 
 ## DESCRIPTION:
