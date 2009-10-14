@@ -6,8 +6,7 @@ require 'rubygems'
 $: << File.dirname(__FILE__)
 require 'lib/right_aws.rb'
 
-testglobs =     ["test/ts_right_aws.rb"]
-
+testglobs = ["test/ts_right_aws.rb"]
 
 begin
     require 'jeweler'
@@ -26,8 +25,7 @@ rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
 
-
-desc "Analyze code coverage of the unit tests."
+#desc "Analyze code coverage of the unit tests."
 #Rcov::RcovTask.new do |t|
 #  t.test_files = FileList[testglobs]
 #  t.verbose = true     # uncomment to see the executed command

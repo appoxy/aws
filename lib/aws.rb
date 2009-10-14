@@ -1,0 +1,1 @@
+require 'right_aws'

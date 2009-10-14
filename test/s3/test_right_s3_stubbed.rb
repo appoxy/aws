@@ -5,11 +5,11 @@ class TestS3Stubbed < Test::Unit::TestCase
   RIGHT_OBJECT_TEXT     = 'Right test message'
   
   def setup
-    @s3     = Rightscale::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    @s3     = Aws::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @bucket = 'right_s3_awesome_test_bucket'
     @key1   = 'test/woohoo1'
     @key2   = 'test1/key/woohoo2'
-    @s      = Rightscale::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    @s      = Aws::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     Rightscale::HttpConnection.reset
   end
 
@@ -18,7 +18,7 @@ class TestS3Stubbed < Test::Unit::TestCase
     Rightscale::HttpConnection.push(409, 'The named bucket you tried to create already exists')
     Rightscale::HttpConnection.push(500, 'We encountered an internal error.  Please try again.')
     Rightscale::HttpConnection.push(500, 'We encountered an internal error.  Please try again.')
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       @s3.create_bucket(@bucket)
     end
   end

@@ -39,6 +39,7 @@ require 'awsbase/benchmark_fix'
 require 'awsbase/support'
 require 'awsbase/right_awsbase'
 require 'ec2/right_ec2'
+require 'ec2/right_mon_interface'
 require 's3/right_s3_interface'
 require 's3/right_s3'
 require 'sqs/right_sqs_interface'
@@ -49,20 +50,18 @@ require 'elb/right_elb_interface'
 
 
 module RightAws #:nodoc:
-  module VERSION #:nodoc:
-    MAJOR = 1
-    MINOR = 11
-    TINY  = 30
 
-    STRING = [MAJOR, MINOR, TINY].join('.')
-  end
 end
 
+module Aws
+    include RightAws
+    extend RightAws
+end
 #-
 
 # We also want everything available in the Rightscale namespace for backward
 # compatibility reasons.
 module Rightscale #:nodoc:
-  include RightAws
-  extend RightAws
+    include RightAws
+    extend RightAws
 end

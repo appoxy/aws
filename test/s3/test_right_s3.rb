@@ -5,7 +5,7 @@ class TestS3 < Test::Unit::TestCase
   RIGHT_OBJECT_TEXT     = 'Right test message'
   
   def setup
-    @s3     = Rightscale::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    @s3     = Aws::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @bucket = 'right_s3_awesome_test_bucket_000A1'
     @bucket2 = 'right_s3_awesome_test_bucket_000A2'
     @key1   = 'test/woohoo1/'
@@ -14,7 +14,7 @@ class TestS3 < Test::Unit::TestCase
     @key1_copy =     'test/woohoo1_2'
     @key1_new_name = 'test/woohoo1_3'
     @key2_new_name = 'test1/key/woohoo2_new'
-    @s      = Rightscale::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    @s      = Aws::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
   end
 
   #---------------------------
@@ -40,7 +40,7 @@ class TestS3 < Test::Unit::TestCase
   end
   
   def test_05_get_and_get_object
-    assert_raise(Rightscale::AwsError) { @s3.get(@bucket, 'undefined/key') }
+    assert_raise(Aws::AwsError) { @s3.get(@bucket, 'undefined/key') }
     data1 = @s3.get(@bucket, @key1)
     assert_equal RIGHT_OBJECT_TEXT, data1[:object], "Object text must be equal to '#{RIGHT_OBJECT_TEXT}'"
     assert_equal RIGHT_OBJECT_TEXT, @s3.get_object(@bucket, @key1), "Get_object text must return '#{RIGHT_OBJECT_TEXT}'"

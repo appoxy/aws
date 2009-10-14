@@ -7,7 +7,7 @@ class TestEc2 < Test::Unit::TestCase
     # are not tested here due to their potentially risk.
   
   def setup
-    @ec2   = Rightscale::Ec2.new(TestCredentials.aws_access_key_id,
+    @ec2   = Aws::Ec2.new(TestCredentials.aws_access_key_id,
                                  TestCredentials.aws_secret_access_key)
     @key   = 'right_ec2_awesome_test_key'
     @group = 'right_ec2_awesome_test_security_group'
