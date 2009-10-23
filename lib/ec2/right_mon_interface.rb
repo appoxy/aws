@@ -88,9 +88,12 @@ module Aws
         #      REQUESTS
         #-----------------------------------------------------------------
 
-        def list_metrics
+        def list_metrics(options={})
+
+            next_token = options[:next_token] || nil
 
             params = { }
+            params['NextToken'] = next_token unless next_token.nil?
 
             @logger.info("list Metrics ")
 
@@ -105,15 +108,22 @@ module Aws
         # measureName:  CPUUtilization (Units: Percent), NetworkIn (Units: Bytes), NetworkOut (Units: Bytes), DiskWriteOps (Units: Count)
         #               DiskReadBytes (Units: Bytes), DiskReadOps (Units: Count), DiskWriteBytes (Units: Bytes)
         # stats: 	array containing one or more of Minimum, Maximum, Sum, Average, Samples
-        # startTime :   Timestamp to start
-        # endtime:      Timestamp to end
+        # start_time :   Timestamp to start
+        # end_time:      Timestamp to end
         # unit: 	Either Seconds, Percent, Bytes, Bits, Count, Bytes, Bits/Second, Count/Second, and None
-        # period: 	Integer 60 or multiple of 60
-        # dimension:    Hash containing keys ImageId, AutoScalingGroupName, InstanceId, InstanceType
-        # customUnit:   nil. not supported currently.
-        # namespace:    AWS/EC2
+        #
+        # Optional parameters:
+        #    period: 	Integer 60 or multiple of 60
+        #    dimension:    Hash containing keys ImageId, AutoScalingGroupName, InstanceId, InstanceType
+        #    customUnit:   nil. not supported currently.
+        #    namespace:    AWS/EC2
 
-        def get_metric_statistics ( measure_name, stats, start_time, end_time, unit, period=60, dimensions=nil,  custom_unit=nil, namespace="AWS/EC2" )
+        def get_metric_statistics ( measure_name, stats, start_time, end_time, unit, options={})
+
+            period = options[:period] || 60
+            dimensions = options[:dimensions] || nil
+            custom_unit = options[:custom_unit] || nil
+            namespace = options[:namespace] || "AWS/EC2"
 
             params = {}
             params['MeasureName'] = measure_name
