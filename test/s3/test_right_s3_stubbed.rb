@@ -1,10 +1,12 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
+require File.dirname(__FILE__) + '/../test_credentials.rb'
 
 class TestS3Stubbed < Test::Unit::TestCase
 
   RIGHT_OBJECT_TEXT     = 'Right test message'
   
   def setup
+      TestCredentials.get_credentials
     @s3     = Aws::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @bucket = 'right_s3_awesome_test_bucket'
     @key1   = 'test/woohoo1'
@@ -25,14 +27,14 @@ class TestS3Stubbed < Test::Unit::TestCase
 
   def test_102_list_all_my_buckets_failure
     Rightscale::HttpConnection.push(401, 'Unauthorized') 
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       @s3.list_all_my_buckets
     end
   end
 
   def test_103_list_empty_bucket
     Rightscale::HttpConnection.push(403, 'Access Denied') 
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       @s3.list_bucket(@bucket)
     end
   end
@@ -41,10 +43,10 @@ class TestS3Stubbed < Test::Unit::TestCase
     Rightscale::HttpConnection.push(400, 'Your proposed upload exceeds the maximum allowed object size.') 
     Rightscale::HttpConnection.push(400, 'The Content-MD5 you specified was an invalid.') 
     Rightscale::HttpConnection.push(409, 'Please try again') 
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       assert @s3.put(@bucket, @key1, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo1!'), 'Put bucket fail'
     end
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       assert @s3.put(@bucket, @key2, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo2!'), 'Put bucket fail'
     end
   end
@@ -56,7 +58,7 @@ class TestS3Stubbed < Test::Unit::TestCase
   
   def test_106_head
     Rightscale::HttpConnection.push(404, 'Good Luck!') 
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       @s3.head(@bucket,@key1)
     end
   end
@@ -72,7 +74,7 @@ class TestS3Stubbed < Test::Unit::TestCase
     Rightscale::HttpConnection.push(500, 'not found') 
     #--- test COPY
     # copy a key
-    assert_raise RightAws::AwsError do
+    assert_raise Aws::AwsError do
       @s3.copy(@bucket, @key1, @bucket, @key1_copy)
     end
     

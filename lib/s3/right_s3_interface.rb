@@ -21,13 +21,13 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
 
-  class S3Interface < RightAwsBase
+  class S3Interface < AwsBase
     
     USE_100_CONTINUE_PUT_SIZE = 1_000_000
     
-    include RightAwsBaseInterface
+    include AwsBaseInterface
     
     DEFAULT_HOST           = 's3.amazonaws.com'
     DEFAULT_PORT           = 80
@@ -50,7 +50,7 @@ module RightAws
 
       # Creates new RightS3 instance.
       #
-      #  s3 = RightAws::S3Interface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=> #<RightAws::S3Interface:0xb7b3c27c>
+      #  s3 = Aws::S3Interface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=> #<Aws::S3Interface:0xb7b3c27c>
       #  
       # Params is a hash:
       #
@@ -165,7 +165,7 @@ module RightAws
       # Raises AwsError if any banana happened.
     def request_info(request, parser, &block) # :nodoc:
       thread = @params[:multi_thread] ? Thread.current : Thread.main
-      thread[:s3_connection] ||= Rightscale::HttpConnection.new(:exception => RightAws::AwsError, :logger => @logger)
+      thread[:s3_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
       request_info_impl(thread[:s3_connection], @@bench, request, parser, &block)
     end
 
@@ -201,7 +201,7 @@ module RightAws
       request_info(req_hash, RightHttp2xxParser.new)
     rescue Exception => e
         # if the bucket exists AWS returns an error for the location constraint interface. Drop it
-      e.is_a?(RightAws::AwsError) && e.message.include?('BucketAlreadyOwnedByYou') ? true  : on_exception
+      e.is_a?(Aws::AwsError) && e.message.include?('BucketAlreadyOwnedByYou') ? true  : on_exception
     end
     
       # Retrieve bucket location
@@ -407,7 +407,7 @@ module RightAws
    
    
     
-    # New experimental API for uploading objects, introduced in RightAws 1.8.1.
+    # New experimental API for uploading objects, introduced in Aws 1.8.1.
     # store_object is similar in function to the older function put, but returns the full response metadata.  It also allows for optional verification
     # of object md5 checksums on upload.  Parameters are passed as hash entries and are checked for completeness as well as for spurious arguments.
     # The hash of the response headers contains useful information like the Amazon request ID and the object ETag (MD5 checksum).
@@ -472,7 +472,7 @@ module RightAws
       #       "content-length"=>"0"}
       #
       # s3.store_object_and_verify(:bucket => "foobucket", :key => "foo", :md5 => "a507841b1bc8115094b00bbe8c1b2953", :data => "polemonium" )
-      #   RightAws::AwsError: Uploaded object failed MD5 checksum verification: {"x-amz-id-2"=>"HTxVtd2bf7UHHDn+WzEH43MkEjFZ26xuYvUzbstkV6nrWvECRWQWFSx91z/bl03n", 
+      #   Aws::AwsError: Uploaded object failed MD5 checksum verification: {"x-amz-id-2"=>"HTxVtd2bf7UHHDn+WzEH43MkEjFZ26xuYvUzbstkV6nrWvECRWQWFSx91z/bl03n",
       #                                                                          "etag"=>"\"a507841b1bc8115094b00bbe8c1b2954\"", 
       #                                                                          "date"=>"Mon, 29 Sep 2008 18:38:41 GMT", 
       #                                                                          :verified_md5=>false, 
@@ -519,7 +519,7 @@ module RightAws
       on_exception
     end
     
-    # New experimental API for retrieving objects, introduced in RightAws 1.8.1.
+    # New experimental API for retrieving objects, introduced in Aws 1.8.1.
     # retrieve_object is similar in function to the older function get.  It allows for optional verification
     # of object md5 checksums on retrieval.  Parameters are passed as hash entries and are checked for completeness as well as for spurious arguments.
     #
@@ -724,7 +724,7 @@ module RightAws
         else
           result[:grantees][key] = 
             { :display_name => grantee[:display_name] || grantee[:uri].to_s[/[^\/]*$/],
-              :permissions  => grantee[:permissions].to_a,
+              :permissions  => grantee[:permissions].lines.to_a,
               :attributes   => grantee[:attributes] }
         end
       end
@@ -968,7 +968,7 @@ module RightAws
     #      PARSERS:
     #-----------------------------------------------------------------
 
-    class S3ListAllMyBucketsParser < RightAWSParser # :nodoc:
+    class S3ListAllMyBucketsParser < AwsParser # :nodoc:
       def reset
         @result = []
         @owner  = {}
@@ -987,7 +987,7 @@ module RightAws
       end
     end
 
-    class S3ListBucketParser < RightAWSParser  # :nodoc:
+    class S3ListBucketParser < AwsParser  # :nodoc:
       def reset
         @result      = []
         @service     = {}
@@ -1018,7 +1018,7 @@ module RightAws
       end
     end
 
-    class S3ImprovedListBucketParser < RightAWSParser  # :nodoc:
+    class S3ImprovedListBucketParser < AwsParser  # :nodoc:
       def reset
         @result      = {}
         @result[:contents] = []
@@ -1060,7 +1060,7 @@ module RightAws
       end
     end
 
-    class S3BucketLocationParser < RightAWSParser # :nodoc:
+    class S3BucketLocationParser < AwsParser # :nodoc:
       def reset
         @result = ''
       end
@@ -1069,7 +1069,7 @@ module RightAws
       end
     end
 
-    class S3AclParser < RightAWSParser  # :nodoc:
+    class S3AclParser < AwsParser  # :nodoc:
       def reset
         @result          = {:grantees=>[], :owner=>{}}
         @current_grantee = {}
@@ -1102,7 +1102,7 @@ module RightAws
       end
     end
     
-    class S3LoggingParser < RightAWSParser  # :nodoc:
+    class S3LoggingParser < AwsParser  # :nodoc:
       def reset
         @result          = {:enabled => false, :targetbucket => '', :targetprefix => ''}
         @current_grantee = {}
@@ -1124,7 +1124,7 @@ module RightAws
       end
     end
 
-    class S3CopyParser < RightAWSParser  # :nodoc:
+    class S3CopyParser < AwsParser  # :nodoc:
       def reset
         @result = {}
       end
@@ -1148,7 +1148,7 @@ module RightAws
       def headers_to_string(headers)
         result = {}
         headers.each do |key, value|
-          value       = value.to_s if value.is_a?(Array) && value.size<2
+          value       = value[0] if value.is_a?(Array) && value.size<2
           result[key] = value
         end
         result

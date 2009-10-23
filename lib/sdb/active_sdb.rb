@@ -28,27 +28,27 @@ rescue LoadError => e
     exit
 end
 
-module RightAws
+module Aws
 
-    # = RightAws::ActiveSdb -- RightScale SDB interface (alpha release)
-    # The RightAws::ActiveSdb class provides a complete interface to Amazon's Simple
+    # = Aws::ActiveSdb -- RightScale SDB interface (alpha release)
+    # The Aws::ActiveSdb class provides a complete interface to Amazon's Simple
     # Database Service.
     #
-    # ActiveSdb is in alpha and does not load by default with the rest of RightAws.  You must use an additional require statement to load the ActiveSdb class.  For example:
+    # ActiveSdb is in alpha and does not load by default with the rest of Aws.  You must use an additional require statement to load the ActiveSdb class.  For example:
     #
     #   require 'right_aws'
     #   require 'sdb/active_sdb'
     #
-    # Additionally, the ActiveSdb class requires the 'uuidtools' gem; this gem is not normally required by RightAws and is not installed as a
-    # dependency of RightAws.
+    # Additionally, the ActiveSdb class requires the 'uuidtools' gem; this gem is not normally required by Aws and is not installed as a
+    # dependency of Aws.
     #
     # Simple ActiveSdb usage example:
     #
-    #  class Client < RightAws::ActiveSdb::Base
+    #  class Client < Aws::ActiveSdb::Base
     #  end
     #
     #  # connect to SDB
-    #  RightAws::ActiveSdb.establish_connection
+    #  Aws::ActiveSdb.establish_connection
     #
     #  # create domain
     #  Client.create_domain
@@ -101,7 +101,7 @@ module RightAws
 
             # Create a new handle to an Sdb account. All handles share the same per process or per thread
             # HTTP connection to Amazon Sdb. Each handle is for a specific account.
-            # The +params+ are passed through as-is to RightAws::SdbInterface.new
+            # The +params+ are passed through as-is to Aws::SdbInterface.new
             # Params:
             #    { :server       => 'sdb.amazonaws.com'  # Amazon service host: 'sdb.amazonaws.com'(default)
             #      :port         => 443                  # Amazon service port: 80 or 443(default)
@@ -118,7 +118,7 @@ module RightAws
             #      :service_endpoint	=> '/'		 # Set this to /mdb/request.mgwsi for usage with M/DB
 
             def establish_connection(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
-                @connection = RightAws::SdbInterface.new(aws_access_key_id, aws_secret_access_key, params)
+                @connection = Aws::SdbInterface.new(aws_access_key_id, aws_secret_access_key, params)
             end
 
             def close_connection
@@ -134,7 +134,7 @@ module RightAws
 
             # Retreive a list of domains.
             #
-            #  put RightAws::ActiveSdb.domains #=> ['co-workers','family','friends','clients']
+            #  put Aws::ActiveSdb.domains #=> ['co-workers','family','friends','clients']
             #
             def domains
                 connection.list_domains[:domains]
@@ -143,7 +143,7 @@ module RightAws
             # Create new domain.
             # Raises no errors if the domain already exists.
             #
-            #  RightAws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41d5-91f4-3ed390a3d3b2", :box_usage=>"0.0055590278"}
+            #  Aws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41d5-91f4-3ed390a3d3b2", :box_usage=>"0.0055590278"}
             #
             def create_domain(domain_name)
                 connection.create_domain(domain_name)
@@ -152,7 +152,7 @@ module RightAws
             # Remove domain from SDB.
             # Raises no errors if the domain does not exist.
             #
-            #  RightAws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41c6-91f4-3ed390a3d3b2", :box_usage=>"0.0055590001"}
+            #  Aws::ActiveSdb.create_domain('alpha')  #=> {:request_id=>"6fc652a0-0000-41c6-91f4-3ed390a3d3b2", :box_usage=>"0.0055590001"}
             #
             def delete_domain(domain_name)
                 connection.delete_domain(domain_name)
@@ -167,25 +167,25 @@ module RightAws
                 # next_token value returned by last find: is useful to continue finding
                 attr_accessor :next_token
 
-                # Returns a RightAws::SdbInterface object
+                # Returns a Aws::SdbInterface object
                 #
-                #  class A < RightAws::ActiveSdb::Base
+                #  class A < Aws::ActiveSdb::Base
                 #  end
                 #
-                #  class B < RightAws::ActiveSdb::Base
+                #  class B < Aws::ActiveSdb::Base
                 #  end
                 #
-                #  class C < RightAws::ActiveSdb::Base
+                #  class C < Aws::ActiveSdb::Base
                 #  end
                 #
-                #  RightAws::ActiveSdb.establish_connection 'key_id_1', 'secret_key_1'
+                #  Aws::ActiveSdb.establish_connection 'key_id_1', 'secret_key_1'
                 #
                 #  C.establish_connection 'key_id_2', 'secret_key_2'
                 #
                 #  # A and B uses the default connection, C - uses its own
-                #  puts A.connection  #=> #<RightAws::SdbInterface:0xb76d6d7c>
-                #  puts B.connection  #=> #<RightAws::SdbInterface:0xb76d6d7c>
-                #  puts C.connection  #=> #<RightAws::SdbInterface:0xb76d6ca0>
+                #  puts A.connection  #=> #<Aws::SdbInterface:0xb76d6d7c>
+                #  puts B.connection  #=> #<Aws::SdbInterface:0xb76d6d7c>
+                #  puts C.connection  #=> #<Aws::SdbInterface:0xb76d6ca0>
                 #
                 def connection
                     @connection || ActiveSdb::connection
@@ -196,18 +196,18 @@ module RightAws
                 # Current domain name.
                 #
                 #  # if 'ActiveSupport' is not loaded then class name converted to downcase
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #  end
                 #  puts Client.domain  #=> 'client'
                 #
                 #  # if 'ActiveSupport' is loaded then class name being tableized
                 #  require 'activesupport'
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #  end
                 #  puts Client.domain  #=> 'clients'
                 #
                 #  # Explicit domain name definition
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #    set_domain_name :foreign_clients
                 #  end
                 #  puts Client.domain  #=> 'foreign_clients'
@@ -225,7 +225,7 @@ module RightAws
 
                 # Change the default domain name to user defined.
                 #
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #    set_domain_name :foreign_clients
                 #  end
                 #
@@ -236,7 +236,7 @@ module RightAws
                 # Create domain at SDB.
                 # Raises no errors if the domain already exists.
                 #
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #  end
                 #  Client.create_domain  #=> {:request_id=>"6fc652a0-0000-41d5-91f4-3ed390a3d3b2", :box_usage=>"0.0055590278"}
                 #
@@ -247,7 +247,7 @@ module RightAws
                 # Remove domain from SDB.
                 # Raises no errors if the domain does not exist.
                 #
-                #  class Client < RightAws::ActiveSdb::Base
+                #  class Client < Aws::ActiveSdb::Base
                 #  end
                 #  Client.delete_domain  #=> {:request_id=>"e14d90d3-0000-4898-9995-0de28cdda270", :box_usage=>"0.0055590278"}
                 #
@@ -297,7 +297,7 @@ module RightAws
                 #  Client.select('1234987b4583475347523948')
                 #  Client.select('1','2','3','4', :conditions=> ["toys=?", "beer"])
                 #
-                # Find helpers: RightAws::ActiveSdb::Base.select_by_... and RightAws::ActiveSdb::Base.select_all_by_...
+                # Find helpers: Aws::ActiveSdb::Base.select_by_... and Aws::ActiveSdb::Base.select_all_by_...
                 #
                 #  Client.select_by_name('Matias Rust')
                 #  Client.select_by_name_and_city('Putin','Moscow')

@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
+require File.dirname(__FILE__) + '/../test_credentials.rb'
 
 class TestAcf < Test::Unit::TestCase
 
@@ -7,15 +8,16 @@ class TestAcf < Test::Unit::TestCase
   STDOUT.sync = true
 
   def setup
-    @acf= Rightscale::AcfInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
-    @s3 = Rightscale::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+      TestCredentials.get_credentials
+    @acf= Aws::AcfInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    @s3 = Aws::S3.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @bucket_name   = "right-acf-awesome-test-bucket-0001"
     @bucket_domain = "#{@bucket_name}.s3.amazonaws.com"
   end
 
   def test_01_list_distributions_part1
     distributions = nil
-    assert_nothing_raised(Rightscale::AwsError) do
+    assert_nothing_raised(Aws::AwsError) do
       distributions = @acf.list_distributions
     end
     assert distributions.is_a?(Array)
@@ -23,13 +25,13 @@ class TestAcf < Test::Unit::TestCase
 
   def test_02_try_to_create_for_bad_bucket
     # a bucket does not exist
-    assert_raise(Rightscale::AwsError) do
+    assert_raise(Aws::AwsError) do
       @acf.create_distribution("right-cloudfront-awesome-test-bucket-not-exist", "Mustn't to be born", true)
     end
     # a bucket is not a domain naming complied guy
     bucket_name = 'right_cloudfront_awesome_test_bucket_BAD'
     @s3.bucket(bucket_name, :create)
-    assert_raise(Rightscale::AwsError) do
+    assert_raise(Aws::AwsError) do
       @acf.create_distribution(bucket_name, "Mustn't to be born", true)
     end
   end
@@ -87,7 +89,7 @@ class TestAcf < Test::Unit::TestCase
     assert_not_equal config[:e_tag], new_config[:e_tag]
 
     # try to update the old config again (must fail because ETAG has changed)
-    assert_raise(Rightscale::AwsError) do
+    assert_raise(Aws::AwsError) do
       @acf.set_distribution_config(old[:aws_id], config)
     end
   end
@@ -98,7 +100,7 @@ class TestAcf < Test::Unit::TestCase
     # list distributions
     @acf.list_distributions
     # list the distributions again - cache should hit
-    assert_raise(Rightscale::AwsNoChange) do
+    assert_raise(Aws::AwsNoChange) do
       @acf.list_distributions
     end
     # disable caching
@@ -112,7 +114,7 @@ class TestAcf < Test::Unit::TestCase
     # should fail because
     if distribution[:status] == 'InProgress'
       # should fail because the distribution is not deployed yet
-      assert_raise(Rightscale::AwsError) do
+      assert_raise(Aws::AwsError) do
         @acf.delete_distribution(distribution[:aws_id], distribution[:e_tag])
       end
       # wait for a deployed state

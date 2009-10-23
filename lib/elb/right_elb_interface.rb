@@ -1,9 +1,9 @@
-module RightAws
+module Aws
 
 
 
-    class Elb < RightAwsBase
-        include RightAwsBaseInterface
+    class Elb < AwsBase
+        include AwsBaseInterface
 
 
         #Amazon EC2 API version being used
@@ -76,7 +76,7 @@ module RightAws
         # Raises AwsError if any banana happened
         def request_info(request, parser)
             thread = @params[:multi_thread] ? Thread.current : Thread.main
-            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => RightAws::AwsError, :logger => @logger)
+            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
             request_info_impl(thread[:elb_connection], @@bench, request, parser)
         end
 
@@ -126,7 +126,7 @@ module RightAws
         #      PARSERS: Instances
         #-----------------------------------------------------------------
 
-        class QElbDescribeLoadBalancersParser < RightAWSParser
+        class QElbDescribeLoadBalancersParser < AwsParser
 
             def reset
                 @result = []
@@ -153,7 +153,7 @@ module RightAws
             end
         end
 
-        class QElbRegisterInstanceParser < RightAWSParser
+        class QElbRegisterInstanceParser < AwsParser
 
             def reset
                 @result = []

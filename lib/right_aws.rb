@@ -49,19 +49,9 @@ require 'acf/right_acf_interface'
 require 'elb/right_elb_interface'
 
 
-module RightAws #:nodoc:
-
-end
-
-module Aws
-    include RightAws
-    extend RightAws
-end
-#-
-
-# We also want everything available in the Rightscale namespace for backward
-# compatibility reasons.
-module Rightscale #:nodoc:
-    include RightAws
-    extend RightAws
+# backwards compatible.
+# @deprecated
+module RightAws
+    include Aws
+    extend Aws
 end

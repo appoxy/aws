@@ -21,10 +21,10 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
 
-  # = RightAWS::EC2 -- RightScale Amazon EC2 interface
-  # The RightAws::EC2 class provides a complete interface to Amazon's
+  # = Aws::EC2 -- RightScale Amazon EC2 interface
+  # The Aws::EC2 class provides a complete interface to Amazon's
   # Elastic Compute Cloud service, as well as the associated EBS (Elastic Block
   # Store).
   # For explanations of the semantics
@@ -35,7 +35,7 @@ module RightAws
   #
   # Create an EC2 interface handle:
   #   
-  #   @ec2   = RightAws::Ec2.new(aws_access_key_id,
+  #   @ec2   = Aws::Ec2.new(aws_access_key_id,
   #                               aws_secret_access_key)
   # Create a new SSH key pair:
   #  @key   = 'right_ec2_awesome_test_key'
@@ -61,11 +61,11 @@ module RightAws
   # Describe running instances:
   #  @ec2.describe_instances
   #
-  # Error handling: all operations raise an RightAws::AwsError in case
+  # Error handling: all operations raise an Aws::AwsError in case
   # of problems. Note that transient errors are automatically retried.
     
-  class Ec2 < RightAwsBase
-    include RightAwsBaseInterface
+  class Ec2 < AwsBase
+    include AwsBaseInterface
     
     # Amazon EC2 API version being used
     API_VERSION       = "2008-12-01"
@@ -125,7 +125,7 @@ module RightAws
       # EC2 doesn't really define any transient errors to retry, and in fact,
       # when they return a 503 it is usually for 'request limit exceeded' which
       # we most certainly should not retry.  So let's pare down the list of
-      # retryable errors to InternalError only (see RightAwsBase for the default
+      # retryable errors to InternalError only (see AwsBase for the default
       # list)
       amazon_problems = ['InternalError']
     end
@@ -626,7 +626,7 @@ module RightAws
     # Bundle a Windows image.
     # Internally, it queues the bundling task and shuts down the instance.
     # It then takes a snapshot of the Windows volume bundles it, and uploads it to
-    # S3. After bundling completes, Rightaws::Ec2#register_image may be used to
+    # S3. After bundling completes, Aws::Ec2#register_image may be used to
     # register the new Windows AMI for subsequent launches.
     #
     #   ec2.bundle_instance('i-e3e24e8a', 'my-awesome-bucket', 'my-win-image-1') #=>
@@ -1183,8 +1183,8 @@ module RightAws
       orig_reiteration_time = nil
       orig_http_params = nil
       
-      orig_reiteration_time = RightAws::AWSErrorHandler::reiteration_time
-      RightAws::AWSErrorHandler::reiteration_time = 0
+      orig_reiteration_time = Aws::AWSErrorHandler::reiteration_time
+      Aws::AWSErrorHandler::reiteration_time = 0
       
       orig_http_params = Rightscale::HttpConnection::params()
       new_http_params = orig_http_params.dup
@@ -1200,7 +1200,7 @@ module RightAws
     rescue Exception
       on_exception
     ensure
-      RightAws::AWSErrorHandler::reiteration_time = orig_reiteration_time if orig_reiteration_time
+      Aws::AWSErrorHandler::reiteration_time = orig_reiteration_time if orig_reiteration_time
       Rightscale::HttpConnection::params = orig_http_params if orig_http_params
     end
 
@@ -1220,7 +1220,7 @@ module RightAws
   #      PARSERS: Boolean Response Parser
   #-----------------------------------------------------------------
     
-    class RightBoolResponseParser < RightAWSParser #:nodoc:
+    class RightBoolResponseParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text=='true' ? true : false if name == 'return'
       end
@@ -1230,7 +1230,7 @@ module RightAws
   #      PARSERS: Key Pair
   #-----------------------------------------------------------------
 
-    class QEc2DescribeKeyPairParser < RightAWSParser #:nodoc:
+    class QEc2DescribeKeyPairParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @item = {} if name == 'item'
       end
@@ -1246,7 +1246,7 @@ module RightAws
       end
     end
 
-    class QEc2CreateKeyPairParser < RightAWSParser #:nodoc:
+    class QEc2CreateKeyPairParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @result = {} if name == 'CreateKeyPairResponse'
       end
@@ -1284,7 +1284,7 @@ module RightAws
     end
 
 
-    class QEc2DescribeSecurityGroupsParser < RightAWSParser #:nodoc:
+    class QEc2DescribeSecurityGroupsParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         case name
           when 'item' 
@@ -1334,7 +1334,7 @@ module RightAws
   #      PARSERS: Images
   #-----------------------------------------------------------------
     
-    class QEc2DescribeImagesParser < RightAWSParser #:nodoc:
+    class QEc2DescribeImagesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         if name == 'item' && @xmlpath[%r{.*/imagesSet$}]
           @image = {}
@@ -1360,7 +1360,7 @@ module RightAws
       end
     end
 
-    class QEc2RegisterImageParser < RightAWSParser #:nodoc:
+    class QEc2RegisterImageParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text if name == 'imageId'
       end
@@ -1370,7 +1370,7 @@ module RightAws
   #      PARSERS: Image Attribute
   #-----------------------------------------------------------------
 
-    class QEc2DescribeImageAttributeParser < RightAWSParser #:nodoc:
+    class QEc2DescribeImageAttributeParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         case name
           when 'launchPermission'
@@ -1403,7 +1403,7 @@ module RightAws
   #      PARSERS: Instances
   #-----------------------------------------------------------------
 
-    class QEc2DescribeInstancesParser < RightAWSParser #:nodoc:
+    class QEc2DescribeInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
            # DescribeInstances property
         if (name == 'item' && @xmlpath == 'DescribeInstancesResponse/reservationSet') || 
@@ -1465,13 +1465,13 @@ module RightAws
       end
     end
 
-    class QEc2ConfirmProductInstanceParser < RightAWSParser #:nodoc:
+    class QEc2ConfirmProductInstanceParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text if name == 'ownerId'
       end
     end
 
-    class QEc2TerminateInstancesParser < RightAWSParser #:nodoc:
+    class QEc2TerminateInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @instance = {} if name == 'item'
       end
@@ -1498,7 +1498,7 @@ module RightAws
   #      PARSERS: Console
   #-----------------------------------------------------------------
 
-    class QEc2GetConsoleOutputParser < RightAWSParser #:nodoc:
+    class QEc2GetConsoleOutputParser < AwsParser #:nodoc:
       def tagend(name)
         case name
         when 'instanceId' then @result[:aws_instance_id] = @text
@@ -1515,7 +1515,7 @@ module RightAws
   #-----------------------------------------------------------------
   #      Instances: Wondows related part
   #-----------------------------------------------------------------
-    class QEc2DescribeBundleTasksParser < RightAWSParser #:nodoc:
+    class QEc2DescribeBundleTasksParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @bundle = {} if name == 'item'
       end
@@ -1540,7 +1540,7 @@ module RightAws
       end
     end
 
-    class QEc2BundleInstanceParser < RightAWSParser #:nodoc:
+    class QEc2BundleInstanceParser < AwsParser #:nodoc:
       def tagend(name)
         case name
 #        when 'requestId'  then @result[:request_id]    = @text
@@ -1565,13 +1565,13 @@ module RightAws
   #      PARSERS: Elastic IPs
   #-----------------------------------------------------------------
   
-    class QEc2AllocateAddressParser < RightAWSParser #:nodoc:
+    class QEc2AllocateAddressParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text if name == 'publicIp'
       end
     end
     
-    class QEc2DescribeAddressesParser < RightAWSParser #:nodoc:
+    class QEc2DescribeAddressesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @address = {} if name == 'item'
       end
@@ -1591,7 +1591,7 @@ module RightAws
   #      PARSERS: AvailabilityZones
   #-----------------------------------------------------------------
 
-    class QEc2DescribeAvailabilityZonesParser < RightAWSParser #:nodoc:
+    class QEc2DescribeAvailabilityZonesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @zone = {} if name == 'item'
       end
@@ -1612,7 +1612,7 @@ module RightAws
   #      PARSERS: Regions
   #-----------------------------------------------------------------
 
-    class QEc2DescribeRegionsParser < RightAWSParser #:nodoc:
+    class QEc2DescribeRegionsParser < AwsParser #:nodoc:
       def tagend(name)
         @result << @text if name == 'regionName'
       end
@@ -1625,7 +1625,7 @@ module RightAws
   #      PARSERS: EBS - Volumes
   #-----------------------------------------------------------------
  
-    class QEc2CreateVolumeParser < RightAWSParser #:nodoc:
+    class QEc2CreateVolumeParser < AwsParser #:nodoc:
       def tagend(name)
         case name 
           when 'volumeId'         then @result[:aws_id]         = @text
@@ -1641,7 +1641,7 @@ module RightAws
       end
     end
     
-    class QEc2AttachAndDetachVolumeParser < RightAWSParser #:nodoc:
+    class QEc2AttachAndDetachVolumeParser < AwsParser #:nodoc:
       def tagend(name)
         case name 
           when 'volumeId'   then @result[:aws_id]                = @text
@@ -1656,7 +1656,7 @@ module RightAws
       end
     end
       
-    class QEc2DescribeVolumesParser < RightAWSParser #:nodoc:
+    class QEc2DescribeVolumesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         case name
         when 'item'
@@ -1698,7 +1698,7 @@ module RightAws
   #      PARSERS: EBS - Snapshots
   #-----------------------------------------------------------------
   
-    class QEc2DescribeSnapshotsParser < RightAWSParser #:nodoc:
+    class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @snapshot = {} if name == 'item'
       end
@@ -1717,7 +1717,7 @@ module RightAws
       end
     end
 
-    class QEc2CreateSnapshotParser < RightAWSParser #:nodoc:
+    class QEc2CreateSnapshotParser < AwsParser #:nodoc:
       def tagend(name)
         case name 
           when 'volumeId'   then @result[:aws_volume_id]  = @text
@@ -1733,5 +1733,7 @@ module RightAws
     end
     
   end
-      
+
 end
+
+

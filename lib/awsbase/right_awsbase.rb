@@ -22,7 +22,7 @@
 #
 
 # Test
-module RightAws
+module Aws
     require 'digest/md5'
     require 'pp'
     require 'cgi'
@@ -155,7 +155,7 @@ module RightAws
     class AwsNoChange < RuntimeError
     end
 
-    class RightAwsBase
+    class AwsBase
 
         # Amazon HTTP Error handling
 
@@ -187,7 +187,7 @@ module RightAws
 
     end
 
-    module RightAwsBaseInterface
+    module AwsBaseInterface
         DEFAULT_SIGNATURE_VERSION = '2'
 
         @@caching = false
@@ -456,7 +456,7 @@ module RightAws
             false
         end
 
-        # Generic handler for AwsErrors. +aws+ is the RightAws::S3, RightAws::EC2, or RightAws::SQS
+        # Generic handler for AwsErrors. +aws+ is the Aws::S3, Aws::EC2, or Aws::SQS
         # object that caused the exception (it must provide last_request and last_response). Supported
         # boolean options are:
         # * <tt>:log</tt> print a message into the log using aws.logger to access the Logger
@@ -690,7 +690,7 @@ module RightAws
         end
     end
 
-    class RightAWSParser  #:nodoc:
+    class AwsParser  #:nodoc:
         # default parsing library
         DEFAULT_XML_LIBRARY = 'rexml'
         # a list of supported parsers
@@ -787,7 +787,7 @@ module RightAws
 
         # Parser must have a lots of methods
         # (see /usr/lib/ruby/1.8/rexml/parsers/streamparser.rb)
-        # We dont need most of them in RightAWSParser and method_missing helps us
+        # We dont need most of them in AwsParser and method_missing helps us
         # to skip their definition
         def method_missing(method, *params)
             # if the method is one of known - just skip it ...
@@ -828,7 +828,7 @@ module RightAws
 #  <Bucket>bucket-for-k</Bucket>
 #</Error>
 
-    class RightErrorResponseParser < RightAWSParser #:nodoc:
+    class RightErrorResponseParser < AwsParser #:nodoc:
         attr_accessor :errors  # array of hashes: error/message
         attr_accessor :requestID
 #    attr_accessor :endpoint, :host_id, :bucket
@@ -863,7 +863,7 @@ module RightAws
         end
     end
 
-    class RightHttp2xxParser < RightAWSParser # :nodoc:
+    class RightHttp2xxParser < AwsParser # :nodoc:
         def parse(response)
             @result = response.is_a?(Net::HTTPSuccess)
         end

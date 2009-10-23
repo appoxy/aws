@@ -21,13 +21,13 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-require "right_aws"
+require "aws"
 
-module RightAws
+module Aws
 
-  class SdbInterface < RightAwsBase
+  class SdbInterface < AwsBase
 
-    include RightAwsBaseInterface
+    include AwsBaseInterface
 
     DEFAULT_HOST      = 'sdb.amazonaws.com'
     DEFAULT_PORT      = 443
@@ -61,7 +61,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:connection_mode => :per_request, :logger => Logger.new('/tmp/x.log')}) #=> #<RightSdb:0xa6b8c27c>
+    #  sdb = Aws::SdbInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX', {:connection_mode => :per_request, :logger => Logger.new('/tmp/x.log')}) #=> #<RightSdb:0xa6b8c27c>
     #
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/
     #
@@ -243,7 +243,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new
+    #  sdb = Aws::SdbInterface.new
     #  sdb.list_domains  #=> { :box_usage  => "0.0000071759",
     #                          :request_id => "976709f9-0111-2345-92cb-9ce90acd0982",
     #                          :domains    => ["toys", "dolls"]}
@@ -288,7 +288,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new
+    #  sdb = Aws::SdbInterface.new
     #  sdb.list_domains  #=> { :box_usage  => "0.0000071759",
     #                          :request_id => "976709f9-0111-2345-92cb-9ce90acd0982",
     #                          :domains    => ["toys", "dolls"]}
@@ -320,7 +320,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new
+    #  sdb = Aws::SdbInterface.new
     #  sdb.create_domain('toys') # => { :box_usage  => "0.0000071759",
     #                                   :request_id => "976709f9-0111-2345-92cb-9ce90acd0982" }
     #
@@ -340,7 +340,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new
+    #  sdb = Aws::SdbInterface.new
     #  sdb.delete_domain('toys') # => { :box_usage  => "0.0000071759",
     #                                   :request_id => "976709f9-0111-2345-92cb-9ce90acd0982" }
     #
@@ -371,7 +371,7 @@ module RightAws
     #
     # Example:
     #
-    #  sdb = RightAws::SdbInterface.new
+    #  sdb = Aws::SdbInterface.new
     #  sdb.create_domain 'family'
     #
     #  attributes = {}
@@ -405,7 +405,7 @@ module RightAws
     end
 
     #
-    # items is an array of RightAws::SdbInterface::Item.new(o.id, o.attributes, true)
+    # items is an array of Aws::SdbInterface::Item.new(o.id, o.attributes, true)
     def batch_put_attributes(domain_name, items)
       params = { 'DomainName' => domain_name }
       i = 0
@@ -688,7 +688,7 @@ module RightAws
     #-----------------------------------------------------------------
     #      PARSERS:
     #-----------------------------------------------------------------
-    class QSdbListDomainParser < RightAWSParser #:nodoc:
+    class QSdbListDomainParser < AwsParser #:nodoc:
       def reset
         @result = { :domains => [] }
       end
@@ -702,7 +702,7 @@ module RightAws
       end
     end
 
-     class QSdbDomainMetadataParser < RightAWSParser #:nodoc:
+     class QSdbDomainMetadataParser < AwsParser #:nodoc:
       def reset
         @result = {}
       end
@@ -721,7 +721,7 @@ module RightAws
     end
 
 
-    class QSdbSimpleParser < RightAWSParser #:nodoc:
+    class QSdbSimpleParser < AwsParser #:nodoc:
       def reset
         @result = {}
       end
@@ -733,7 +733,7 @@ module RightAws
       end
     end
 
-    class QSdbGetAttributesParser < RightAWSParser #:nodoc:
+    class QSdbGetAttributesParser < AwsParser #:nodoc:
       def reset
         @last_attribute_name = nil
         @result = { :attributes => {} }
@@ -748,7 +748,7 @@ module RightAws
       end
     end
 
-    class QSdbQueryParser < RightAWSParser #:nodoc:
+    class QSdbQueryParser < AwsParser #:nodoc:
       def reset
         @result = { :items => [] }
       end
@@ -762,7 +762,7 @@ module RightAws
       end
     end
 
-    class QSdbQueryWithAttributesParser < RightAWSParser #:nodoc:
+    class QSdbQueryWithAttributesParser < AwsParser #:nodoc:
       def reset
         @result = { :items => [] }
       end
@@ -785,7 +785,7 @@ module RightAws
       end
     end
 
-    class QSdbSelectParser < RightAWSParser #:nodoc:
+    class QSdbSelectParser < AwsParser #:nodoc:
       def reset
         @result = { :items => [] }
       end

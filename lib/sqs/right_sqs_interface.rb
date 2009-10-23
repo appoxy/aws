@@ -21,10 +21,10 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
 
   #
-  # Right::Aws::SqsGen2Interface - RightScale's low-level Amazon SQS interface
+  # Right::Aws::SqsInterface - RightScale's low-level Amazon SQS interface
   # for API version 2008-01-01 and later.
   # For explanations of the semantics
   # of each call, please refer to Amazon's documentation at
@@ -33,10 +33,10 @@ module RightAws
   # This class provides a procedural interface to SQS.  Conceptually it is
   # mostly a pass-through interface to SQS and its API is very similar to the
   # bare SQS API.  For a somewhat higher-level and object-oriented interface, see
-  # RightAws::SqsGen2.
+  # Aws::Sqs.
 
-  class SqsInterface < RightAwsBase
-    include RightAwsBaseInterface
+  class SqsInterface < AwsBase
+    include AwsBaseInterface
 
     API_VERSION       = "2008-01-01"
     DEFAULT_HOST      = "queue.amazonaws.com"
@@ -65,7 +65,7 @@ module RightAws
     # Amazon's article "Migrating to Amazon SQS API version 2008-01-01" at:
     # http://developer.amazonwebservices.com/connect/entry.jspa?externalID=1148
     #
-    #  sqs = RightAws::SqsGen2Interface.new('1E3GDYEOGFJPIT75KDT40','hgTHt68JY07JKUY08ftHYtERkjgtfERn57DFE379', {:multi_thread => true, :logger => Logger.new('/tmp/x.log')})
+    #  sqs = Aws::SqsInterface.new('1E3GDYEOGFJPIT75KDT40','hgTHt68JY07JKUY08ftHYtERkjgtfERn57DFE379', {:multi_thread => true, :logger => Logger.new('/tmp/x.log')})
     #
     # Params is a hash:
     #
@@ -367,7 +367,7 @@ module RightAws
     #      PARSERS: Status Response Parser
     #-----------------------------------------------------------------
 
-    class SqsStatusParser < RightAWSParser # :nodoc:
+    class SqsStatusParser < AwsParser # :nodoc:
       def tagend(name)
         if name == 'ResponseMetadata'
           @result = true
@@ -379,13 +379,13 @@ module RightAws
     #      PARSERS: Queue
     #-----------------------------------------------------------------
 
-    class SqsCreateQueueParser < RightAWSParser # :nodoc:
+    class SqsCreateQueueParser < AwsParser # :nodoc:
       def tagend(name)
         @result = @text if name == 'QueueUrl'
       end
     end
 
-    class SqsListQueuesParser < RightAWSParser # :nodoc:
+    class SqsListQueuesParser < AwsParser # :nodoc:
       def reset
         @result = []
       end
@@ -394,7 +394,7 @@ module RightAws
       end
     end
 
-    class SqsGetQueueAttributesParser < RightAWSParser # :nodoc:
+    class SqsGetQueueAttributesParser < AwsParser # :nodoc:
       def reset
         @result = {}
       end
@@ -410,7 +410,7 @@ module RightAws
     #      PARSERS: Messages
     #-----------------------------------------------------------------
 
-    class SqsReceiveMessageParser < RightAWSParser # :nodoc:
+    class SqsReceiveMessageParser < AwsParser # :nodoc:
       def reset
         @result = []
       end
@@ -427,7 +427,7 @@ module RightAws
       end
     end
 
-    class SqsSendMessagesParser < RightAWSParser # :nodoc:
+    class SqsSendMessagesParser < AwsParser # :nodoc:
       def reset
         @result = {}
       end

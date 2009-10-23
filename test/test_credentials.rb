@@ -3,6 +3,11 @@ class TestCredentials
     @@aws_access_key_id = nil
     @@aws_secret_access_key = nil
     @@account_number = nil
+    @@config = nil
+
+    def self.config
+        @@config
+    end
 
     def self.aws_access_key_id
         @@aws_access_key_id
@@ -33,16 +38,17 @@ class TestCredentials
     def self.get_credentials
         #Dir.chdir do
         begin
-            puts Dir.chdir
-            Dir.chdir('.amazon') do
-                credentials = YAML::load(File.open("testcredentials.yml"))
-                puts credentials.inspect
+
+            Dir.chdir(File.expand_path("~/.test-configs")) do
+                credentials = YAML::load(File.open("aws.yml"))
+                @@config = credentials
+                puts 'creds=' + credentials.inspect
                 self.aws_access_key_id = credentials["amazon"]["access_key"]
                 self.aws_secret_access_key = credentials["amazon"]["secret_key"]
                 puts 'akey=' + self.aws_access_key_id
             end
         rescue Exception => e
-            puts "Couldn't chdir to ~/.amazon: #{e.message}"
+            puts "#{e.message}"
             raise e
         end
         #end

@@ -40,14 +40,13 @@ The RightScale AWS gems have been designed to provide a robust, fast, and secure
 These gems have been used in production by RightScale since late 2006 and are being maintained to track enhancements made by Amazon.
 The RightScale AWS gems comprise:
 
-- RightAws::Ec2 -- interface to Amazon EC2 (Elastic Compute Cloud) and the associated EBS (Elastic Block Store)
-- RightAws::S3 and RightAws::S3Interface -- interface to Amazon S3 (Simple Storage Service)
-- RightAws::Sqs and RightAws::SqsInterface -- interface to first-generation Amazon SQS (Simple Queue Service) (API version 2007-05-01)
-- RightAws::SqsGen2 and RightAws::SqsGen2Interface -- interface to second-generation Amazon SQS (Simple Queue Service) (API version 2008-01-01)
-- RightAws::SdbInterface and RightAws::ActiveSdb -- interface to Amazon SDB (SimpleDB)
-- RightAws::AcfInterface -- interface to Amazon CloudFront, a content distribution service
-- RightAws::ElbInterface -- interface to Amazon Load Balancing service
-- RightAws::MonInterface -- interface to Amazon CloudWatch monitoring service
+- Aws::Ec2 -- interface to Amazon EC2 (Elastic Compute Cloud) and the associated EBS (Elastic Block Store)
+- Aws::S3 and Aws::S3Interface -- interface to Amazon S3 (Simple Storage Service)
+- Aws::Sqs and Aws::SqsInterface -- interface to Amazon SQS (Simple Queue Service)
+- Aws::SdbInterface and Aws::ActiveSdb -- interface to Amazon SDB (SimpleDB)
+- Aws::AcfInterface -- interface to Amazon CloudFront, a content distribution service
+- Aws::ElbInterface -- interface to Amazon Load Balancing service
+- Aws::MonInterface -- interface to Amazon CloudWatch monitoring service
 
 
 ## FEATURES:
@@ -81,7 +80,7 @@ All RightScale AWS interfaces offer two threading options:
 1. Use a single persistent HTTP connection per process.
 2. Use a persistent HTTP connection per Ruby thread.
  
-Either way, it doesn't matter how many (for example) RightAws::S3 objects you create,
+Either way, it doesn't matter how many (for example) Aws::S3 objects you create,
 they all use the same per-program or per-thread
 connection. The purpose of sharing the connection is to keep a single
 persistent HTTP connection open to avoid paying connection
@@ -104,21 +103,19 @@ multithreaded mode.
 
 ## GETTING STARTED:
 
-* For EC2 read RightAws::Ec2 and consult the Amazon EC2 API documentation at
+* For EC2 read Aws::Ec2 and consult the Amazon EC2 API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=87
-* For S3 read RightAws::S3 and consult the Amazon S3 API documentation at
+* For S3 read Aws::S3 and consult the Amazon S3 API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=48
-* For first generation SQS read RightAws::Sqs and consult the Amazon SQS API documentation at
+* For SQS read Aws::Sqs and consult the Amazon SQS API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=31
-* For second generation SQS read RightAws::SqsGen2, RightAws::SqsGen2Interface, and consult the Amazon SQS API documentation at
-  http://developer.amazonwebservices.com/connect/entry.jspa?externalID=1214&categoryID=31 
 
   Amazon's Migration Guide for moving from first to second generation SQS is
   avalable at:
   http://developer.amazonwebservices.com/connect/entry.jspa?externalID=1148
-* For SDB read RightAws::SdbInterface, RightAws::ActiveSdb, and consult the Amazon SDB API documentation at
+* For SDB read Aws::SdbInterface, Aws::ActiveSdb, and consult the Amazon SDB API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=141
-* For CloudFront (ACF) read RightAws::AcfInterface and consult the Amazon CloudFront API documentation at 
+* For CloudFront (ACF) read Aws::AcfInterface and consult the Amazon CloudFront API documentation at
   http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=213
 
 ## KNOWN ISSUES:
@@ -140,7 +137,7 @@ multithreaded mode.
   changes the semantics of core Ruby (specifically, the String class) and thus presents a reliability
   problem for most Ruby programs.
 
-- 2/11/08: If you use RightAws in conjunction with attachment_fu, the
+- 2/11/08: If you use Aws in conjunction with attachment_fu, the
   right_aws gem must be included (using the require statement) AFTER
   attachment_fu.  If right_aws is loaded before attachment_fu, you'll
   encounter errors similar to:
@@ -158,17 +155,17 @@ multithreaded mode.
 
 - 8/07: Amazon has changed the semantics of the SQS service.  A
   new queue may not be created within 60 seconds of the destruction of any
-  older queue with the same name.  Certain methods of RightAws::Sqs and
-  RightAws::SqsInterface will fail with the message:
+  older queue with the same name.  Certain methods of Aws::Sqs and
+  Aws::SqsInterface will fail with the message:
   "AWS.SimpleQueueService.QueueDeletedRecently: You must wait 60 seconds after deleting a queue before you can create another with the same name."
   
 ## REQUIREMENTS:
 
-RightAws requires REXML and the right_http_connection gem.
+Aws requires REXML and the right_http_connection gem.
 If libxml and its Ruby bindings (distributed in the libxml-ruby gem) are
-present, RightAws can be configured to use them:
-  RightAws::RightAWSParser.xml_lib = 'libxml'
-Any error with the libxml installation will result in RightAws failing-safe to
+present, Aws can be configured to use them:
+  Aws::AwsParser.xml_lib = 'libxml'
+Any error with the libxml installation will result in Aws failing-safe to
 REXML parsing.
 
 

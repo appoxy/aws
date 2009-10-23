@@ -1,7 +1,7 @@
-module RightAws
+module Aws
 
-    class Mon < RightAws::RightAwsBase
-        include RightAws::RightAwsBaseInterface
+    class Mon < Aws::AwsBase
+        include Aws::AwsBaseInterface
 
 
         #Amazon EC2 API version being used
@@ -15,7 +15,7 @@ module RightAws
         # NetworkIn NetworkOut DiskReadOps DiskWriteOps DiskReadBytes DiskWriteBytes CPUUtilization
         measures=%w(NetworkIn NetworkOut DiskReadOps DiskWriteOps DiskReadBytes DiskWriteBytes CPUUtilization)
 
-        @@bench = RightAws::AwsBenchmarkingBlock.new
+        @@bench = Aws::AwsBenchmarkingBlock.new
 
         def self.bench_xml
             @@bench.xml
@@ -80,7 +80,7 @@ module RightAws
         # Raises AwsError if any banana happened
         def request_info(request, parser)
             thread = @params[:multi_thread] ? Thread.current : Thread.main
-            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => RightAws::AwsError, :logger => @logger)
+            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
             request_info_impl(thread[:elb_connection], @@bench, request, parser)
         end
 
@@ -152,7 +152,7 @@ module RightAws
         #-----------------------------------------------------------------
 
 
-        class QMonGetMetricStatistics < RightAws::RightAWSParser
+        class QMonGetMetricStatistics < Aws::AwsParser
 
             def reset
                 @result = []
@@ -186,7 +186,7 @@ module RightAws
             end
         end
 
-        class QMonListMetrics < RightAws::RightAWSParser
+        class QMonListMetrics < Aws::AwsParser
 
             def reset
                 @result = []

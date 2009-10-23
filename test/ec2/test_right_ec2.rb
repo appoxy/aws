@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
 require 'pp'
+require File.dirname(__FILE__) + '/../test_credentials.rb'
 
 class TestEc2 < Test::Unit::TestCase
 
@@ -7,6 +8,7 @@ class TestEc2 < Test::Unit::TestCase
     # are not tested here due to their potentially risk.
   
   def setup
+      TestCredentials.get_credentials
     @ec2   = Aws::Ec2.new(TestCredentials.aws_access_key_id,
                                  TestCredentials.aws_secret_access_key)
     @key   = 'right_ec2_awesome_test_key'
@@ -45,13 +47,13 @@ class TestEc2 < Test::Unit::TestCase
     images = @ec2.describe_images
     assert images.size>0, 'Amazon must have at least some public images'
       # unknown image
-    assert_raise(Rightscale::AwsError){ @ec2.describe_images(['ami-ABCDEFGH'])}
+    assert_raise(Aws::AwsError){ @ec2.describe_images(['ami-ABCDEFGH'])}
   end
 
   def test_07_describe_instanses
     assert @ec2.describe_instances
       # unknown image
-    assert_raise(Rightscale::AwsError){ @ec2.describe_instances(['i-ABCDEFGH'])}
+    assert_raise(Aws::AwsError){ @ec2.describe_instances(['i-ABCDEFGH'])}
   end
 
   def test_08_delete_security_group
@@ -62,11 +64,11 @@ class TestEc2 < Test::Unit::TestCase
     assert @ec2.delete_key_pair(@key), 'Delete_key_pair fail'
 ##  Hmmm... Amazon does not through the exception any more. It now just returns a 'true' if the key does not exist any more...
 ##      # key must be deleted already
-##    assert_raise(Rightscale::AwsError) { @ec2.delete_key_pair(@key) }
+##    assert_raise(Aws::AwsError) { @ec2.delete_key_pair(@key) }
   end
 
   def test_10_signature_version_0
-    ec2 = Rightscale::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :signature_version => '0')
+    ec2 = Aws::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :signature_version => '0')
     images = ec2.describe_images
     assert images.size>0, 'Amazon must have at least some public images'
     # check that the request has correct signature version
@@ -82,7 +84,7 @@ class TestEc2 < Test::Unit::TestCase
     assert regions.size > 0
     # check an access to regions
     regions.each do |region|
-      regional_ec2 = Rightscale::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :region => region)
+      regional_ec2 = Aws::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :region => region)
       # do we have a correct endpoint server?
       assert_equal "#{region}.ec2.amazonaws.com", regional_ec2.params[:server]
       # get a list of images from every region
@@ -96,7 +98,7 @@ class TestEc2 < Test::Unit::TestCase
   end
   
   def test_12_endpoint_url
-    ec2 = Rightscale::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :endpoint_url => 'a://b.c:0/d/', :region => 'z')
+    ec2 = Aws::Ec2.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :endpoint_url => 'a://b.c:0/d/', :region => 'z')
     # :endpoint_url has a priority hence :region should be ommitted
     assert_equal 'a',   ec2.params[:protocol]
     assert_equal 'b.c', ec2.params[:server]

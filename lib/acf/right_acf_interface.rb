@@ -21,9 +21,9 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
 
-  # = RightAws::AcfInterface -- RightScale Amazon's CloudFront interface
+  # = Aws::AcfInterface -- RightScale Amazon's CloudFront interface
   # The AcfInterface class provides a complete interface to Amazon's
   # CloudFront service.
   #
@@ -33,7 +33,7 @@ module RightAws
   #
   # Example:
   #
-  #  acf = RightAws::AcfInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX')
+  #  acf = Aws::AcfInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX')
   #
   #  list = acf.list_distributions #=>
   #    [{:status             => "Deployed",
@@ -72,9 +72,9 @@ module RightAws
   #
   #  acf.set_distribution_config(distibution[:aws_id], config) #=> true
   #
-  class AcfInterface < RightAwsBase
+  class AcfInterface < AwsBase
     
-    include RightAwsBaseInterface
+    include AwsBaseInterface
 
     API_VERSION      = "2008-06-30"
     DEFAULT_HOST     = 'cloudfront.amazonaws.com'
@@ -100,8 +100,8 @@ module RightAws
     # * <tt>:logger</tt>: for log messages, default: RAILS_DEFAULT_LOGGER else STDOUT
     # * <tt>:cache</tt>: true/false: caching for list_distributions method, default: false.
     #
-    #  acf = RightAws::AcfInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX',
-    #    {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=>  #<RightAws::AcfInterface::0xb7b3c30c>
+    #  acf = Aws::AcfInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX',
+    #    {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=>  #<Aws::AcfInterface::0xb7b3c30c>
     #
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       init({ :name             => 'ACF',
@@ -142,7 +142,7 @@ module RightAws
       # Raises AwsError if any banana happened.
     def request_info(request, parser, &block) # :nodoc:
       thread = @params[:multi_thread] ? Thread.current : Thread.main
-      thread[:acf_connection] ||= Rightscale::HttpConnection.new(:exception => RightAws::AwsError, :logger => @logger)
+      thread[:acf_connection] ||= Aws::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
       request_info_impl(thread[:acf_connection], @@bench, request, parser, &block)
     end
 
@@ -179,7 +179,7 @@ module RightAws
     #-----------------------------------------------------------------
 
     # List distributions.
-    # Returns an array of distributions or RightAws::AwsError exception.
+    # Returns an array of distributions or Aws::AwsError exception.
     #
     #  acf.list_distributions #=>
     #    [{:status             => "Deployed",
@@ -196,7 +196,7 @@ module RightAws
     end
 
     # Create a new distribution.
-    # Returns the just created distribution or RightAws::AwsError exception.
+    # Returns the just created distribution or Aws::AwsError exception.
     #
     #  acf.create_distribution('bucket-for-k-dzreyev.s3.amazonaws.com', 'Woo-Hoo!', true, ['web1.my-awesome-site.net'] ) #=>
     #    {:comment            => "Woo-Hoo!",
@@ -233,7 +233,7 @@ module RightAws
     end
 
     # Get a distribution's information.
-    # Returns a distribution's information or RightAws::AwsError exception.
+    # Returns a distribution's information or Aws::AwsError exception.
     #
     #  acf.get_distribution('E2REJM3VUN5RSI') #=>
     #    {:enabled            => true,
@@ -253,7 +253,7 @@ module RightAws
     end
 
     # Get a distribution's configuration.
-    # Returns a distribution's configuration or RightAws::AwsError exception.
+    # Returns a distribution's configuration or Aws::AwsError exception.
     #
     #  acf.get_distribution_config('E2REJM3VUN5RSI') #=>
     #    {:enabled          => true,
@@ -270,7 +270,7 @@ module RightAws
 
     # Set a distribution's configuration 
     # (the :origin and the :caller_reference cannot be changed).
-    # Returns +true+ on success or RightAws::AwsError exception.
+    # Returns +true+ on success or Aws::AwsError exception.
     #
     #  config = acf.get_distribution_config('E2REJM3VUN5RSI') #=>
     #    {:enabled          => true,
@@ -306,7 +306,7 @@ module RightAws
     end
 
     # Delete a distribution. The enabled distribution cannot be deleted.
-    # Returns +true+ on success or RightAws::AwsError exception.
+    # Returns +true+ on success or Aws::AwsError exception.
     #
     #  acf.delete_distribution('E2REJM3VUN5RSI', 'E39OHHU1ON65SI') #=> true
     #
@@ -320,7 +320,7 @@ module RightAws
     #      PARSERS:
     #-----------------------------------------------------------------
 
-    class AcfDistributionListParser < RightAWSParser # :nodoc:
+    class AcfDistributionListParser < AwsParser # :nodoc:
       def reset
         @result = []
       end
@@ -341,7 +341,7 @@ module RightAws
       end
     end
 
-    class AcfDistributionParser < RightAWSParser # :nodoc:
+    class AcfDistributionParser < AwsParser # :nodoc:
       def reset
         @result = { :cnames => [] }
       end
@@ -360,7 +360,7 @@ module RightAws
       end
     end
 
-    class AcfDistributionConfigParser < RightAWSParser # :nodoc:
+    class AcfDistributionConfigParser < AwsParser # :nodoc:
       def reset
         @result = { :cnames => [] }
       end

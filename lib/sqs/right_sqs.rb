@@ -21,28 +21,28 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
 
     #
-    # RightAws::Sqs -- RightScale's Amazon SQS interface, API version
+    # Aws::Sqs -- RightScale's Amazon SQS interface, API version
     # 2008-01-01 and later.
-    # The RightAws::Sqs class provides a complete interface to the second generation of Amazon's Simple
+    # The Aws::Sqs class provides a complete interface to the second generation of Amazon's Simple
     # Queue Service.
     # For explanations of the semantics
     # of each call, please refer to Amazon's documentation at
     # http://developer.amazonwebservices.com/connect/kbcategory.jspa?categoryID=31
     #
     #
-    # RightAws::Sqs is built atop RightAws::SqsInterface, a lower-level
+    # Aws::Sqs is built atop Aws::SqsInterface, a lower-level
     # procedural API that may be appropriate for certain programs.
     #
-    # Error handling: all operations raise an RightAws::AwsError in case
+    # Error handling: all operations raise an Aws::AwsError in case
     # of problems. Note that transient errors are automatically retried.
     #
-    #  sqs    = RightAws::Sqs.new(aws_access_key_id, aws_secret_access_key)
+    #  sqs    = Aws::Sqs.new(aws_access_key_id, aws_secret_access_key)
     #  queue1 = sqs.queue('my_awesome_queue')
     #   ...
-    #  queue2 = RightAws::Sqs::Queue.create(sqs, 'my_cool_queue', true)
+    #  queue2 = Aws::Sqs::Queue.create(sqs, 'my_cool_queue', true)
     #  puts queue2.size
     #   ...
     #  message1 = queue2.receive
@@ -73,7 +73,7 @@ module RightAws
       # Retrieves a list of queues.
       # Returns an +array+ of +Queue+ instances.
       #
-      #  RightAws::Sqs.queues #=> array of queues
+      #  Aws::Sqs.queues #=> array of queues
       #
     def queues(prefix=nil)
       @interface.list_queues(prefix).map do |url|
@@ -84,7 +84,7 @@ module RightAws
       # Returns Queue instance by queue name.
       # If the queue does not exist at Amazon SQS and +create+ is true, the method creates it.
       #
-      #  RightAws::Sqs.queue('my_awesome_queue') #=> #<RightAws::Sqs::Queue:0xb7b626e4 ... >
+      #  Aws::Sqs.queue('my_awesome_queue') #=> #<Aws::Sqs::Queue:0xb7b626e4 ... >
       #
     def queue(queue_name, create=true, visibility=nil)
       url = @interface.queue_url_by_name(queue_name)
@@ -99,7 +99,7 @@ module RightAws
         # Returns Queue instance by queue name.
         # If the queue does not exist at Amazon SQS and +create+ is true, the method creates it.
         #
-        #  RightAws::Sqs::Queue.create(sqs, 'my_awesome_queue') #=> #<RightAws::Sqs::Queue:0xb7b626e4 ... >
+        #  Aws::Sqs::Queue.create(sqs, 'my_awesome_queue') #=> #<Aws::Sqs::Queue:0xb7b626e4 ... >
         #
       def self.create(sqs, url_or_name, create=true, visibility=nil)
         sqs.queue(url_or_name, create, visibility)
@@ -108,7 +108,7 @@ module RightAws
         # Creates new Queue instance.
         # Does not create a queue at Amazon.
         #
-        #  queue = RightAws::Sqs::Queue.new(sqs, 'my_awesome_queue')
+        #  queue = Aws::Sqs::Queue.new(sqs, 'my_awesome_queue')
         #
       def initialize(sqs, url_or_name)
         @sqs  = sqs
@@ -181,7 +181,7 @@ module RightAws
         # Retrieves first accessible message from queue.
         # Returns Message instance or +nil+ it the queue is empty.
         #
-        #  queue.receive #=> #<RightAws::Sqs::Message:0xb7bf0884 ... >
+        #  queue.receive #=> #<Aws::Sqs::Message:0xb7bf0884 ... >
         #
       def receive(visibility=nil)
         list = receive_messages(1, visibility)
@@ -191,7 +191,7 @@ module RightAws
         # Pops (and deletes) first accessible message from queue.
         # Returns Message instance or +nil+ if the queue is empty.
         #
-        #  queue.pop #=> #<RightAws::Sqs::Message:0xb7bf0884 ... >
+        #  queue.pop #=> #<Aws::Sqs::Message:0xb7bf0884 ... >
         #
       def pop
         list = @sqs.interface.pop_messages(@url, 1)

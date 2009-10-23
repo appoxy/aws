@@ -1,15 +1,16 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
-require '../test_credentials'
+require File.dirname(__FILE__) + '/../test_credentials.rb'
 
 class TestSdb < Test::Unit::TestCase
   
   DOMAIN_NAME = 'right_sdb_awesome_test_domain'
   
-  class Client < RightAws::ActiveSdb::Base
+  class Client < Aws::ActiveSdb::Base
     set_domain_name DOMAIN_NAME
   end
 
   def setup
+      TestCredentials.get_credentials
     STDOUT.sync  = true
     @clients = [ 
       { 'name' => 'Bush',     'country' => 'USA',    'gender' => 'male',   'expiration' => '2009', 'post' => 'president' },
@@ -18,7 +19,7 @@ class TestSdb < Test::Unit::TestCase
       { 'name' => 'Mary',     'country' => 'USA',    'gender' => 'female', 'hobby' => ['patchwork', 'bundle jumping'] },
       { 'name' => 'Sandy',    'country' => 'Russia', 'gender' => 'female', 'hobby' => ['flowers', 'cats', 'cooking'] },
       { 'name' => 'Mary',     'country' => 'Russia', 'gender' => 'female', 'hobby' => ['flowers', 'cats', 'cooking'] } ]
-    RightAws::ActiveSdb.establish_connection(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+    Aws::ActiveSdb.establish_connection(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
   end
 
   SDB_DELAY = 3
@@ -34,22 +35,22 @@ class TestSdb < Test::Unit::TestCase
   end
 
   #---------------------------
-  # Rightscale::SdbInterface
+  # Aws::SdbInterface
   #---------------------------
 
   def test_00_delete_domain
-    assert RightAws::ActiveSdb.delete_domain(DOMAIN_NAME)
+    assert Aws::ActiveSdb.delete_domain(DOMAIN_NAME)
     wait SDB_DELAY, 'test 00: after domain deletion'
   end
   
   def test_01_create_domain
     # check that domain does not exist
-    assert !RightAws::ActiveSdb.domains.include?(DOMAIN_NAME)
+    assert !Aws::ActiveSdb.domains.include?(DOMAIN_NAME)
     # create domain
     assert Client.create_domain
     wait SDB_DELAY, 'test 01: after domain creation'
     # check that we have received new domain from Amazin
-    assert RightAws::ActiveSdb.domains.include?(DOMAIN_NAME)
+    assert Aws::ActiveSdb.domains.include?(DOMAIN_NAME)
   end
 
   def test_02_create_items
@@ -105,11 +106,11 @@ class TestSdb < Test::Unit::TestCase
     assert_equal ids.size, Client.find(ids).size
     ids << 'dummy_id'
     # must raise an error when getting unexistent record
-    assert_raise(RightAws::ActiveSdb::ActiveSdbError) do 
+    assert_raise(Aws::ActiveSdb::ActiveSdbError) do
       Client.find(ids)
     end
     # find one record by unknown id
-    assert_raise(RightAws::ActiveSdb::ActiveSdbError) do
+    assert_raise(Aws::ActiveSdb::ActiveSdbError) do
       Client.find('dummy_id')
     end
   end
@@ -292,7 +293,7 @@ class TestSdb < Test::Unit::TestCase
   def test_14_delete_domain
     assert Client.delete_domain
     wait SDB_DELAY, 'test 12: after delete domain'
-    assert_raise(Rightscale::AwsError) do 
+    assert_raise(Aws::AwsError) do
       Client.find :all 
     end
   end

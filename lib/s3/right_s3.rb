@@ -21,10 +21,10 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-module RightAws
+module Aws
   
-  # = RightAws::S3 -- RightScale's Amazon S3 interface
-  # The RightAws::S3 class provides a complete interface to Amazon's Simple
+  # = Aws::S3 -- RightScale's Amazon S3 interface
+  # The Aws::S3 class provides a complete interface to Amazon's Simple
   # Storage Service.
   # For explanations of the semantics
   # of each call, please refer to Amazon's documentation at
@@ -32,7 +32,7 @@ module RightAws
   #
   # See examples below for the bucket and buckets methods.
   #
-  # Error handling: all operations raise an RightAws::AwsError in case
+  # Error handling: all operations raise an Aws::AwsError in case
   # of problems. Note that transient errors are automatically retried.
   #
   # It is a good way to use domain naming style getting a name for the buckets. 
@@ -52,7 +52,7 @@ module RightAws
     
     # Create a new handle to an S3 account. All handles share the same per process or per thread
     # HTTP connection to Amazon S3. Each handle is for a specific account.
-    # The +params+ are passed through as-is to RightAws::S3Interface.new
+    # The +params+ are passed through as-is to Aws::S3Interface.new
     # 
     # Params is a hash:
     #
@@ -66,9 +66,9 @@ module RightAws
     end
     
     # Retrieve a list of buckets.
-    # Returns an array of RightAws::S3::Bucket instances.
+    # Returns an array of Aws::S3::Bucket instances.
     #  # Create handle to S3 account
-    #  s3 = RightAws::S3.new(aws_access_key_id, aws_secret_access_key)
+    #  s3 = Aws::S3.new(aws_access_key_id, aws_secret_access_key)
     #  my_buckets_names = s3.buckets.map{|b| b.name}
     #  puts "Buckets on S3: #{my_bucket_names.join(', ')}"
     def buckets
@@ -82,10 +82,10 @@ module RightAws
     # If the bucket does not exist and +create+ is set, a new bucket
     # is created on S3. Launching this method with +create+=+true+ may
     # affect on the bucket's ACL if the bucket already exists.
-    # Returns a RightAws::S3::Bucket instance or +nil+ if the bucket does not exist 
+    # Returns a Aws::S3::Bucket instance or +nil+ if the bucket does not exist
     # and +create+ is not set.
     #
-    #  s3 = RightAws::S3.new(aws_access_key_id, aws_secret_access_key)
+    #  s3 = Aws::S3.new(aws_access_key_id, aws_secret_access_key)
     #  bucket1 = s3.bucket('my_awesome_bucket_1')
     #  bucket1.keys  #=> exception here if the bucket does not exists
     #   ...
@@ -115,15 +115,15 @@ module RightAws
       # Returns Bucket instance or +nil+ if the bucket does not exist 
       # and +create+ is not set.
       #
-      #  s3 = RightAws::S3.new(aws_access_key_id, aws_secret_access_key)
+      #  s3 = Aws::S3.new(aws_access_key_id, aws_secret_access_key)
       #   ...
-      #  bucket1 = RightAws::S3::Bucket.create(s3, 'my_awesome_bucket_1')
+      #  bucket1 = Aws::S3::Bucket.create(s3, 'my_awesome_bucket_1')
       #  bucket1.keys  #=> exception here if the bucket does not exists
       #   ...
-      #  bucket2 = RightAws::S3::Bucket.create(s3, 'my_awesome_bucket_2', true)
+      #  bucket2 = Aws::S3::Bucket.create(s3, 'my_awesome_bucket_2', true)
       #  bucket2.keys  #=> list of keys
       #  # create a bucket at the European location with public read access
-      #  bucket3 = RightAws::S3::Bucket.create(s3,'my-awesome-bucket-3', true, 'public-read', :location => :eu)
+      #  bucket3 = Aws::S3::Bucket.create(s3,'my-awesome-bucket-3', true, 'public-read', :location => :eu)
       #  
       #  see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTAccessPolicy.html
       #  (section: Canned Access Policies)
@@ -135,7 +135,7 @@ module RightAws
 
         # Create a bucket instance. In normal use this method should
         # not be called directly.
-        # Use RightAws::S3::Bucket.create or RightAws::S3.bucket instead. 
+        # Use Aws::S3::Bucket.create or Aws::S3.bucket instead.
       def initialize(s3, name, creation_date=nil, owner=nil)
         @s3    = s3
         @name  = name
@@ -148,7 +148,7 @@ module RightAws
       
         # Return bucket name as a String.
         #
-        #  bucket = RightAws::S3.bucket('my_awesome_bucket') 
+        #  bucket = Aws::S3.bucket('my_awesome_bucket')
         #  puts bucket #=> 'my_awesome_bucket'
         #
       def to_s
@@ -243,9 +243,9 @@ module RightAws
         # Retrieves meta-header information if +head+ is +true+. 
         # Returns new Key instance. 
         #
-        #  key = bucket.key('logs/today/1.log', true) #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = bucket.key('logs/today/1.log', true) #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #   # is the same as:
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log')
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log')
         #  key.head
         #
       def key(key_name, head=false)
@@ -288,9 +288,9 @@ module RightAws
         key.get(headers)
       end
 
-        # Rename object. Returns RightAws::S3::Key instance.
+        # Rename object. Returns Aws::S3::Key instance.
         # 
-        #  new_key = bucket.rename_key('logs/today/1.log','logs/today/2.log')   #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  new_key = bucket.rename_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
         #
@@ -300,9 +300,9 @@ module RightAws
         old_key_or_name
       end
 
-        # Create an object copy. Returns a destination RightAws::S3::Key instance.
+        # Create an object copy. Returns a destination Aws::S3::Key instance.
         # 
-        #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
         #
@@ -311,9 +311,9 @@ module RightAws
         old_key_or_name.copy(new_key_or_name)
       end
       
-        # Move an object to other location. Returns a destination RightAws::S3::Key instance.
+        # Move an object to other location. Returns a destination Aws::S3::Key instance.
         # 
-        #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
         #
@@ -396,7 +396,7 @@ module RightAws
         # The +name+ is a +String+.
         # Returns a new Key instance. 
         #
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.exists?                                                  #=> true | false
         #  key.put('Woohoo!')                                           #=> true
         #  key.exists?                                                  #=> true
@@ -407,7 +407,7 @@ module RightAws
       
         # Create a new Key instance, but do not create the actual key.
         # In normal use this method should not be called directly.
-        # Use RightAws::S3::Key.create or bucket.key() instead. 
+        # Use Aws::S3::Key.create or bucket.key() instead.
         #
       def initialize(bucket, name, data=nil, headers={}, meta_headers={}, 
                      last_modified=nil, e_tag=nil, size=nil, storage_class=nil, owner=nil)
@@ -429,7 +429,7 @@ module RightAws
       
         # Return key name as a String.
         #
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key                                                   #=> 'logs/today/1.log'
         #
       def to_s
@@ -476,7 +476,7 @@ module RightAws
         # Parameter +data+ is a +String+ or S3Object instance. 
         # Returns +true+.
         #
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log')
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log')
         #  key.data = 'Qwerty'
         #  key.put             #=> true
         #   ...
@@ -491,7 +491,7 @@ module RightAws
       
         # Rename an object. Returns new object name.
         # 
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.rename('logs/today/2.log')   #=> 'logs/today/2.log'
         #  puts key.name                    #=> 'logs/today/2.log'
         #  key.exists?                      #=> true
@@ -501,21 +501,21 @@ module RightAws
         @name = new_name
       end
       
-        # Create an object copy. Returns a destination RightAws::S3::Key instance.
+        # Create an object copy. Returns a destination Aws::S3::Key instance.
         #
         #  # Key instance as destination
-        #  key1 = RightAws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
-        #  key2 = RightAws::S3::Key.create(bucket, 'logs/today/2.log') #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  key1 = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
+        #  key2 = Aws::S3::Key.create(bucket, 'logs/today/2.log') #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key1.put('Olala!')   #=> true
-        #  key1.copy(key2)      #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  key1.copy(key2)      #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key1.exists?         #=> true
         #  key2.exists?         #=> true
         #  puts key2.data       #=> 'Olala!'
         #
         #  # String as destination
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/777.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/777.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.put('Olala!')                          #=> true
-        #  new_key = key.copy('logs/today/888.log')   #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  new_key = key.copy('logs/today/888.log')   #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key.exists?                                #=> true
         #  new_key.exists?                            #=> true
         #
@@ -525,21 +525,21 @@ module RightAws
         new_key_or_name
       end
 
-        # Move an object to other location. Returns a destination RightAws::S3::Key instance.
+        # Move an object to other location. Returns a destination Aws::S3::Key instance.
         #
         #  # Key instance as destination
-        #  key1 = RightAws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
-        #  key2 = RightAws::S3::Key.create(bucket, 'logs/today/2.log') #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  key1 = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
+        #  key2 = Aws::S3::Key.create(bucket, 'logs/today/2.log') #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key1.put('Olala!')   #=> true
-        #  key1.move(key2)      #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  key1.move(key2)      #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key1.exists?         #=> false
         #  key2.exists?         #=> true
         #  puts key2.data       #=> 'Olala!'
         #  
         #  # String as destination
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/777.log') #=> #<RightAws::S3::Key:0xb7b1e240 ... >
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/777.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.put('Olala!')                          #=> true
-        #  new_key = key.move('logs/today/888.log')   #=> #<RightAws::S3::Key:0xb7b5e240 ... >
+        #  new_key = key.move('logs/today/888.log')   #=> #<Aws::S3::Key:0xb7b5e240 ... >
         #  key.exists?                                #=> false
         #  new_key.exists?                            #=> true
         #
@@ -553,7 +553,7 @@ module RightAws
         # Refresh meta-headers (by calling +head+ method) if +head+ is set. 
         # Returns +true+ if the key exists in bucket and +false+ otherwise. 
         #
-        #  key = RightAws::S3::Key.create(bucket, 'logs/today/1.log')
+        #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log')
         #  key.e_tag        #=> nil
         #  key.meta_headers #=> {}
         #  key.refresh      #=> true
@@ -611,7 +611,7 @@ module RightAws
         # Check for existence of the key in the given bucket. 
         # Returns +true+ or +false+. 
         #
-        #  key = RightAws::S3::Key.create(bucket,'logs/today/1.log')
+        #  key = Aws::S3::Key.create(bucket,'logs/today/1.log')
         #  key.exists?        #=> false
         #  key.put('Woohoo!') #=> true
         #  key.exists?        #=> true
@@ -669,13 +669,13 @@ module RightAws
       # 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'):
       #
       #  bucket  = s3.bucket('my_awesome_bucket', true)
-      #  grantee1 = RightAws::S3::Grantee.new(bucket, 'a123b...223c', FULL_CONTROL, :apply)
-      #  grantee2 = RightAws::S3::Grantee.new(bucket, 'xy3v3...5fhp', [READ, WRITE], :apply)
+      #  grantee1 = Aws::S3::Grantee.new(bucket, 'a123b...223c', FULL_CONTROL, :apply)
+      #  grantee2 = Aws::S3::Grantee.new(bucket, 'xy3v3...5fhp', [READ, WRITE], :apply)
       #
       # There is only one way to get and to remove permission (via Grantee instances):
       #
       #  grantees = bucket.grantees # a list of Grantees that have any access for this bucket
-      #  grantee1 = RightAws::S3::Grantee.new(bucket, 'a123b...223c')
+      #  grantee1 = Aws::S3::Grantee.new(bucket, 'a123b...223c')
       #  grantee1.perms #=> returns a list of perms for this grantee to that bucket
       #    ...
       #  grantee1.drop             # remove all perms for this grantee
@@ -696,7 +696,7 @@ module RightAws
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
         #   ...
-        #  RightAws::S3::Grantee.owner_and_grantees(bucket) #=> [owner, grantees]
+        #  Aws::S3::Grantee.owner_and_grantees(bucket) #=> [owner, grantees]
         #
       def self.owner_and_grantees(thing)
         if thing.is_a?(Bucket)
@@ -718,7 +718,7 @@ module RightAws
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
         #   ...
-        #  RightAws::S3::Grantee.grantees(bucket) #=> grantees
+        #  Aws::S3::Grantee.grantees(bucket) #=> grantees
         #
       def self.grantees(thing)
         owner_and_grantees(thing)[1]
@@ -750,10 +750,10 @@ module RightAws
         # this thing before. The default action is :refresh.
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
-        #  grantee1 = RightAws::S3::Grantee.new(bucket, 'a123b...223c', FULL_CONTROL)
+        #  grantee1 = Aws::S3::Grantee.new(bucket, 'a123b...223c', FULL_CONTROL)
         #    ...
-        #  grantee2 = RightAws::S3::Grantee.new(bucket, 'abcde...asdf', [FULL_CONTROL, READ], :apply)
-        #  grantee3 = RightAws::S3::Grantee.new(bucket, 'aaaaa...aaaa', 'READ', :apply_and_refresh)  
+        #  grantee2 = Aws::S3::Grantee.new(bucket, 'abcde...asdf', [FULL_CONTROL, READ], :apply)
+        #  grantee3 = Aws::S3::Grantee.new(bucket, 'aaaaa...aaaa', 'READ', :apply_and_refresh)
         #
       def initialize(thing, id, perms=[], action=:refresh, name=nil)
         @thing = thing
@@ -888,20 +888,20 @@ module RightAws
     
   end
 
-    # RightAws::S3Generator and RightAws::S3Generator::Bucket methods:
+    # Aws::S3Generator and Aws::S3Generator::Bucket methods:
     #
-    #  s3g = RightAws::S3Generator.new('1...2', 'nx...Y6') #=> #<RightAws::S3Generator:0xb7b5cc94>
+    #  s3g = Aws::S3Generator.new('1...2', 'nx...Y6') #=> #<Aws::S3Generator:0xb7b5cc94>
     #
     #    # List all buckets(method 'GET'):
     #  buckets_list = s3g.buckets #=> 'https://s3.amazonaws.com:443/?Signature=Y...D&Expires=1180941864&AWSAccessKeyId=1...2'
     #    # Create bucket link (method 'PUT'):
-    #  bucket = s3g.bucket('my_awesome_bucket')     #=> #<RightAws::S3Generator::Bucket:0xb7bcbda8>
+    #  bucket = s3g.bucket('my_awesome_bucket')     #=> #<Aws::S3Generator::Bucket:0xb7bcbda8>
     #  link_to_create = bucket.create_link(1.hour)  #=> https://s3.amazonaws.com:443/my_awesome_bucket?Signature=4...D&Expires=1180942132&AWSAccessKeyId=1...2
     #    # ... or:
-    #  bucket = RightAws::S3Generator::Bucket.create(s3g, 'my_awesome_bucket') #=> #<RightAws::S3Generator::Bucket:0xb7bcbda8>
+    #  bucket = Aws::S3Generator::Bucket.create(s3g, 'my_awesome_bucket') #=> #<Aws::S3Generator::Bucket:0xb7bcbda8>
     #  link_to_create = bucket.create_link(1.hour)                                 #=> https://s3.amazonaws.com:443/my_awesome_bucket?Signature=4...D&Expires=1180942132&AWSAccessKeyId=1...2
     #    # ... or:
-    #  bucket = RightAws::S3Generator::Bucket.new(s3g, 'my_awesome_bucket') #=> #<RightAws::S3Generator::Bucket:0xb7bcbda8>
+    #  bucket = Aws::S3Generator::Bucket.new(s3g, 'my_awesome_bucket') #=> #<Aws::S3Generator::Bucket:0xb7bcbda8>
     #  link_to_create = bucket.create_link(1.hour)                              #=> https://s3.amazonaws.com:443/my_awesome_bucket?Signature=4...D&Expires=1180942132&AWSAccessKeyId=1...2
     #    # List bucket(method 'GET'):
     #  bucket.keys(1.day) #=> https://s3.amazonaws.com:443/my_awesome_bucket?Signature=i...D&Expires=1180942620&AWSAccessKeyId=1...2
@@ -912,10 +912,10 @@ module RightAws
     #    # Delete bucket (method 'DELETE'): 
     #  bucket.delete(2.hour) #=> https://s3.amazonaws.com:443/my_awesome_bucket/logs%2Ftoday%2F1.log?Signature=4...D&Expires=1180820032&AWSAccessKeyId=1...2
     #  
-    # RightAws::S3Generator::Key methods:
+    # Aws::S3Generator::Key methods:
     #
     #    # Create Key instance:  
-    #  key = RightAws::S3Generator::Key.new(bicket, 'my_cool_key') #=> #<RightAws::S3Generator::Key:0xb7b7394c>
+    #  key = Aws::S3Generator::Key.new(bicket, 'my_cool_key') #=> #<Aws::S3Generator::Key:0xb7b7394c>
     #    # Put key data (method 'PUT'):
     #  key.put    #=> https://s3.amazonaws.com:443/my_awesome_bucket/my_cool_key?Signature=2...D&Expires=1180943302&AWSAccessKeyId=1...2
     #    # Get key data (method 'GET'):
@@ -1004,7 +1004,7 @@ module RightAws
         #  puts bucket.put('logs/today/1.log', 2.hour)
         #
       def put(key, meta_headers={}, expires=nil, headers={})
-        meta = RightAws::S3::Key.add_meta_prefix(meta_headers)
+        meta = Aws::S3::Key.add_meta_prefix(meta_headers)
         @s3.interface.put_link(@name, key.to_s, nil, expires, meta.merge(headers))
       end
         

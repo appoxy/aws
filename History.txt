@@ -31,7 +31,7 @@ Initial release.
   * libxml and paid AMI support added
 
 * r1581, tve, 2007-08-24 16:21:45
-  * Improved RightAws documentation
+  * Improved Aws documentation
 
 == 1.3.0 2007-09-26
 
@@ -85,7 +85,7 @@ Initial release.
   * S3::Grantee#exists? method added 
 
 * r2109, konstantin, 2007-11-12 21:49:36  +0300
-  * RightAwsBaseInterface: caching implemented.
+  * AwsBaseInterface: caching implemented.
     (The Ec2 functions are being cached: describe_images, describe_instances, 
     describe_security_groups and describe_key_pairs)
 
@@ -107,14 +107,14 @@ Initial release.
 == 1.5.0
 * r 2688, konstantin, 02-30-08 15:42:00  +0300
   * SDB support added.
-  * RightAws::S3::bucket and RightAws::S3::Bucket.create methods behaviour 
+  * Aws::S3::bucket and Aws::S3::Bucket.create methods behaviour
     changed: param +create+ is set to +false+ by default.
 
 == 1.6.0
 
 * r2780, todd, 2008-02-11 11:41:07 -0800 (Mon, 11 Feb 2008), 4 lines
   * Some doc updates & tweaks: we now support ultra-large PUTs to S3, small SDB
-    cleanups, add SDB to the list of interfaces in RightAws, update some copyrights,
+    cleanups, add SDB to the list of interfaces in Aws, update some copyrights,
     warn about loading attachment_fu AFTER right_aws (big no-no).
 
 * r2784, todd, 2008-02-11 13:46:47 -0800 (Mon, 11 Feb 2008), 2 lines
@@ -152,8 +152,8 @@ Initial release.
 
   Release Notes:
   
-  RightAws includes some new features, including:
-  - Support in RightAws::S3 and RightAws::S3Interface for S3 key copy, move, and rename
+  Aws includes some new features, including:
+  - Support in Aws::S3 and Aws::S3Interface for S3 key copy, move, and rename
   - Support for signature version 0 request authentication to EC2, SQS, and SDB
   - Enhanced S3 object meta-header read and update
   - Interoperability with clouds running Eucalyptus (http://eucalyptus.cs.ucsb.edu)
@@ -163,7 +163,7 @@ Initial release.
   Bug fixes include:
   - Corrected the failure, under certain conditions, of retries of streaming PUTs to S3.
     We now reset the seek pointer of the streaming IO object to its initial position.
-  - Removal of an accidental dependency on ActiveSupport in RightAws::S3Interface.get_link().
+  - Removal of an accidental dependency on ActiveSupport in Aws::S3Interface.get_link().
   - Monkey-patch of the Ruby File class on Windows platforms to correct a problem in lstat.
     The lstat bug was causing failure of very large file uploads on Windows [ Contributed by Benjamin Allfree ] 
   - Fixed parsing of the ETag field for S3 objects
@@ -179,25 +179,25 @@ Initial release.
 
   Release Notes:
 
-  This release adds major new features to RightAws to support Amazon's new
-  Elastic Block Store (EBS).  Via the RightAws::Ec2 module, users can create
+  This release adds major new features to Aws to support Amazon's new
+  Elastic Block Store (EBS).  Via the Aws::Ec2 module, users can create
   and delete EBS volumes, attach and detach them from instances, snapshot
   volumes, and list the available volumes and snapshots.
 
-  Bug fixes include correction of RightAws::S3 copy's failure to url-encode
+  Bug fixes include correction of Aws::S3 copy's failure to url-encode
 the source key.
  
 == 1.8.1
 
   Release Notes:
 
-  RightScale::SdbInterface & ::ActiveSdb have several enhancements, including:
-  - RightAws::SdbInterface#last_query_expression added for debug puposes
-  - RightAws::ActiveSdb::Base#query :order and :auto_load options added to support query
+  Aws::SdbInterface & ::ActiveSdb have several enhancements, including:
+  - Aws::SdbInterface#last_query_expression added for debug puposes
+  - Aws::ActiveSdb::Base#query :order and :auto_load options added to support query
     result sorting and attributes auto loading
-  - RightAws::ActiveSdb::Base#find_all_by_ and find_by_ helpers improved to support
+  - Aws::ActiveSdb::Base#find_all_by_ and find_by_ helpers improved to support
     :order, :auto_load, :limit and :next_token options
-  - RightAws::SdbInterface#delete_attributes bug fixed 
+  - Aws::SdbInterface#delete_attributes bug fixed
   - SdbInterface allows specification of a string value to use for
     representing Ruby nil in SDB.
   - Sdb tests fixed and improved
@@ -208,13 +208,13 @@ the source key.
 === 1.9.0
 
   Release Notes:
-  - RightAws::Ec2 now supports Windows instances. Added:
+  - Aws::Ec2 now supports Windows instances. Added:
    - Ec2::get_initial_password
    - Ec2::bundle_instance
    - Ec2::describe_bundle_tasks
    - Ec::cancel_bundle_task
 
-  - Full Amazon CloudFront support added with RightAws::AcfInterface
+  - Full Amazon CloudFront support added with Aws::AcfInterface
   - Bug fixes to S3Interface::store_object_and_verify and 
     S3Interface::retrieve_object_and_verify (thanks to numerous user reports)
   - Updates to caching for Ec2::describe_images_by methods
