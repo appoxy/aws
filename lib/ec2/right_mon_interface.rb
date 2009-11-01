@@ -114,7 +114,7 @@ module Aws
         #
         # Optional parameters:
         #    period: 	Integer 60 or multiple of 60
-        #    dimension:    Hash containing keys ImageId, AutoScalingGroupName, InstanceId, InstanceType
+        #    dimensions:    Hash containing keys ImageId, AutoScalingGroupName, InstanceId, InstanceType
         #    customUnit:   nil. not supported currently.
         #    namespace:    AWS/EC2
 

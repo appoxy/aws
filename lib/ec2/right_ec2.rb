@@ -34,7 +34,7 @@ module Aws
   # Examples:
   #
   # Create an EC2 interface handle:
-  #   
+  #
   #   @ec2   = Aws::Ec2.new(aws_access_key_id,
   #                               aws_secret_access_key)
   # Create a new SSH key pair:
@@ -56,33 +56,33 @@ module Aws
   #
   # Launch an instance:
   #  ec2.run_instances('ami-9a9e7bf3', 1, 1, ['default'], @key, 'SomeImportantUserData', 'public')
-  # 
+  #
   #
   # Describe running instances:
   #  @ec2.describe_instances
   #
   # Error handling: all operations raise an Aws::AwsError in case
   # of problems. Note that transient errors are automatically retried.
-    
+
   class Ec2 < AwsBase
     include AwsBaseInterface
-    
+
     # Amazon EC2 API version being used
-    API_VERSION       = "2008-12-01"
+    API_VERSION       = "2009-08-15"
     DEFAULT_HOST      = "ec2.amazonaws.com"
     DEFAULT_PATH      = '/'
     DEFAULT_PROTOCOL  = 'http'
     DEFAULT_PORT      = 80
-    
+
     # Default addressing type (public=NAT, direct=no-NAT) used when launching instances.
     DEFAULT_ADDRESSING_TYPE =  'public'
     DNS_ADDRESSING_SET      = ['public','direct']
-    
+
     # Amazon EC2 Instance Types : http://www.amazon.com/b?ie=UTF8&node=370375011
-    # Default EC2 instance type (platform) 
-    DEFAULT_INSTANCE_TYPE   =  'm1.small' 
+    # Default EC2 instance type (platform)
+    DEFAULT_INSTANCE_TYPE   =  'm1.small'
     INSTANCE_TYPES          = ['m1.small','c1.medium','m1.large','m1.xlarge','c1.xlarge']
-    
+
     @@bench = AwsBenchmarkingBlock.new
     def self.bench_xml
       @@bench.xml
@@ -90,13 +90,13 @@ module Aws
     def self.bench_ec2
       @@bench.service
     end
-    
+
      # Current API version (sometimes we have to check it outside the GEM).
     @@api = ENV['EC2_API_VERSION'] || API_VERSION
-    def self.api 
+    def self.api
       @@api
     end
-    
+
     # Create a new handle to an EC2 account. All handles share the same per process or per thread
     # HTTP connection to Amazon EC2. Each handle is for a specific account. The params have the
     # following options:
@@ -110,16 +110,16 @@ module Aws
     # * <tt>:signature_version</tt>:  The signature version : '0' or '1'(default)
     # * <tt>:cache</tt>: true/false: caching for: ec2_describe_images, describe_instances,
     # describe_images_by_owner, describe_images_by_executable_by, describe_availability_zones,
-    # describe_security_groups, describe_key_pairs, describe_addresses, 
+    # describe_security_groups, describe_key_pairs, describe_addresses,
     # describe_volumes, describe_snapshots methods, default: false.
     #
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
-      init({ :name             => 'EC2', 
-             :default_host     => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).host   : DEFAULT_HOST, 
+      init({ :name             => 'EC2',
+             :default_host     => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).host   : DEFAULT_HOST,
              :default_port     => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).port   : DEFAULT_PORT,
-             :default_service  => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).path   : DEFAULT_PATH,             
-             :default_protocol => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).scheme : DEFAULT_PROTOCOL }, 
-           aws_access_key_id    || ENV['AWS_ACCESS_KEY_ID'] , 
+             :default_service  => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).path   : DEFAULT_PATH,
+             :default_protocol => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).scheme : DEFAULT_PROTOCOL },
+           aws_access_key_id    || ENV['AWS_ACCESS_KEY_ID'] ,
            aws_secret_access_key|| ENV['AWS_SECRET_ACCESS_KEY'],
            params)
       # EC2 doesn't really define any transient errors to retry, and in fact,
@@ -137,7 +137,7 @@ module Aws
                       "Version"        => @@api }
       service_hash.update(params)
       service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-      
+
       # use POST method if the length of the query string is too large
       if service_params.size > 2000
         if signature_version == '2'
@@ -151,7 +151,7 @@ module Aws
         request        = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
       end
         # prepare output hash
-      { :request  => request, 
+      { :request  => request,
         :server   => @params[:server],
         :port     => @params[:port],
         :protocol => @params[:protocol] }
@@ -175,11 +175,11 @@ module Aws
   #      Images
   #-----------------------------------------------------------------
 
-    # params: 
+    # params:
     #   { 'ImageId'      => ['id1', ..., 'idN'],
     #     'Owner'        => ['self', ..., 'userN'],
     #     'ExecutableBy' => ['self', 'all', ..., 'userN']
-    #   } 
+    #   }
     def ec2_describe_images(params={}, image_type=nil, cache_for=nil) #:nodoc:
       request_hash = {}
       params.each do |list_by, list|
@@ -193,8 +193,8 @@ module Aws
     end
 
       # Retrieve a list of images. Returns array of hashes describing the images or an exception:
-      # +image_type+ = 'machine' || 'kernel' || 'ramdisk' 
-      # 
+      # +image_type+ = 'machine' || 'kernel' || 'ramdisk'
+      #
       #  ec2.describe_images #=>
       #    [{:aws_owner => "522821470517",
       #      :aws_id => "ami-e4b6538d",
@@ -249,25 +249,25 @@ module Aws
     end
 
 
-      # Register new image at Amazon. 
+      # Register new image at Amazon.
       # Returns new image id or an exception.
       #
       #  ec2.register_image('bucket/key/manifest') #=> 'ami-e444444d'
       #
     def register_image(image_location)
-      link = generate_request("RegisterImage", 
+      link = generate_request("RegisterImage",
                               'ImageLocation' => image_location.to_s)
       request_info(link, QEc2RegisterImageParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
       # Deregister image at Amazon. Returns +true+ or an exception.
       #
       #  ec2.deregister_image('ami-e444444d') #=> true
       #
     def deregister_image(image_id)
-      link = generate_request("DeregisterImage", 
+      link = generate_request("DeregisterImage",
                               'ImageId' => image_id.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
@@ -280,20 +280,20 @@ module Aws
       #  ec2.describe_image_attribute('ami-e444444d') #=> {:groups=>["all"], :users=>["000000000777"]}
       #
     def describe_image_attribute(image_id, attribute='launchPermission')
-      link = generate_request("DescribeImageAttribute", 
+      link = generate_request("DescribeImageAttribute",
                               'ImageId'   => image_id,
                               'Attribute' => attribute)
       request_info(link, QEc2DescribeImageAttributeParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
       # Reset image attribute. Currently, only 'launchPermission' is supported. Returns +true+ or an exception.
       #
       #  ec2.reset_image_attribute('ami-e444444d') #=> true
       #
     def reset_image_attribute(image_id, attribute='launchPermission')
-      link = generate_request("ResetImageAttribute", 
+      link = generate_request("ResetImageAttribute",
                               'ImageId'   => image_id,
                               'Attribute' => attribute)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
@@ -303,13 +303,13 @@ module Aws
 
       # Modify an image's attributes. It is recommended that you use
       # modify_image_launch_perm_add_users, modify_image_launch_perm_remove_users, etc.
-      # instead of modify_image_attribute because the signature of 
+      # instead of modify_image_attribute because the signature of
       # modify_image_attribute may change with EC2 service changes.
       #
       #  attribute      : currently, only 'launchPermission' is supported.
       #  operation_type : currently, only 'add' & 'remove' are supported.
-      #  vars: 
-      #    :user_group  : currently, only 'all' is supported.  
+      #  vars:
+      #    :user_group  : currently, only 'all' is supported.
       #    :user_id
       #    :product_code
     def modify_image_attribute(image_id, attribute, operation_type = nil, vars = {})
@@ -342,7 +342,7 @@ module Aws
       modify_image_attribute(image_id, 'launchPermission', 'remove', :user_id => user_id.to_a)
     end
 
-      # Add image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions). 
+      # Add image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions).
       # Returns +true+ or an exception.
       #
       #  ec2.modify_image_launch_perm_add_groups('ami-e444444d') #=> true
@@ -350,15 +350,15 @@ module Aws
     def modify_image_launch_perm_add_groups(image_id, user_group=['all'])
       modify_image_attribute(image_id, 'launchPermission', 'add', :user_group => user_group.to_a)
     end
-    
-      # Remove image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions). 
+
+      # Remove image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions).
       #
       #  ec2.modify_image_launch_perm_remove_groups('ami-e444444d') #=> true
       #
     def modify_image_launch_perm_remove_groups(image_id, user_group=['all'])
       modify_image_attribute(image_id, 'launchPermission', 'remove', :user_group => user_group.to_a)
     end
-    
+
       # Add product code to image
       #
       #  ec2.modify_image_product_code('ami-e444444d','0ABCDEF') #=> true
@@ -370,7 +370,7 @@ module Aws
   #-----------------------------------------------------------------
   #      Instances
   #-----------------------------------------------------------------
-    
+
     def get_desc_instances(instances)  # :nodoc:
       result = []
       instances.each do |reservation|
@@ -388,11 +388,11 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
       # Retrieve information about EC2 instances. If +list+ is omitted then returns the
       # list of all instances.
       #
-      #  ec2.describe_instances #=> 
+      #  ec2.describe_instances #=>
       #    [{:aws_image_id       => "ami-e444444d",
       #      :aws_reason         => "",
       #      :aws_state_code     => "16",
@@ -409,6 +409,7 @@ module Aws
       #      :aws_availability_zone => "us-east-1b",
       #      :aws_kernel_id      => "aki-ba3adfd3",
       #      :aws_ramdisk_id     => "ari-badbad00",
+      #      :monitoring_state         => ...,
       #       ..., {...}]
       #
     def describe_instances(list=[])
@@ -419,7 +420,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
       # Return the product code attached to instance or +nil+ otherwise.
       #
       #  ec2.confirm_product_instance('ami-e444444d','12345678') #=> nil
@@ -430,7 +431,7 @@ module Aws
                                 'InstanceId'  => instance })
       request_info(link, QEc2ConfirmProductInstanceParser.new(:logger => @logger))
     end
-    
+
       # Launch new EC2 instances. Returns a list of launched instances or an exception.
       #
       #  ec2.run_instances('ami-e444444d',1,1,['my_awesome_group'],'my_awesome_key', 'Woohoo!!!', 'public') #=>
@@ -453,82 +454,84 @@ module Aws
       #     :aws_availability_zone => "us-east-1b"
       #     }]
       #
-    def run_instances(image_id, min_count, max_count, group_ids, key_name, user_data='',  
+    def run_instances(image_id, min_count, max_count, group_ids, key_name, user_data='',
                       addressing_type = nil, instance_type = nil,
-                      kernel_id = nil, ramdisk_id = nil, availability_zone = nil, 
-                      block_device_mappings = nil) 
- 	    launch_instances(image_id, { :min_count       => min_count, 
- 	                                 :max_count       => max_count, 
- 	                                 :user_data       => user_data, 
-                                   :group_ids       => group_ids, 
-                                   :key_name        => key_name, 
-                                   :instance_type   => instance_type, 
+                      kernel_id = nil, ramdisk_id = nil, availability_zone = nil,
+                      block_device_mappings = nil)
+ 	    launch_instances(image_id, { :min_count       => min_count,
+ 	                                 :max_count       => max_count,
+ 	                                 :user_data       => user_data,
+                                   :group_ids       => group_ids,
+                                   :key_name        => key_name,
+                                   :instance_type   => instance_type,
                                    :addressing_type => addressing_type,
                                    :kernel_id       => kernel_id,
                                    :ramdisk_id      => ramdisk_id,
                                    :availability_zone     => availability_zone,
                                    :block_device_mappings => block_device_mappings
-                                 }) 
+                                 })
     end
-    
-     
-      # Launch new EC2 instances. Returns a list of launched instances or an exception. 
+
+
+      # Launch new EC2 instances. Returns a list of launched instances or an exception.
       #
       # +lparams+ keys (default values in parenthesis):
       #  :min_count              fixnum, (1)
       #  :max_count              fixnum, (1)
       #  :group_ids              array or string ([] == 'default')
       #  :instance_type          string (DEFAULT_INSTACE_TYPE)
-      #  :addressing_type        string (DEFAULT_ADDRESSING_TYPE 
+      #  :addressing_type        string (DEFAULT_ADDRESSING_TYPE
       #  :key_name               string
       #  :kernel_id              string
-      #  :ramdisk_id             string 
+      #  :ramdisk_id             string
       #  :availability_zone      string
       #  :block_device_mappings  string
       #  :user_data              string
-      # 
-      #  ec2.launch_instances('ami-e444444d', :group_ids => 'my_awesome_group', 
-      #                                       :user_data => "Woohoo!!!", 
-      #                                       :addressing_type => "public", 
-      #                                       :key_name => "my_awesome_key", 
-      #                                       :availability_zone => "us-east-1c") #=> 
-      #   [{:aws_image_id       => "ami-e444444d", 
-      #     :aws_reason         => "", 
-      #     :aws_state_code     => "0", 
-      #     :aws_owner          => "000000000888", 
-      #     :aws_instance_id    => "i-123f1234", 
-      #     :aws_reservation_id => "r-aabbccdd", 
-      #     :aws_state          => "pending", 
-      #     :dns_name           => "", 
-      #     :ssh_key_name       => "my_awesome_key", 
-      #     :aws_groups         => ["my_awesome_group"], 
-      #     :private_dns_name   => "", 
+      #  :monitoring_enabled     boolean (default=false)
+      #
+      #  ec2.launch_instances('ami-e444444d', :group_ids => 'my_awesome_group',
+      #                                       :user_data => "Woohoo!!!",
+      #                                       :addressing_type => "public",
+      #                                       :key_name => "my_awesome_key",
+      #                                       :availability_zone => "us-east-1c") #=>
+      #   [{:aws_image_id       => "ami-e444444d",
+      #     :aws_reason         => "",
+      #     :aws_state_code     => "0",
+      #     :aws_owner          => "000000000888",
+      #     :aws_instance_id    => "i-123f1234",
+      #     :aws_reservation_id => "r-aabbccdd",
+      #     :aws_state          => "pending",
+      #     :dns_name           => "",
+      #     :ssh_key_name       => "my_awesome_key",
+      #     :aws_groups         => ["my_awesome_group"],
+      #     :private_dns_name   => "",
       #     :aws_instance_type  => "m1.small",
       #     :aws_launch_time    => "2008-1-1T00:00:00.000Z",
       #     :aws_ramdisk_id     => "ari-8605e0ef"
       #     :aws_kernel_id      => "aki-9905e0f0",
       #     :ami_launch_index   => "0",
       #     :aws_availability_zone => "us-east-1c"
-      #     }] 
-      #     
-    def launch_instances(image_id, lparams={}) 
-      @logger.info("Launching instance of image #{image_id} for #{@aws_access_key_id}, " + 
+      #     }]
+      #
+    def launch_instances(image_id, lparams={})
+      @logger.info("Launching instance of image #{image_id} for #{@aws_access_key_id}, " +
                    "key: #{lparams[:key_name]}, groups: #{(lparams[:group_ids]).to_a.join(',')}")
       # careful: keyName and securityGroups may be nil
       params = hash_params('SecurityGroup', lparams[:group_ids].to_a)
       params.update( {'ImageId'        => image_id,
-                      'MinCount'       => (lparams[:min_count] || 1).to_s, 
-                      'MaxCount'       => (lparams[:max_count] || 1).to_s, 
-                      'AddressingType' => lparams[:addressing_type] || DEFAULT_ADDRESSING_TYPE, 
+                      'MinCount'       => (lparams[:min_count] || 1).to_s,
+                      'MaxCount'       => (lparams[:max_count] || 1).to_s,
+                      'AddressingType' => lparams[:addressing_type] || DEFAULT_ADDRESSING_TYPE,
                       'InstanceType'   => lparams[:instance_type]   || DEFAULT_INSTANCE_TYPE })
       # optional params
-      params['KeyName']                    = lparams[:key_name]              unless lparams[:key_name].blank? 
-      params['KernelId']                   = lparams[:kernel_id]             unless lparams[:kernel_id].blank? 
-      params['RamdiskId']                  = lparams[:ramdisk_id]            unless lparams[:ramdisk_id].blank? 
-      params['Placement.AvailabilityZone'] = lparams[:availability_zone]     unless lparams[:availability_zone].blank? 
+      params['KeyName']                    = lparams[:key_name]              unless lparams[:key_name].blank?
+      params['KernelId']                   = lparams[:kernel_id]             unless lparams[:kernel_id].blank?
+      params['RamdiskId']                  = lparams[:ramdisk_id]            unless lparams[:ramdisk_id].blank?
+      params['Placement.AvailabilityZone'] = lparams[:availability_zone]     unless lparams[:availability_zone].blank?
       params['BlockDeviceMappings']        = lparams[:block_device_mappings] unless lparams[:block_device_mappings].blank?
-      unless lparams[:user_data].blank? 
-        lparams[:user_data].strip! 
+      params['Monitoring.Enabled']         = lparams[:monitoring_enabled]    unless lparams[:monitoring_enabled].blank?
+      unless lparams[:user_data].blank?
+        lparams[:user_data].strip!
           # Do not use CGI::escape(encode64(...)) as it is done in Amazons EC2 library.
           # Amazon 169.254.169.254 does not like escaped symbols!
           # And it doesn't like "\n" inside of encoded string! Grrr....
@@ -542,19 +545,26 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
+    def monitor_instances(list=[])
+      link = generate_request("MonitorInstances", hash_params('InstanceId',list.to_a))
+      request_info(link, QEc2TerminateInstancesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
       # Terminates EC2 instances. Returns a list of termination params or an exception.
       #
       #  ec2.terminate_instances(['i-f222222d','i-f222222e']) #=>
-      #    [{:aws_shutdown_state      => "shutting-down", 
-      #      :aws_instance_id         => "i-f222222d", 
-      #      :aws_shutdown_state_code => 32, 
-      #      :aws_prev_state          => "running", 
-      #      :aws_prev_state_code     => 16}, 
-      #     {:aws_shutdown_state      => "shutting-down", 
-      #      :aws_instance_id         => "i-f222222e", 
-      #      :aws_shutdown_state_code => 32, 
-      #      :aws_prev_state          => "running", 
+      #    [{:aws_shutdown_state      => "shutting-down",
+      #      :aws_instance_id         => "i-f222222d",
+      #      :aws_shutdown_state_code => 32,
+      #      :aws_prev_state          => "running",
+      #      :aws_prev_state_code     => 16},
+      #     {:aws_shutdown_state      => "shutting-down",
+      #      :aws_instance_id         => "i-f222222e",
+      #      :aws_shutdown_state_code => 32,
+      #      :aws_prev_state          => "running",
       #      :aws_prev_state_code     => 16}]
       #
     def terminate_instances(list=[])
@@ -592,7 +602,7 @@ module Aws
   #-----------------------------------------------------------------
   #      Instances: Windows addons
   #-----------------------------------------------------------------
-  
+
       # Get initial Windows Server setup password from an instance console output.
       #
       #  my_awesome_key = ec2.create_key_pair('my_awesome_key') #=>
@@ -638,7 +648,7 @@ module Aws
     #      :aws_instance_id => "i-878a25ee",
     #      :aws_start_time  => "2008-10-16T13:58:02.000Z"}]
     #
-    def bundle_instance(instance_id, s3_bucket, s3_prefix, 
+    def bundle_instance(instance_id, s3_bucket, s3_prefix,
                         s3_owner_aws_access_key_id=nil, s3_owner_aws_secret_access_key=nil,
                         s3_expires = S3Interface::DEFAULT_EXPIRES_AFTER,
                         s3_upload_policy='ec2-bundle-read')
@@ -666,7 +676,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
       # Describe the status of the Windows AMI bundlings.
       # If +list+ is omitted the returns the whole list of tasks.
       #
@@ -731,7 +741,7 @@ module Aws
     def describe_security_groups(list=[])
       link = generate_request("DescribeSecurityGroups", hash_params('GroupName',list.to_a))
       request_cache_or_info( :describe_security_groups, link,  QEc2DescribeSecurityGroupsParser, @@bench, list.blank?) do |parser|
-        result = []     
+        result = []
         parser.result.each do |item|
           perms = []
           item.ipPermissions.each do |perm|
@@ -740,8 +750,8 @@ module Aws
                         :owner => ngroup.userId}
             end
             perm.ipRanges.each do |cidr_ip|
-              perms << {:from_port => perm.fromPort, 
-                        :to_port   => perm.toPort, 
+              perms << {:from_port => perm.fromPort,
+                        :to_port   => perm.toPort,
                         :protocol  => perm.ipProtocol,
                         :cidr_ips  => cidr_ip}
             end
@@ -755,18 +765,18 @@ module Aws
           end
           perms.compact!
 
-          result << {:aws_owner       => item.ownerId, 
-                     :aws_group_name  => item.groupName, 
+          result << {:aws_owner       => item.ownerId,
+                     :aws_group_name  => item.groupName,
                      :aws_description => item.groupDescription,
                      :aws_perms       => perms}
-        
+
         end
         result
       end
     rescue Exception
       on_exception
     end
-    
+
       # Create new Security Group. Returns +true+ or an exception.
       #
       #  ec2.create_security_group('default-1',"Default allowing SSH, HTTP, and HTTPS ingress") #=> true
@@ -774,7 +784,7 @@ module Aws
     def create_security_group(name, description)
       # EC2 doesn't like an empty description...
       description = " " if description.blank?
-      link = generate_request("CreateSecurityGroup", 
+      link = generate_request("CreateSecurityGroup",
                               'GroupName'        => name.to_s,
                               'GroupDescription' => description.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
@@ -787,20 +797,20 @@ module Aws
       #  ec2.delete_security_group('default-1') #=> true
       #
     def delete_security_group(name)
-      link = generate_request("DeleteSecurityGroup", 
+      link = generate_request("DeleteSecurityGroup",
                               'GroupName' => name.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
       # Authorize named ingress for security group. Allows instances that are member of someone
       # else's security group to open connections to instances in my group.
       #
       #  ec2.authorize_security_group_named_ingress('my_awesome_group', '7011-0219-8268', 'their_group_name') #=> true
       #
     def authorize_security_group_named_ingress(name, owner, group)
-      link = generate_request("AuthorizeSecurityGroupIngress", 
+      link = generate_request("AuthorizeSecurityGroupIngress",
                               'GroupName'                  => name.to_s,
                                 'SourceSecurityGroupName'    => group.to_s,
                               'SourceSecurityGroupOwnerId' => owner.to_s.gsub(/-/,''))
@@ -808,13 +818,13 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
       # Revoke named ingress for security group.
       #
       #  ec2.revoke_security_group_named_ingress('my_awesome_group', aws_user_id, 'another_group_name') #=> true
       #
     def revoke_security_group_named_ingress(name, owner, group)
-      link = generate_request("RevokeSecurityGroupIngress", 
+      link = generate_request("RevokeSecurityGroupIngress",
                               'GroupName'                  => name.to_s,
                               'SourceSecurityGroupName'    => group.to_s,
                               'SourceSecurityGroupOwnerId' => owner.to_s.gsub(/-/,''))
@@ -822,14 +832,14 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
       # Add permission to a security group. Returns +true+ or an exception. +protocol+ is one of :'tcp'|'udp'|'icmp'.
       #
       #  ec2.authorize_security_group_IP_ingress('my_awesome_group', 80, 82, 'udp', '192.168.1.0/8') #=> true
       #  ec2.authorize_security_group_IP_ingress('my_awesome_group', -1, -1, 'icmp') #=> true
       #
     def authorize_security_group_IP_ingress(name, from_port, to_port, protocol='tcp', cidr_ip='0.0.0.0/0')
-      link = generate_request("AuthorizeSecurityGroupIngress", 
+      link = generate_request("AuthorizeSecurityGroupIngress",
                               'GroupName'  => name.to_s,
                               'IpProtocol' => protocol.to_s,
                               'FromPort'   => from_port.to_s,
@@ -839,13 +849,13 @@ module Aws
     rescue Exception
       on_exception
     end
-    
-      # Remove permission from a security group. Returns +true+ or an exception. +protocol+ is one of :'tcp'|'udp'|'icmp' ('tcp' is default). 
+
+      # Remove permission from a security group. Returns +true+ or an exception. +protocol+ is one of :'tcp'|'udp'|'icmp' ('tcp' is default).
       #
       #  ec2.revoke_security_group_IP_ingress('my_awesome_group', 80, 82, 'udp', '192.168.1.0/8') #=> true
       #
     def revoke_security_group_IP_ingress(name, from_port, to_port, protocol='tcp', cidr_ip='0.0.0.0/0')
-      link = generate_request("RevokeSecurityGroupIngress", 
+      link = generate_request("RevokeSecurityGroupIngress",
                               'GroupName'  => name.to_s,
                               'IpProtocol' => protocol.to_s,
                               'FromPort'   => from_port.to_s,
@@ -859,7 +869,7 @@ module Aws
   #-----------------------------------------------------------------
   #      Keys
   #-----------------------------------------------------------------
-  
+
       # Retrieve a list of SSH keys. Returns an array of keys or an exception. Each key is
       # represented as a two-element hash.
       #
@@ -874,7 +884,7 @@ module Aws
     rescue Exception
       on_exception
     end
-      
+
       # Create new SSH key. Returns a hash of the key's data or an exception.
       #
       #  ec2.create_key_pair('my_awesome_key') #=>
@@ -883,7 +893,7 @@ module Aws
       #     :aws_material    => "-----BEGIN RSA PRIVATE KEY-----\nMIIEpQIBAAK...Q8MDrCbuQ=\n-----END RSA PRIVATE KEY-----"}
       #
     def create_key_pair(name)
-      link = generate_request("CreateKeyPair", 
+      link = generate_request("CreateKeyPair",
                               'KeyName' => name.to_s)
       request_info(link, QEc2CreateKeyPairParser.new(:logger => @logger))
     rescue Exception
@@ -895,13 +905,13 @@ module Aws
       #  ec2.delete_key_pair('my_awesome_key') #=> true
       #
     def delete_key_pair(name)
-      link = generate_request("DeleteKeyPair", 
+      link = generate_request("DeleteKeyPair",
                               'KeyName' => name.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
   #-----------------------------------------------------------------
   #      Elastic IPs
   #-----------------------------------------------------------------
@@ -924,7 +934,7 @@ module Aws
     #  ec2.associate_address('i-d630cbbf', '75.101.154.140') #=> true
     #
     def associate_address(instance_id, public_ip)
-      link = generate_request("AssociateAddress", 
+      link = generate_request("AssociateAddress",
                               "InstanceId" => instance_id.to_s,
                               "PublicIp"   => public_ip.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
@@ -941,7 +951,7 @@ module Aws
     #  ec2.describe_addresses('75.101.154.140') #=> [{:instance_id=>"i-d630cbbf", :public_ip=>"75.101.154.140"}]
     #
     def describe_addresses(list=[])
-      link = generate_request("DescribeAddresses", 
+      link = generate_request("DescribeAddresses",
                               hash_params('PublicIp',list.to_a))
       request_cache_or_info :describe_addresses, link,  QEc2DescribeAddressesParser, @@bench, list.blank?
     rescue Exception
@@ -950,11 +960,11 @@ module Aws
 
     # Disassociate the specified elastic IP address from the instance to which it is assigned.
     # Returns +true+ or an exception.
-    # 
+    #
     #  ec2.disassociate_address('75.101.154.140') #=> true
     #
     def disassociate_address(public_ip)
-      link = generate_request("DisassociateAddress", 
+      link = generate_request("DisassociateAddress",
                               "PublicIp" => public_ip.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
@@ -967,7 +977,7 @@ module Aws
     #  ec2.release_address('75.101.154.140') #=> true
     #
     def release_address(public_ip)
-      link = generate_request("ReleaseAddress", 
+      link = generate_request("ReleaseAddress",
                               "PublicIp" => public_ip.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
@@ -977,7 +987,7 @@ module Aws
   #-----------------------------------------------------------------
   #      Availability zones
   #-----------------------------------------------------------------
-    
+
     # Describes availability zones that are currently available to the account and their states.
     # Returns an array of 2 keys (:zone_name and :zone_state) hashes:
     #
@@ -985,12 +995,12 @@ module Aws
     #                                         :zone_name=>"us-east-1a",
     #                                         :zone_state=>"available"}, ... ]
     #
-    #  ec2.describe_availability_zones('us-east-1c') #=> [{:region_name=>"us-east-1", 
+    #  ec2.describe_availability_zones('us-east-1c') #=> [{:region_name=>"us-east-1",
     #                                                      :zone_state=>"available",
     #                                                      :zone_name=>"us-east-1c"}]
     #
     def describe_availability_zones(list=[])
-      link = generate_request("DescribeAvailabilityZones", 
+      link = generate_request("DescribeAvailabilityZones",
                               hash_params('ZoneName',list.to_a))
       request_cache_or_info :describe_availability_zones, link,  QEc2DescribeAvailabilityZonesParser, @@bench, list.blank?
     rescue Exception
@@ -1017,10 +1027,10 @@ module Aws
   #-----------------------------------------------------------------
   #      EBS: Volumes
   #-----------------------------------------------------------------
-  
+
     # Describe all EBS volumes.
     #
-    #  ec2.describe_volumes #=> 
+    #  ec2.describe_volumes #=>
     #      [{:aws_size              => 94,
     #        :aws_device            => "/dev/sdc",
     #        :aws_attachment_status => "attached",
@@ -1039,17 +1049,17 @@ module Aws
     #        :aws_created_at => Wed Jun 18 08:19:21 UTC 2008,}, ... ]
     #
     def describe_volumes(list=[])
-      link = generate_request("DescribeVolumes", 
+      link = generate_request("DescribeVolumes",
                               hash_params('VolumeId',list.to_a))
       request_cache_or_info :describe_volumes, link,  QEc2DescribeVolumesParser, @@bench, list.blank?
     rescue Exception
       on_exception
     end
-    
-    # Create new EBS volume based on previously created snapshot. 
+
+    # Create new EBS volume based on previously created snapshot.
     # +Size+ in Gigabytes.
     #
-    #  ec2.create_volume('snap-000000', 10, zone) #=> 
+    #  ec2.create_volume('snap-000000', 10, zone) #=>
     #      {:snapshot_id    => "snap-e21df98b",
     #       :aws_status     => "creating",
     #       :aws_id         => "vol-fc9f7a95",
@@ -1058,7 +1068,7 @@ module Aws
     #       :aws_size       => 94}
     #
     def create_volume(snapshot_id, size, zone)
-      link = generate_request("CreateVolume", 
+      link = generate_request("CreateVolume",
                               "SnapshotId"        => snapshot_id.to_s,
                               "Size"              => size.to_s,
                               "AvailabilityZone"  => zone.to_s )
@@ -1067,19 +1077,19 @@ module Aws
       on_exception
     end
 
-    # Delete the specified EBS volume. 
+    # Delete the specified EBS volume.
     # This does not deletes any snapshots created from this volume.
     #
     #  ec2.delete_volume('vol-b48a6fdd') #=> true
     #
     def delete_volume(volume_id)
-      link = generate_request("DeleteVolume", 
+      link = generate_request("DeleteVolume",
                               "VolumeId" => volume_id.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
     # Attach the specified EBS volume to a specified instance, exposing the
     # volume using the specified device name.
     #
@@ -1091,7 +1101,7 @@ module Aws
     #      :aws_id          => "vol-898a6fe0" }
     #
     def attach_volume(volume_id, instance_id, device)
-      link = generate_request("AttachVolume", 
+      link = generate_request("AttachVolume",
                               "VolumeId"   => volume_id.to_s,
                               "InstanceId" => instance_id.to_s,
                               "Device"     => device.to_s)
@@ -1099,10 +1109,10 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Detach the specified EBS volume from the instance to which it is attached.
-    # 
-    #   ec2.detach_volume('vol-898a6fe0') #=> 
+    #
+    #   ec2.detach_volume('vol-898a6fe0') #=>
     #     { :aws_instance_id => "i-7c905415",
     #       :aws_device      => "/dev/sdh",
     #       :aws_status      => "detaching",
@@ -1121,14 +1131,14 @@ module Aws
       on_exception
     end
 
-    
+
   #-----------------------------------------------------------------
   #      EBS: Snapshots
   #-----------------------------------------------------------------
 
      # Describe all EBS snapshots.
      #
-     # ec2.describe_snapshots #=> 
+     # ec2.describe_snapshots #=>
      #   [ { :aws_progress   => "100%",
      #       :aws_status     => "completed",
      #       :aws_id         => "snap-72a5401b",
@@ -1141,7 +1151,7 @@ module Aws
      #       :aws_started_at => "2008-02-23T16:23:19.000Z" },...]
      #
     def describe_snapshots(list=[])
-      link = generate_request("DescribeSnapshots", 
+      link = generate_request("DescribeSnapshots",
                               hash_params('SnapshotId',list.to_a))
       request_cache_or_info :describe_snapshots, link,  QEc2DescribeSnapshotsParser, @@bench, list.blank?
     rescue Exception
@@ -1150,7 +1160,7 @@ module Aws
 
     # Create a snapshot of specified volume.
     #
-    #  ec2.create_snapshot('vol-898a6fe0') #=> 
+    #  ec2.create_snapshot('vol-898a6fe0') #=>
     #      {:aws_volume_id  => "vol-fd9f7a94",
     #       :aws_started_at => Tue Jun 24 18:40:40 UTC 2008,
     #       :aws_progress   => "",
@@ -1158,19 +1168,19 @@ module Aws
     #       :aws_id         => "snap-d56783bc"}
     #
     def create_snapshot(volume_id)
-      link = generate_request("CreateSnapshot", 
+      link = generate_request("CreateSnapshot",
                               "VolumeId" => volume_id.to_s)
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
     # Create a snapshot of specified volume, but with the normal retry algorithms disabled.
     # This method will return immediately upon error.  The user can specify connect and read timeouts (in s)
     # for the connection to AWS.  If the user does not specify timeouts, try_create_snapshot uses the default values
     # in Rightscale::HttpConnection.
     #
-    #  ec2.try_create_snapshot('vol-898a6fe0') #=> 
+    #  ec2.try_create_snapshot('vol-898a6fe0') #=>
     #      {:aws_volume_id  => "vol-fd9f7a94",
     #       :aws_started_at => Tue Jun 24 18:40:40 UTC 2008,
     #       :aws_progress   => "",
@@ -1178,25 +1188,25 @@ module Aws
     #       :aws_id         => "snap-d56783bc"}
     #
     def try_create_snapshot(volume_id, connect_timeout = nil, read_timeout = nil)
-      # For safety in the ensure block...we don't want to restore values 
+      # For safety in the ensure block...we don't want to restore values
       # if we never read them in the first place
       orig_reiteration_time = nil
       orig_http_params = nil
-      
+
       orig_reiteration_time = Aws::AWSErrorHandler::reiteration_time
       Aws::AWSErrorHandler::reiteration_time = 0
-      
+
       orig_http_params = Rightscale::HttpConnection::params()
       new_http_params = orig_http_params.dup
       new_http_params[:http_connection_retry_count] = 0
       new_http_params[:http_connection_open_timeout] = connect_timeout if !connect_timeout.nil?
       new_http_params[:http_connection_read_timeout] = read_timeout if !read_timeout.nil?
       Rightscale::HttpConnection::params = new_http_params
-      
-      link = generate_request("CreateSnapshot", 
+
+      link = generate_request("CreateSnapshot",
                               "VolumeId" => volume_id.to_s)
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
-     
+
     rescue Exception
       on_exception
     ensure
@@ -1209,17 +1219,17 @@ module Aws
     #  ec2.delete_snapshot('snap-55a5403c') #=> true
     #
     def delete_snapshot(snapshot_id)
-      link = generate_request("DeleteSnapshot", 
+      link = generate_request("DeleteSnapshot",
                               "SnapshotId" => snapshot_id.to_s)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
       on_exception
     end
-    
+
   #-----------------------------------------------------------------
   #      PARSERS: Boolean Response Parser
   #-----------------------------------------------------------------
-    
+
     class RightBoolResponseParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text=='true' ? true : false if name == 'return'
@@ -1235,14 +1245,14 @@ module Aws
         @item = {} if name == 'item'
       end
       def tagend(name)
-        case name 
+        case name
           when 'keyName'        then @item[:aws_key_name]    = @text
           when 'keyFingerprint' then @item[:aws_fingerprint] = @text
           when 'item'           then @result                << @item
         end
       end
       def reset
-        @result = [];    
+        @result = [];
       end
     end
 
@@ -1251,7 +1261,7 @@ module Aws
         @result = {} if name == 'CreateKeyPairResponse'
       end
       def tagend(name)
-        case name 
+        case name
           when 'keyName'        then @result[:aws_key_name]    = @text
           when 'keyFingerprint' then @result[:aws_fingerprint] = @text
           when 'keyMaterial'    then @result[:aws_material]    = @text
@@ -1287,9 +1297,9 @@ module Aws
     class QEc2DescribeSecurityGroupsParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         case name
-          when 'item' 
+          when 'item'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo'
-              @group = QEc2SecurityGroupItemType.new 
+              @group = QEc2SecurityGroupItemType.new
               @group.ipPermissions = []
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions'
               @perm = QEc2IpPermissionType.new
@@ -1306,9 +1316,9 @@ module Aws
           when 'groupDescription' then @group.groupDescription = @text
           when 'groupName'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item'
-              @group.groupName  = @text 
+              @group.groupName  = @text
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups/item'
-              @sgroup.groupName = @text 
+              @sgroup.groupName = @text
             end
           when 'ipProtocol'       then @perm.ipProtocol = @text
           when 'fromPort'         then @perm.fromPort   = @text
@@ -1333,7 +1343,7 @@ module Aws
   #-----------------------------------------------------------------
   #      PARSERS: Images
   #-----------------------------------------------------------------
-    
+
     class QEc2DescribeImagesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         if name == 'item' && @xmlpath[%r{.*/imagesSet$}]
@@ -1381,8 +1391,8 @@ module Aws
         end
       end
       def tagend(name)
-          # right now only 'launchPermission' is supported by Amazon. 
-          # But nobody know what will they xml later as attribute. That is why we 
+          # right now only 'launchPermission' is supported by Amazon.
+          # But nobody know what will they xml later as attribute. That is why we
           # check for 'group' and 'userId' inside of 'launchPermission/item'
         case name
           when 'imageId'            then @result[:aws_id] = @text
@@ -1406,18 +1416,18 @@ module Aws
     class QEc2DescribeInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
            # DescribeInstances property
-        if (name == 'item' && @xmlpath == 'DescribeInstancesResponse/reservationSet') || 
+        if (name == 'item' && @xmlpath == 'DescribeInstancesResponse/reservationSet') ||
            # RunInstances property
-           (name == 'RunInstancesResponse')  
+           (name == 'RunInstancesResponse')
             @reservation = { :aws_groups    => [],
                              :instances_set => [] }
-              
-        elsif (name == 'item') && 
+
+        elsif (name == 'item') &&
                 # DescribeInstances property
               ( @xmlpath=='DescribeInstancesResponse/reservationSet/item/instancesSet' ||
                # RunInstances property
                 @xmlpath=='RunInstancesResponse/instancesSet' )
-              # the optional params (sometimes are missing and we dont want them to be nil) 
+              # the optional params (sometimes are missing and we dont want them to be nil)
             @instance = { :aws_reason       => '',
                           :dns_name         => '',
                           :private_dns_name => '',
@@ -1428,12 +1438,12 @@ module Aws
         end
       end
       def tagend(name)
-        case name 
+        case name
           # reservation
           when 'reservationId'    then @reservation[:aws_reservation_id] = @text
           when 'ownerId'          then @reservation[:aws_owner]          = @text
           when 'groupId'          then @reservation[:aws_groups]        << @text
-          # instance  
+          # instance
           when 'instanceId'       then @instance[:aws_instance_id]    = @text
           when 'imageId'          then @instance[:aws_image_id]       = @text
           when 'dnsName'          then @instance[:dns_name]           = @text
@@ -1450,6 +1460,11 @@ module Aws
           when 'ramdiskId'        then @instance[:aws_ramdisk_id]     = @text
           when 'platform'         then @instance[:aws_platform]       = @text
           when 'availabilityZone' then @instance[:aws_availability_zone] = @text
+          when 'state'
+            if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/monitoring' || # DescribeInstances property
+               @xmlpath == 'RunInstancesResponse/instancesSet/item/monitoring'            # RunInstances property
+              @instance[:monitoring_state] = @text
+            end
           when 'item'
             if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet' || # DescribeInstances property
                @xmlpath == 'RunInstancesResponse/instancesSet'            # RunInstances property
@@ -1470,6 +1485,23 @@ module Aws
         @result = @text if name == 'ownerId'
       end
     end
+
+    class QEc2MonitorInstancesParser < AwsParser #:nodoc:
+         def tagstart(name, attributes)
+           @instance = {} if name == 'item'
+         end
+         def tagend(name)
+           case name
+           when 'instanceId' then @instance[:aws_instance_id] = @text
+           when 'state' then @instance[:aws_monitoring_state] = @text
+           when 'item'  then @result << @instance
+           end
+         end
+         def reset
+           @result = []
+         end
+       end
+
 
     class QEc2TerminateInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
@@ -1564,20 +1596,20 @@ module Aws
   #-----------------------------------------------------------------
   #      PARSERS: Elastic IPs
   #-----------------------------------------------------------------
-  
+
     class QEc2AllocateAddressParser < AwsParser #:nodoc:
       def tagend(name)
         @result = @text if name == 'publicIp'
       end
     end
-    
+
     class QEc2DescribeAddressesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @address = {} if name == 'item'
       end
       def tagend(name)
         case name
-        when 'instanceId' then @address[:instance_id] = @text.blank? ? nil : @text 
+        when 'instanceId' then @address[:instance_id] = @text.blank? ? nil : @text
         when 'publicIp'   then @address[:public_ip]   = @text
         when 'item'       then @result << @address
         end
@@ -1624,10 +1656,10 @@ module Aws
   #-----------------------------------------------------------------
   #      PARSERS: EBS - Volumes
   #-----------------------------------------------------------------
- 
+
     class QEc2CreateVolumeParser < AwsParser #:nodoc:
       def tagend(name)
-        case name 
+        case name
           when 'volumeId'         then @result[:aws_id]         = @text
           when 'status'           then @result[:aws_status]     = @text
           when 'createTime'       then @result[:aws_created_at] = Time.parse(@text)
@@ -1640,10 +1672,10 @@ module Aws
         @result = {}
       end
     end
-    
+
     class QEc2AttachAndDetachVolumeParser < AwsParser #:nodoc:
       def tagend(name)
-        case name 
+        case name
           when 'volumeId'   then @result[:aws_id]                = @text
           when 'instanceId' then @result[:aws_instance_id]       = @text
           when 'device'     then @result[:aws_device]            = @text
@@ -1655,7 +1687,7 @@ module Aws
         @result = {}
       end
     end
-      
+
     class QEc2DescribeVolumesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         case name
@@ -1666,7 +1698,7 @@ module Aws
         end
       end
       def tagend(name)
-        case name 
+        case name
           when 'volumeId'
             case @xmlpath
             when 'DescribeVolumesResponse/volumeSet/item' then @volume[:aws_id] = @text
@@ -1683,7 +1715,7 @@ module Aws
           when 'attachTime'       then @volume[:aws_attached_at] = Time.parse(@text)
           when 'snapshotId'       then @volume[:snapshot_id]     = @text.blank? ? nil : @text
           when 'availabilityZone' then @volume[:zone]            = @text
-          when 'item' 
+          when 'item'
             case @xmlpath
             when 'DescribeVolumesResponse/volumeSet' then @result << @volume
             end
@@ -1697,13 +1729,13 @@ module Aws
   #-----------------------------------------------------------------
   #      PARSERS: EBS - Snapshots
   #-----------------------------------------------------------------
-  
+
     class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @snapshot = {} if name == 'item'
       end
       def tagend(name)
-        case name 
+        case name
           when 'volumeId'   then @snapshot[:aws_volume_id]  = @text
           when 'snapshotId' then @snapshot[:aws_id]         = @text
           when 'status'     then @snapshot[:aws_status]     = @text
@@ -1719,7 +1751,7 @@ module Aws
 
     class QEc2CreateSnapshotParser < AwsParser #:nodoc:
       def tagend(name)
-        case name 
+        case name
           when 'volumeId'   then @result[:aws_volume_id]  = @text
           when 'snapshotId' then @result[:aws_id]         = @text
           when 'status'     then @result[:aws_status]     = @text
@@ -1731,7 +1763,7 @@ module Aws
         @result = {}
       end
     end
-    
+
   end
 
 end
