@@ -29,7 +29,7 @@ module Aws
     require 'uri'
 
     class AwsUtils #:nodoc:
-        @@digest1   = OpenSSL::Digest::Digest.new("sha1")
+        @@digest1 = OpenSSL::Digest::Digest.new("sha1")
         @@digest256 = nil
         if OpenSSL::OPENSSL_VERSION_NUMBER > 0x00908000
             @@digest256 = OpenSSL::Digest::Digest.new("sha256") rescue nil # Some installation may not support sha256
@@ -74,7 +74,7 @@ module Aws
             # select a signing method (make an old openssl working with sha1)
             # make 'HmacSHA256' to be a default one
             service_hash['SignatureMethod'] = 'HmacSHA256' unless ['HmacSHA256', 'HmacSHA1'].include?(service_hash['SignatureMethod'])
-            service_hash['SignatureMethod'] = 'HmacSHA1'   unless @@digest256
+            service_hash['SignatureMethod'] = 'HmacSHA1' unless @@digest256
             # select a digest
             digest = (service_hash['SignatureMethod'] == 'HmacSHA256' ? @@digest256 : @@digest1)
             # form string to sign
@@ -83,7 +83,7 @@ module Aws
             end.join('&')
             string_to_sign = "#{http_verb.to_s.upcase}\n#{host.downcase}\n#{uri}\n#{canonical_string}"
             # sign the string
-            signature      = escape_sig(Base64.encode64(OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)).strip)
+            signature = escape_sig(Base64.encode64(OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)).strip)
             "#{canonical_string}&Signature=#{signature}"
         end
 
@@ -191,9 +191,11 @@ module Aws
         DEFAULT_SIGNATURE_VERSION = '2'
 
         @@caching = false
+
         def self.caching
             @@caching
         end
+
         def self.caching=(caching)
             @@caching = caching
         end
@@ -222,21 +224,21 @@ module Aws
         def init(service_info, aws_access_key_id, aws_secret_access_key, params={}) #:nodoc:
             @params = params
             raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
-        if aws_access_key_id.blank? || aws_secret_access_key.blank?
-            @aws_access_key_id     = aws_access_key_id
+ if aws_access_key_id.blank? || aws_secret_access_key.blank?
+            @aws_access_key_id = aws_access_key_id
             @aws_secret_access_key = aws_secret_access_key
             # if the endpoint was explicitly defined - then use it
             if @params[:endpoint_url]
-                @params[:server]   = URI.parse(@params[:endpoint_url]).host
-                @params[:port]     = URI.parse(@params[:endpoint_url]).port
-                @params[:service]  = URI.parse(@params[:endpoint_url]).path
+                @params[:server] = URI.parse(@params[:endpoint_url]).host
+                @params[:port] = URI.parse(@params[:endpoint_url]).port
+                @params[:service] = URI.parse(@params[:endpoint_url]).path
                 @params[:protocol] = URI.parse(@params[:endpoint_url]).scheme
-                @params[:region]   = nil
+                @params[:region] = nil
             else
-                @params[:server]   ||= service_info[:default_host]
-                @params[:server]     = "#{@params[:region]}.#{@params[:server]}" if @params[:region]
-                @params[:port]     ||= service_info[:default_port]
-                @params[:service]  ||= service_info[:default_service]
+                @params[:server] ||= service_info[:default_host]
+                @params[:server] = "#{@params[:region]}.#{@params[:server]}" if @params[:region]
+                @params[:port] ||= service_info[:default_port]
+                @params[:service] ||= service_info[:default_service]
                 @params[:protocol] ||= service_info[:default_protocol]
             end
             if !@params[:multi_thread].nil? && @params[:connection_mode].nil? # user defined this
@@ -247,7 +249,7 @@ module Aws
             @params[:connection_mode] = :per_request if @params[:connection_mode] == :default
             @logger = @params[:logger]
             @logger = RAILS_DEFAULT_LOGGER if !@logger && defined?(RAILS_DEFAULT_LOGGER)
-            @logger = Logger.new(STDOUT)   if !@logger
+            @logger = Logger.new(STDOUT) if !@logger
             @logger.info "New #{self.class.name} using #{@params[:connection_mode].to_s}-connection mode"
             @error_handler = nil
             @cache = {}
@@ -288,9 +290,9 @@ module Aws
                 unless @cache[function] && @cache[function][:response_md5] == response_md5
                     # well, the response is new, reset cache data
                     update_cache(function, {:response_md5 => response_md5,
-                                            :timestamp    => Time.now,
-                                            :hits         => 0,
-                                            :parsed       => nil})
+                                            :timestamp => Time.now,
+                                            :hits => 0,
+                                            :parsed => nil})
                 else
                     # aha, cache hits, update the data and throw an exception if needed
                     @cache[function][:hits] += 1
@@ -321,8 +323,8 @@ module Aws
         end
 
         def request_info_impl(connection, benchblock, request, parser, &block) #:nodoc:
-            @connection    = connection
-            @last_request  = request[:request]
+            @connection = connection
+            @last_request = request[:request]
             @last_response = nil
             response=nil
             blockexception = nil
@@ -345,7 +347,7 @@ module Aws
                                 response.read_body(&block)
                             else
                                 @error_handler = AWSErrorHandler.new(self, parser, :errors_list => self.class.amazon_problems) unless @error_handler
-                                check_result   = @error_handler.check(request)
+                                check_result = @error_handler.check(request)
                                 if check_result
                                     @error_handler = nil
                                     return check_result
@@ -378,7 +380,7 @@ module Aws
                     return parser.result
                 else
                     @error_handler = AWSErrorHandler.new(self, parser, :errors_list => self.class.amazon_problems) unless @error_handler
-                    check_result   = @error_handler.check(request)
+                    check_result = @error_handler.check(request)
                     if check_result
                         @error_handler = nil
                         return check_result
@@ -413,6 +415,12 @@ module Aws
             @last_response && @last_response.body.to_s[%r{<requestId>(.+?)</requestId>}] && $1
         end
 
+        def hash_params(prefix, list) #:nodoc:
+            groups = {}
+            list.each_index{|i| groups.update("#{prefix}.#{i+1}"=>list[i])} if list
+            return groups
+        end
+
     end
 
 
@@ -436,9 +444,9 @@ module Aws
         attr_reader :request_data
 
         def initialize(errors=nil, http_code=nil, request_id=nil, request_data=nil)
-            @errors      = errors
-            @request_id  = request_id
-            @http_code   = http_code
+            @errors = errors
+            @request_id = request_id
+            @http_code = http_code
             @request_data = request_data
             msg = @errors.is_a?(Array) ? @errors.map{|code, msg| "#{code}: #{msg}"}.join("; ") : @errors.to_s
             msg += "\nREQUEST(#{@request_data})" unless @request_data.nil?
@@ -469,14 +477,14 @@ module Aws
                 puts error_text if options[:puts]
                 # Log the error
                 if options[:log]
-                    request  = aws.last_request  ? aws.last_request.path :  '-none-'
+                    request = aws.last_request ? aws.last_request.path : '-none-'
                     response = aws.last_response ? "#{aws.last_response.code} -- #{aws.last_response.message} -- #{aws.last_response.body}" : '-none-'
                     aws.logger.error error_text
                     aws.logger.error "Request was:  #{request}"
                     aws.logger.error "Response was: #{response}"
                 end
             end
-            raise if options[:raise]  # re-raise an exception
+            raise if options[:raise] # re-raise an exception
             return nil
         end
 
@@ -494,33 +502,41 @@ module Aws
         DEFAULT_CLOSE_ON_4XX_PROBABILITY = 10
 
         @@reiteration_start_delay = 0.2
+
         def self.reiteration_start_delay
             @@reiteration_start_delay
         end
+
         def self.reiteration_start_delay=(reiteration_start_delay)
             @@reiteration_start_delay = reiteration_start_delay
         end
 
         @@reiteration_time = 5
+
         def self.reiteration_time
             @@reiteration_time
         end
+
         def self.reiteration_time=(reiteration_time)
             @@reiteration_time = reiteration_time
         end
 
         @@close_on_error = true
+
         def self.close_on_error
             @@close_on_error
         end
+
         def self.close_on_error=(close_on_error)
             @@close_on_error = close_on_error
         end
 
         @@close_on_4xx_probability = DEFAULT_CLOSE_ON_4XX_PROBABILITY
+
         def self.close_on_4xx_probability
             @@close_on_4xx_probability
         end
+
         def self.close_on_4xx_probability=(close_on_4xx_probability)
             @@close_on_4xx_probability = close_on_4xx_probability
         end
@@ -531,26 +547,26 @@ module Aws
         #  :close_on_error           = true | false
         #  :close_on_4xx_probability = 1-100
         def initialize(aws, parser, params={}) #:nodoc:
-            @aws           = aws              # Link to RightEc2 | RightSqs | RightS3 instance
-            @parser        = parser           # parser to parse Amazon response
-            @started_at    = Time.now
-            @stop_at       = @started_at  + (params[:reiteration_time] || @@reiteration_time)
-            @errors_list   = params[:errors_list] || []
+            @aws = aws # Link to RightEc2 | RightSqs | RightS3 instance
+            @parser = parser # parser to parse Amazon response
+            @started_at = Time.now
+            @stop_at = @started_at + (params[:reiteration_time] || @@reiteration_time)
+            @errors_list = params[:errors_list] || []
             @reiteration_delay = @@reiteration_start_delay
-            @retries       = 0
+            @retries = 0
             # close current HTTP(S) connection on 5xx, errors from list and 4xx errors
-            @close_on_error           = params[:close_on_error].nil? ? @@close_on_error : params[:close_on_error]
+            @close_on_error = params[:close_on_error].nil? ? @@close_on_error : params[:close_on_error]
             @close_on_4xx_probability = params[:close_on_4xx_probability] || @@close_on_4xx_probability
         end
 
         # Returns false if
-        def check(request)  #:nodoc:
-            result           = false
-            error_found      = false
+        def check(request) #:nodoc:
+            result = false
+            error_found = false
             redirect_detected= false
-            error_match      = nil
+            error_match = nil
             last_errors_text = ''
-            response         = @aws.last_response
+            response = @aws.last_response
             # log error
             request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
             # is this a redirect?
@@ -563,13 +579,13 @@ module Aws
                 @aws.logger.warn("##### #{@aws.class.name} request: #{request_text_data} ####")
             end
             # Check response body: if it is an Amazon XML document or not:
-            if redirect_detected || (response.body && response.body[/<\?xml/])   # ... it is a xml document
+            if redirect_detected || (response.body && response.body[/<\?xml/]) # ... it is a xml document
                 @aws.class.bench_xml.add! do
                     error_parser = RightErrorResponseParser.new
                     error_parser.parse(response)
-                    @aws.last_errors     = error_parser.errors
+                    @aws.last_errors = error_parser.errors
                     @aws.last_request_id = error_parser.requestID
-                    last_errors_text     = @aws.last_errors.flatten.join("\n")
+                    last_errors_text = @aws.last_errors.flatten.join("\n")
                     # on redirect :
                     if redirect_detected
                         location = response['location']
@@ -577,15 +593,15 @@ module Aws
                         @aws.logger.info("##### #{@aws.class.name} redirect requested: #{response.code} #{response.message} #####")
                         @aws.logger.info("##### New location: #{location} #####")
                         # ... fix the connection data
-                        request[:server]   = URI.parse(location).host
+                        request[:server] = URI.parse(location).host
                         request[:protocol] = URI.parse(location).scheme
-                        request[:port]     = URI.parse(location).port
+                        request[:port] = URI.parse(location).port
                     end
                 end
-            else                               # ... it is not a xml document(probably just a html page?)
-                @aws.last_errors     = [[response.code, "#{response.message} (#{request_text_data})"]]
+            else # ... it is not a xml document(probably just a html page?)
+                @aws.last_errors = [[response.code, "#{response.message} (#{request_text_data})"]]
                 @aws.last_request_id = '-undefined-'
-                last_errors_text     = response.message
+                last_errors_text = response.message
             end
             # now - check the error
             unless redirect_detected
@@ -690,7 +706,7 @@ module Aws
         end
     end
 
-    class AwsParser  #:nodoc:
+    class AwsParser #:nodoc:
         # default parsing library
         DEFAULT_XML_LIBRARY = 'rexml'
         # a list of supported parsers
@@ -700,20 +716,21 @@ module Aws
         def self.xml_lib
             @@xml_lib
         end
+
         def self.xml_lib=(new_lib_name)
             @@xml_lib = new_lib_name
         end
 
         attr_accessor :result
-        attr_reader   :xmlpath
+        attr_reader :xmlpath
         attr_accessor :xml_lib
 
         def initialize(params={})
             @xmlpath = ''
-            @result  = false
-            @text    = ''
+            @result = false
+            @text = ''
             @xml_lib = params[:xml_lib] || @@xml_lib
-            @logger  = params[:logger]
+            @logger = params[:logger]
             reset
         end
 
@@ -769,15 +786,15 @@ module Aws
             # Parse the xml text
             case @xml_lib
                 when 'libxml'
-                    xml        = XML::SaxParser.new
+                    xml = XML::SaxParser.new
                     xml.string = xml_text
                     # check libxml-ruby version
                     if XML::Parser::VERSION >= '0.5.1.0'
                         xml.callbacks = RightSaxParserCallback.new(self)
                     else
                         xml.on_start_element{|name, attr_hash| self.tag_start(name, attr_hash)}
-                        xml.on_characters{   |text|            self.text(text)}
-                        xml.on_end_element{  |name|            self.tag_end(name)}
+                        xml.on_characters{ |text| self.text(text)}
+                        xml.on_end_element{ |name| self.tag_end(name)}
                     end
                     xml.parse
                 else
@@ -829,7 +846,7 @@ module Aws
 #</Error>
 
     class RightErrorResponseParser < AwsParser #:nodoc:
-        attr_accessor :errors  # array of hashes: error/message
+        attr_accessor :errors # array of hashes: error/message
         attr_accessor :requestID
 #    attr_accessor :endpoint, :host_id, :bucket
         def tagend(name)
@@ -837,14 +854,14 @@ module Aws
                 when 'RequestID';
                     @requestID = @text
                 when 'Code';
-                    @code      = @text
+                    @code = @text
                 when 'Message';
-                    @message   = @text
+                    @message = @text
 #       when 'Endpoint'  ; @endpoint  = @text
 #       when 'HostId'    ; @host_id   = @text
 #       when 'Bucket'    ; @bucket    = @text
                 when 'Error';
-                    @errors   << [ @code, @message ]
+                    @errors << [ @code, @message ]
             end
         end
 
@@ -855,7 +872,7 @@ module Aws
 
     # Dummy parser - does nothing
     # Returns the original params back
-    class RightDummyParser  # :nodoc:
+    class RightDummyParser # :nodoc:
         attr_accessor :result
 
         def parse(response, params={})

@@ -147,8 +147,6 @@ module Aws
             #params['CustomUnit'] = customUnit always nil
             params['Namespace'] = namespace
 
-            @logger.info("get Metric Statistics ")
-
             link = generate_request("GetMetricStatistics", params)
             resp = request_info(link, QMonGetMetricStatistics.new(:logger => @logger))
 
