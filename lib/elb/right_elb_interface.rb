@@ -134,6 +134,24 @@ module Aws
             on_exception
         end
 
+        def deregister_instances_from_load_balancer(name, instance_ids)
+            params = {}
+            params['LoadBalancerName'] = name
+
+            i = 1
+            instance_ids.each do |l|
+                params["Instances.member.#{i}.InstanceId"] = "#{l}"
+                i += 1
+            end
+
+            @logger.info("Deregistering Instances #{instance_ids.join(',')} from Load Balancer '#{name}'")
+
+            link = generate_request("DeregisterInstancesFromLoadBalancer", params) # Same response as register I believe
+            resp = request_info(link, QElbRegisterInstanceParser.new(:logger => @logger))
+
+        rescue Exception
+            on_exception
+        end
 
         def describe_load_balancers(lparams={})
             @logger.info("Describing Load Balancers")
