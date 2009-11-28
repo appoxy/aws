@@ -134,6 +134,25 @@ module Aws
             on_exception
         end
 
+        def deregister_instances_from_load_balancer(name, instance_ids)
+            params = {}
+            params['LoadBalancerName'] = name
+
+            i = 1
+            instance_ids.each do |l|
+                params["Instances.member.#{i}.InstanceId"] = "#{l}"
+                i += 1
+            end
+
+            @logger.info("Deregistering Instances #{instance_ids.join(',')} from Load Balancer '#{name}'")
+
+            link = generate_request("DeregisterInstancesFromLoadBalancer", params) # Same response as register I believe
+            resp = request_info(link, QElbRegisterInstanceParser.new(:logger => @logger))
+
+        rescue Exception
+            on_exception
+        end
+
 
         def describe_load_balancers(lparams={})
             @logger.info("Describing Load Balancers")
@@ -148,6 +167,25 @@ module Aws
         rescue Exception
             on_exception
         end
+
+
+        # Only supports one instance at a time as of now..
+        def describe_instance_health(name, instance_id)
+            @logger.info("Describing Instance Health")
+            params = {}
+
+            params['LoadBalancerName'] = name
+            params["Instances.member.1.InstanceId"] = instance_id
+
+            link = generate_request("DescribeInstanceHealth", params)
+
+            resp = request_info(link, QElbDescribeInstanceHealthParser.new(:logger => @logger))
+
+        rescue Exception
+            on_exception
+        end
+
+
 
         def delete_load_balancer(name)
             @logger.info("Deleting Load Balancer - " + name.to_s)
@@ -257,12 +295,9 @@ module Aws
         end
 
         class QElbRegisterInstanceParser < AwsParser
-
             def reset
                 @result = {}
             end
-
-
             def tagend(name)
                 case name
                     when 'InstanceId' then
@@ -271,13 +306,22 @@ module Aws
             end
         end
 
-        class QElbDeleteParser < AwsParser
+        class QElbDescribeInstanceHealthParser < AwsParser
+            def reset
+                @result = {}
+            end
+            def tagend(name)
+                case name
+                    when 'State' then
+                        @result[:state] = @text
+                end
+            end
+        end
 
+        class QElbDeleteParser < AwsParser
             def reset
                 @result = true
             end
-
-
         end
 
 
