@@ -71,8 +71,8 @@ module Aws
     API_VERSION       = "2009-08-15"
     DEFAULT_HOST      = "ec2.amazonaws.com"
     DEFAULT_PATH      = '/'
-    DEFAULT_PROTOCOL  = 'http'
-    DEFAULT_PORT      = 80
+    DEFAULT_PROTOCOL  = 'https'
+    DEFAULT_PORT      = 443
 
     # Default addressing type (public=NAT, direct=no-NAT) used when launching instances.
     DEFAULT_ADDRESSING_TYPE =  'public'
