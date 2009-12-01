@@ -343,7 +343,7 @@ module Aws
                     bunch_of_records_requested = args.size > 1 || args.first.is_a?(Array)
                     # flatten ids
                     args = args.to_a.flatten
-                    args.each { |id| cond << "id=#{self.connection.escape(id)}" }
+                    args.each { |id| cond << "itemName() = #{self.connection.escape(id)}" }
                     ids_cond = "(#{cond.join(' OR ')})"
                     # user defined :conditions to string (if it was defined)
                     options[:conditions] = build_conditions(options[:conditions])
