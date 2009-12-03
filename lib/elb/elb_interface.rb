@@ -128,7 +128,7 @@ module Aws
             @logger.info("Registering Instances #{instance_ids.join(',')} with Load Balancer '#{name}'")
 
             link = generate_request("RegisterInstancesWithLoadBalancer", params)
-            resp = request_info(link, QElbRegisterInstanceParser.new(:logger => @logger))
+            resp = request_info(link, QElbRegisterInstancesParser.new(:logger => @logger))
 
         rescue Exception
             on_exception
@@ -147,11 +147,12 @@ module Aws
             @logger.info("Deregistering Instances #{instance_ids.join(',')} from Load Balancer '#{name}'")
 
             link = generate_request("DeregisterInstancesFromLoadBalancer", params) # Same response as register I believe
-            resp = request_info(link, QElbRegisterInstanceParser.new(:logger => @logger))
+            resp = request_info(link, QElbRegisterInstancesParser.new(:logger => @logger))
 
         rescue Exception
             on_exception
         end
+
 
         def describe_load_balancers(lparams={})
             @logger.info("Describing Load Balancers")
@@ -166,6 +167,30 @@ module Aws
         rescue Exception
             on_exception
         end
+
+
+        def describe_instance_health(name, instance_ids)
+            instance_ids = [instance_ids] if instance_ids.is_a?(String)
+#            @logger.info("Describing Instance Health")
+            params = {}
+            params['LoadBalancerName'] = name
+
+            i = 1
+            instance_ids.each do |l|
+                params["Instances.member.#{i}.InstanceId"] = "#{l}"
+                i += 1
+            end
+
+            @logger.info("Describing Instances Health #{instance_ids.join(',')} with Load Balancer '#{name}'")
+
+            link = generate_request("DescribeInstanceHealth", params)
+            resp = request_info(link, QElbDescribeInstancesHealthParser.new(:logger => @logger))
+
+
+        rescue Exception
+            on_exception
+        end
+
 
         def delete_load_balancer(name)
             @logger.info("Deleting Load Balancer - " + name.to_s)
@@ -274,28 +299,61 @@ module Aws
             end
         end
 
-        class QElbRegisterInstanceParser < AwsParser
+        class QElbRegisterInstancesParser < AwsParser
 
             def reset
-                @result = {}
+                @result = []
             end
 
+            def tagstart(name, attributes)
+#                puts 'tagstart ' + name + ' -- ' + @xmlpath
+                if (name == 'member' && @xmlpath == 'RegisterInstancesWithLoadBalancerResult/Instances/member')
+                    @member = { }
+                end
 
+            end
             def tagend(name)
                 case name
                     when 'InstanceId' then
-                        @result[:instance_id] = @text
+                        @member[:instance_id] = @text
                 end
             end
+#
+        end
+
+        class QElbDescribeInstancesHealthParser < AwsParser
+
+            def reset
+                @result = []
+            end
+
+            def tagstart(name, attributes)
+#                puts 'tagstart ' + name + ' -- ' + @xmlpath
+                if (name == 'member' && @xmlpath == 'DescribeInstanceHealthResult/InstanceStates')
+                    @member = { }
+                end
+            end
+
+            def tagend(name)
+                case name
+                    when 'Description' then
+                        @member[:description] = @text
+                    when 'State' then
+                        @member[:state] = @text
+                    when 'InstanceId' then
+                        @member[:instance_id] = @text
+                    when 'ReasonCode' then
+                        @member[:reason_code] = @text
+
+                end
+            end
+#
         end
 
         class QElbDeleteParser < AwsParser
-
             def reset
                 @result = true
             end
-
-
         end
 
 

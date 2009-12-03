@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
      "lib/awsbase/support.rb",
      "lib/ec2/right_ec2.rb",
      "lib/ec2/right_mon_interface.rb",
-     "lib/elb/right_elb_interface.rb",
+     "lib/elb/elb_interface.rb",
      "lib/right_aws.rb",
      "lib/s3/right_s3.rb",
      "lib/s3/right_s3_interface.rb",
