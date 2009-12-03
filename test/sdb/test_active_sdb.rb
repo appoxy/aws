@@ -4,9 +4,13 @@ require File.dirname(__FILE__) + '/../test_credentials.rb'
 class TestSdb < Test::Unit::TestCase
   
   DOMAIN_NAME = 'right_sdb_awesome_test_domain'
+  DASH_DOMAIN_NAME = 'right_sdb-awesome_test_domain'
   
   class Client < Aws::ActiveSdb::Base
     set_domain_name DOMAIN_NAME
+  end
+  class DashClient < RightAws::ActiveSdb::Base
+    set_domain_name DASH_DOMAIN_NAME
   end
 
   def setup
@@ -112,6 +116,39 @@ class TestSdb < Test::Unit::TestCase
     # find one record by unknown id
     assert_raise(Aws::ActiveSdb::ActiveSdbError) do
       Client.find('dummy_id')
+    end
+  end
+
+  def test_04b_find_all_dashed
+    # retrieve all the DB, make sure all are in place
+    clients = DashedClient.find(:all)
+    ids = clients.map{|client| client.id }[0..1]
+    assert_equal @clients.size + 1, clients.size
+    # retrieve all presidents (must find: Bush, Putin, Medvedev)
+    assert_equal 3, DashedClient.find(:all, :conditions => ["[?=?]",'post','president']).size
+    # retrieve all russian presidents (must find: Putin, Medvedev)
+    assert_equal 2, DashedClient.find(:all, :conditions => ["['post'=?] intersection ['country'=?]",'president', 'Russia']).size
+    # retrieve all russian presidents and all women (must find: Putin, Medvedev, 2 Maries and Sandy)
+    assert_equal 5, DashedClient.find(:all, :conditions => ["['post'=?] intersection ['country'=?] union ['gender'=?]",'president', 'Russia','female']).size
+    # find all rissian presidents Bushes
+    assert_equal 0, DashedClient.find(:all, :conditions => ["['post'=?] intersection ['country'=?] intersection ['name'=?]",'president', 'Russia','Bush']).size
+    # --- find by ids
+    # must find 1 rec (by rec id) and return it
+    assert_equal ids.first, DashedClient.find(ids.first).id
+    # must find 1 rec (by one item array) and return an array
+    assert_equal ids.first, DashedClient.find([ids.first]).first.id
+    # must find 2 recs (by a list of comma separated ids) and return an array
+    assert_equal ids.size, DashedClient.find(*ids).size
+    # must find 2 recs (by an array of ids) and return an array
+    assert_equal ids.size, DashedClient.find(ids).size
+    ids << 'dummy_id'
+    # must raise an error when getting unexistent record
+    assert_raise(RightAws::ActiveSdb::ActiveSdbError) do 
+      DashedClient.find(ids)
+    end
+    # find one record by unknown id
+    assert_raise(RightAws::ActiveSdb::ActiveSdbError) do
+      DashedClient.find('dummy_id')
     end
   end
 

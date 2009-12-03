@@ -563,7 +563,7 @@ module Aws
                         sort_by, sort_order = sort_options(options[:order])
                         conditions << (conditions.blank? ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
                     end
-                    "SELECT #{select} FROM #{from}#{conditions}#{order}#{limit}"
+                    "SELECT #{select} FROM `#{from}`#{conditions}#{order}#{limit}"
                 end
 
                 def build_conditions(conditions) # :nodoc:
