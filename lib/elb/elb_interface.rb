@@ -307,7 +307,9 @@ module Aws
 
             def tagstart(name, attributes)
 #                puts 'tagstart ' + name + ' -- ' + @xmlpath
-                if (name == 'member' && @xmlpath == 'RegisterInstancesWithLoadBalancerResponse/RegisterInstancesWithLoadBalancerResult/Instances/member')
+                if (name == 'member' &&
+                        (@xmlpath == 'RegisterInstancesWithLoadBalancerResponse/RegisterInstancesWithLoadBalancerResult/Instances/member' ||
+                        @xmlpath == 'DeregisterInstancesFromLoadBalancerResponse/DeregisterInstancesFromLoadBalancerResult/Instances/member'))
                     @member = { }
                 end
 
