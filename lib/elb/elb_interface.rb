@@ -169,7 +169,7 @@ module Aws
         end
 
 
-        def describe_instance_health(name, instance_ids)
+        def describe_instance_health(name, instance_ids=[])
             instance_ids = [instance_ids] if instance_ids.is_a?(String)
 #            @logger.info("Describing Instance Health")
             params = {}
@@ -306,16 +306,19 @@ module Aws
             end
 
             def tagstart(name, attributes)
-#                puts 'tagstart ' + name + ' -- ' + @xmlpath
-                if (name == 'member' && @xmlpath == 'RegisterInstancesWithLoadBalancerResult/Instances/member')
+                puts 'tagstart ' + name + ' -- ' + @xmlpath
+                if (name == 'member' && @xmlpath == 'RegisterInstancesWithLoadBalancerResponse/RegisterInstancesWithLoadBalancerResult/Instances/member')
                     @member = { }
                 end
 
             end
+
             def tagend(name)
                 case name
                     when 'InstanceId' then
                         @member[:instance_id] = @text
+                    when 'member' then
+                        @result << @member
                 end
             end
 #
@@ -328,8 +331,8 @@ module Aws
             end
 
             def tagstart(name, attributes)
-#                puts 'tagstart ' + name + ' -- ' + @xmlpath
-                if (name == 'member' && @xmlpath == 'DescribeInstanceHealthResult/InstanceStates')
+                puts 'tagstart ' + name + ' -- ' + @xmlpath
+                if (name == 'member' && @xmlpath == 'DescribeInstanceHealthResponse/DescribeInstanceHealthResult/InstanceStates')
                     @member = { }
                 end
             end
@@ -344,7 +347,8 @@ module Aws
                         @member[:instance_id] = @text
                     when 'ReasonCode' then
                         @member[:reason_code] = @text
-
+                    when 'member' then
+                        @result << @member
                 end
             end
 #
