@@ -306,7 +306,7 @@ module Aws
             end
 
             def tagstart(name, attributes)
-                puts 'tagstart ' + name + ' -- ' + @xmlpath
+#                puts 'tagstart ' + name + ' -- ' + @xmlpath
                 if (name == 'member' && @xmlpath == 'RegisterInstancesWithLoadBalancerResponse/RegisterInstancesWithLoadBalancerResult/Instances/member')
                     @member = { }
                 end
@@ -331,7 +331,7 @@ module Aws
             end
 
             def tagstart(name, attributes)
-                puts 'tagstart ' + name + ' -- ' + @xmlpath
+#                puts 'tagstart ' + name + ' -- ' + @xmlpath
                 if (name == 'member' && @xmlpath == 'DescribeInstanceHealthResponse/DescribeInstanceHealthResult/InstanceStates')
                     @member = { }
                 end
