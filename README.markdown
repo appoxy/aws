@@ -18,6 +18,10 @@ http://groups.google.com/group/ruby-aws
 
 http://appoxy.lighthouseapp.com/projects/38441-aws/overview
 
+## Documentation
+
+http://rdoc.info/projects/appoxy/aws
+
 ## Appoxy Amazon Web Services Ruby Gems
 
 Published by Appoxy LLC, under the MIT License. Special thanks to RightScale from which this project is forked.
