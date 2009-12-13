@@ -22,7 +22,7 @@
 #
 
 module Aws
-  
+
   # = Aws::S3 -- RightScale's Amazon S3 interface
   # The Aws::S3 class provides a complete interface to Amazon's Simple
   # Storage Service.
@@ -35,25 +35,25 @@ module Aws
   # Error handling: all operations raise an Aws::AwsError in case
   # of problems. Note that transient errors are automatically retried.
   #
-  # It is a good way to use domain naming style getting a name for the buckets. 
+  # It is a good way to use domain naming style getting a name for the buckets.
   # See http://docs.amazonwebservices.com/AmazonS3/2006-03-01/UsingBucket.html
   # about the naming convention for the buckets. This case they can be accessed using a virtual domains.
-  # 
+  #
   # Let assume you have 3 buckets: 'awesome-bucket', 'awesome_bucket' and 'AWEsomE-bucket'.
   # The first ones objects can be accessed as: http:// awesome-bucket.s3.amazonaws.com/key/object
-  # 
+  #
   # But the rest have to be accessed as:
   # http:// s3.amazonaws.com/awesome_bucket/key/object and  http:// s3.amazonaws.com/AWEsomE-bucket/key/object
-  #  
+  #
   # See: http://docs.amazonwebservices.com/AmazonS3/2006-03-01/VirtualHosting.html for better explanation.
   #
   class S3
     attr_reader :interface
-    
+
     # Create a new handle to an S3 account. All handles share the same per process or per thread
     # HTTP connection to Amazon S3. Each handle is for a specific account.
     # The +params+ are passed through as-is to Aws::S3Interface.new
-    # 
+    #
     # Params is a hash:
     #
     #    {:server       => 's3.amazonaws.com'   # Amazon service host: 's3.amazonaws.com'(default)
@@ -64,7 +64,7 @@ module Aws
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       @interface = S3Interface.new(aws_access_key_id, aws_secret_access_key, params)
     end
-    
+
     # Retrieve a list of buckets.
     # Returns an array of Aws::S3::Bucket instances.
     #  # Create handle to S3 account
@@ -77,7 +77,7 @@ module Aws
         Bucket.new(self, entry[:name], entry[:creation_date], owner)
       end
     end
-    
+
     # Retrieve an individual bucket.
     # If the bucket does not exist and +create+ is set, a new bucket
     # is created on S3. Launching this method with +create+=+true+ may
@@ -93,26 +93,29 @@ module Aws
     #  bucket2.keys  #=> list of keys
     #  # create a bucket at the European location with public read access
     #  bucket3 = s3.bucket('my-awesome-bucket-3', true, 'public-read', :location => :eu)
-    #  
+    #
     #  see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTAccessPolicy.html
     #  (section: Canned Access Policies)
     #
     def bucket(name, create=false, perms=nil, headers={})
       headers['x-amz-acl'] = perms if perms
       @interface.create_bucket(name, headers) if create
-      buckets.each { |bucket| return bucket if bucket.name == name }
-      nil
+      return Bucket.new(self, name)
+        # The old way below was too slow and unnecessary because it retreived all the buckets every time.
+        #            owner = Owner.new(entry[:owner_id], entry[:owner_display_name])
+#       buckets.each { |bucket| return bucket if bucket.name == name }
+#      nil
     end
-    
+
 
     class Bucket
       attr_reader :s3, :name, :owner, :creation_date
-      
+
       # Create a Bucket instance.
       # If the bucket does not exist and +create+ is set, a new bucket
       # is created on S3. Launching this method with +create+=+true+ may
       # affect on the bucket's ACL if the bucket already exists.
-      # Returns Bucket instance or +nil+ if the bucket does not exist 
+      # Returns Bucket instance or +nil+ if the bucket does not exist
       # and +create+ is not set.
       #
       #  s3 = Aws::S3.new(aws_access_key_id, aws_secret_access_key)
@@ -124,11 +127,11 @@ module Aws
       #  bucket2.keys  #=> list of keys
       #  # create a bucket at the European location with public read access
       #  bucket3 = Aws::S3::Bucket.create(s3,'my-awesome-bucket-3', true, 'public-read', :location => :eu)
-      #  
+      #
       #  see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTAccessPolicy.html
       #  (section: Canned Access Policies)
       #
-      def self.create(s3, name, create=false, perms=nil, headers={}) 
+      def self.create(s3, name, create=false, perms=nil, headers={})
         s3.bucket(name, create, perms, headers)
       end
 
@@ -145,7 +148,7 @@ module Aws
           @creation_date = Time.parse(@creation_date)
         end
       end
-      
+
         # Return bucket name as a String.
         #
         #  bucket = Aws::S3.bucket('my_awesome_bucket')
@@ -155,30 +158,30 @@ module Aws
         @name.to_s
       end
       alias_method :full_name, :to_s
-      
+
         # Return a public link to bucket.
-        # 
+        #
         #  bucket.public_link #=> 'https://s3.amazonaws.com:443/my_awesome_bucket'
         #
       def public_link
         params = @s3.interface.params
         "#{params[:protocol]}://#{params[:server]}:#{params[:port]}/#{full_name}"
       end
-      
+
         # Returns the bucket location
       def location
         @location ||= @s3.interface.bucket_location(@name)
       end
-      
-      # Retrieves the logging configuration for a bucket. 
+
+      # Retrieves the logging configuration for a bucket.
       # Returns a hash of {:enabled, :targetbucket, :targetprefix}
-      # 
+      #
       #   bucket.logging_info()
       #   => {:enabled=>true, :targetbucket=>"mylogbucket", :targetprefix=>"loggylogs/"}
       def logging_info
         @s3.interface.get_logging_parse(:bucket => @name)
       end
-      
+
       # Enables S3 server access logging on a bucket.  The target bucket must have been properly configured to receive server
       # access logs.
       #  Params:
@@ -193,17 +196,17 @@ module Aws
         xmldoc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><BucketLoggingStatus xmlns=\"http://doc.s3.amazonaws.com/2006-03-01\"><LoggingEnabled><TargetBucket>#{params[:targetbucket]}</TargetBucket><TargetPrefix>#{params[:targetprefix]}</TargetPrefix></LoggingEnabled></BucketLoggingStatus>"
         @s3.interface.put_logging(:bucket => @name, :xmldoc => xmldoc)
       end
-      
+
       # Disables S3 server access logging on a bucket.  Takes no arguments.
       def disable_logging
         xmldoc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><BucketLoggingStatus xmlns=\"http://doc.s3.amazonaws.com/2006-03-01\"></BucketLoggingStatus>"
         @s3.interface.put_logging(:bucket => @name, :xmldoc => xmldoc)
       end
 
-        # Retrieve a group of keys from Amazon. 
-        # +options+ is a hash: { 'prefix'=>'', 'marker'=>'', 'max-keys'=>5, 'delimiter'=>'' }). 
-        # Retrieves meta-headers information if +head+ it +true+. 
-        # Returns an array of Key instances. 
+        # Retrieve a group of keys from Amazon.
+        # +options+ is a hash: { 'prefix'=>'', 'marker'=>'', 'max-keys'=>5, 'delimiter'=>'' }).
+        # Retrieves meta-headers information if +head+ it +true+.
+        # Returns an array of Key instances.
         #
         #  bucket.keys                     #=> # returns all keys from bucket
         #  bucket.keys('prefix' => 'logs') #=> # returns all keys that starts with 'logs'
@@ -212,7 +215,7 @@ module Aws
         keys_and_service(options, head)[0]
       end
 
-        # Same as +keys+ method but return an array of [keys, service_data]. 
+        # Same as +keys+ method but return an array of [keys, service_data].
         # where +service_data+ is a hash with additional output information.
         #
         #  keys, service = bucket.keys_and_service({'max-keys'=> 2, 'prefix' => 'logs'})
@@ -238,10 +241,10 @@ module Aws
         [list, service_data]
       end
 
-        # Retrieve key information from Amazon. 
-        # The +key_name+ is a +String+ or Key instance. 
-        # Retrieves meta-header information if +head+ is +true+. 
-        # Returns new Key instance. 
+        # Retrieve key information from Amazon.
+        # The +key_name+ is a +String+ or Key instance.
+        # Retrieves meta-header information if +head+ is +true+.
+        # Returns new Key instance.
         #
         #  key = bucket.key('logs/today/1.log', true) #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #   # is the same as:
@@ -264,23 +267,23 @@ module Aws
         end
         key_instance
       end
-      
-        # Store object data. 
-        # The +key+ is a +String+ or Key instance. 
+
+        # Store object data.
+        # The +key+ is a +String+ or Key instance.
         # Returns +true+.
         #
         #  bucket.put('logs/today/1.log', 'Olala!') #=> true
         #
       def put(key, data=nil, meta_headers={}, perms=nil, headers={})
-        key = Key.create(self, key.to_s, data, meta_headers) unless key.is_a?(Key) 
+        key = Key.create(self, key.to_s, data, meta_headers) unless key.is_a?(Key)
         key.put(data, perms, headers)
       end
 
-        # Retrieve object data from Amazon. 
-        # The +key+ is a +String+ or Key. 
-        # Returns Key instance. 
+        # Retrieve object data from Amazon.
+        # The +key+ is a +String+ or Key.
+        # Returns Key instance.
         #
-        #  key = bucket.get('logs/today/1.log') #=> 
+        #  key = bucket.get('logs/today/1.log') #=>
         #  puts key.data #=> 'sasfasfasdf'
         #
       def get(key, headers={})
@@ -289,7 +292,7 @@ module Aws
       end
 
         # Rename object. Returns Aws::S3::Key instance.
-        # 
+        #
         #  new_key = bucket.rename_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
@@ -301,7 +304,7 @@ module Aws
       end
 
         # Create an object copy. Returns a destination Aws::S3::Key instance.
-        # 
+        #
         #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
@@ -310,9 +313,9 @@ module Aws
         old_key_or_name = Key.create(self, old_key_or_name.to_s) unless old_key_or_name.is_a?(Key)
         old_key_or_name.copy(new_key_or_name)
       end
-      
+
         # Move an object to other location. Returns a destination Aws::S3::Key instance.
-        # 
+        #
         #  new_key = bucket.copy_key('logs/today/1.log','logs/today/2.log')   #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  puts key.name   #=> 'logs/today/2.log'
         #  key.exists?     #=> true
@@ -321,18 +324,18 @@ module Aws
         old_key_or_name = Key.create(self, old_key_or_name.to_s) unless old_key_or_name.is_a?(Key)
         old_key_or_name.move(new_key_or_name)
       end
-      
-        # Remove all keys from a bucket. 
-        # Returns +true+. 
+
+        # Remove all keys from a bucket.
+        # Returns +true+.
         #
         #  bucket.clear #=> true
         #
       def clear
-        @s3.interface.clear_bucket(@name)  
+        @s3.interface.clear_bucket(@name)
       end
 
         # Delete all keys where the 'folder_key' can be interpreted
-        # as a 'folder' name. 
+        # as a 'folder' name.
         # Returns an array of string keys that have been deleted.
         #
         #  bucket.keys.map{|key| key.name}.join(', ') #=> 'test, test/2/34, test/3, test1, test1/logs'
@@ -341,10 +344,10 @@ module Aws
       def delete_folder(folder, separator='/')
         @s3.interface.delete_folder(@name, folder, separator)
       end
-      
+
         # Delete a bucket. Bucket must be empty.
-        # If +force+ is set, clears and deletes the bucket. 
-        # Returns +true+. 
+        # If +force+ is set, clears and deletes the bucket.
+        # Returns +true+.
         #
         #  bucket.delete(true) #=> true
         #
@@ -352,7 +355,7 @@ module Aws
         force ? @s3.interface.force_delete_bucket(@name) : @s3.interface.delete_bucket(@name)
       end
 
-        # Return a list of grantees. 
+        # Return a list of grantees.
         #
       def grantees
         Grantee::grantees(self)
@@ -378,7 +381,7 @@ module Aws
         end
         [hash, meta]
       end
-      
+
       def self.add_meta_prefix(meta_headers, prefix=S3Interface::AMAZON_METADATA_PREFIX)
         meta = {}
         meta_headers.each do |meta_header, value|
@@ -392,9 +395,9 @@ module Aws
       end
 
 
-        # Create a new Key instance, but do not create the actual key. 
+        # Create a new Key instance, but do not create the actual key.
         # The +name+ is a +String+.
-        # Returns a new Key instance. 
+        # Returns a new Key instance.
         #
         #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.exists?                                                  #=> true | false
@@ -404,12 +407,12 @@ module Aws
       def self.create(bucket, name, data=nil, meta_headers={})
         new(bucket, name, data, {}, meta_headers)
       end
-      
+
         # Create a new Key instance, but do not create the actual key.
         # In normal use this method should not be called directly.
         # Use Aws::S3::Key.create or bucket.key() instead.
         #
-      def initialize(bucket, name, data=nil, headers={}, meta_headers={}, 
+      def initialize(bucket, name, data=nil, headers={}, meta_headers={},
                      last_modified=nil, e_tag=nil, size=nil, storage_class=nil, owner=nil)
         raise 'Bucket must be a Bucket instance.' unless bucket.is_a?(Bucket)
         @bucket        = bucket
@@ -420,13 +423,13 @@ module Aws
         @storage_class = storage_class
         @owner         = owner
         @last_modified = last_modified
-        if @last_modified && !@last_modified.is_a?(Time) 
+        if @last_modified && !@last_modified.is_a?(Time)
           @last_modified = Time.parse(@last_modified)
         end
         @headers, @meta_headers = self.class.split_meta(headers)
         @meta_headers.merge!(meta_headers)
       end
-      
+
         # Return key name as a String.
         #
         #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
@@ -435,24 +438,24 @@ module Aws
       def to_s
         @name.to_s
       end
-      
+
         # Return the full S3 path to this key (bucket/key).
-        # 
+        #
         #  key.full_name #=> 'my_awesome_bucket/cool_key'
         #
       def full_name(separator='/')
         "#{@bucket.to_s}#{separator}#{@name}"
       end
-        
+
         # Return a public link to a key.
-        # 
+        #
         #  key.public_link #=> 'https://s3.amazonaws.com:443/my_awesome_bucket/cool_key'
         #
       def public_link
         params = @bucket.s3.interface.params
         "#{params[:protocol]}://#{params[:server]}:#{params[:port]}/#{full_name('/')}"
       end
-         
+
         # Return Key data. Retrieve this data from Amazon if it is the first time call.
         # TODO TRB 6/19/07 What does the above mean? Clarify.
         #
@@ -460,9 +463,9 @@ module Aws
         get if !@data and exists?
         @data
       end
-      
-        # Retrieve object data and attributes from Amazon. 
-        # Returns a +String+. 
+
+        # Retrieve object data and attributes from Amazon.
+        # Returns a +String+.
         #
       def get(headers={}, &block)
         response = @bucket.s3.interface.get(@bucket.name, @name, headers, &block)
@@ -471,9 +474,9 @@ module Aws
         refresh(false)
         @data
       end
-      
-        # Store object data on S3. 
-        # Parameter +data+ is a +String+ or S3Object instance. 
+
+        # Store object data on S3.
+        # Parameter +data+ is a +String+ or S3Object instance.
         # Returns +true+.
         #
         #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log')
@@ -488,9 +491,9 @@ module Aws
         meta  = self.class.add_meta_prefix(@meta_headers)
         @bucket.s3.interface.put(@bucket.name, @name, @data, meta.merge(headers))
       end
-      
+
         # Rename an object. Returns new object name.
-        # 
+        #
         #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.rename('logs/today/2.log')   #=> 'logs/today/2.log'
         #  puts key.name                    #=> 'logs/today/2.log'
@@ -500,7 +503,7 @@ module Aws
         @bucket.s3.interface.rename(@bucket.name, @name, new_name)
         @name = new_name
       end
-      
+
         # Create an object copy. Returns a destination Aws::S3::Key instance.
         #
         #  # Key instance as destination
@@ -535,7 +538,7 @@ module Aws
         #  key1.exists?         #=> false
         #  key2.exists?         #=> true
         #  puts key2.data       #=> 'Olala!'
-        #  
+        #
         #  # String as destination
         #  key = Aws::S3::Key.create(bucket, 'logs/today/777.log') #=> #<Aws::S3::Key:0xb7b1e240 ... >
         #  key.put('Olala!')                          #=> true
@@ -548,10 +551,10 @@ module Aws
         @bucket.s3.interface.move(@bucket.name, @name, new_key_or_name.bucket.name, new_key_or_name.name)
         new_key_or_name
       end
-      
+
         # Retrieve key info from bucket and update attributes.
-        # Refresh meta-headers (by calling +head+ method) if +head+ is set. 
-        # Returns +true+ if the key exists in bucket and +false+ otherwise. 
+        # Refresh meta-headers (by calling +head+ method) if +head+ is set.
+        # Returns +true+ if the key exists in bucket and +false+ otherwise.
         #
         #  key = Aws::S3::Key.create(bucket, 'logs/today/1.log')
         #  key.e_tag        #=> nil
@@ -577,7 +580,7 @@ module Aws
       end
 
         # Updates headers and meta-headers from S3.
-        # Returns +true+. 
+        # Returns +true+.
         #
         #  key.meta_headers #=> {"family"=>"qwerty"}
         #  key.head         #=> true
@@ -587,7 +590,7 @@ module Aws
         @headers, @meta_headers = self.class.split_meta(@bucket.s3.interface.head(@bucket, @name))
         true
       end
-      
+
         # Reload meta-headers only. Returns meta-headers hash.
         #
         #  key.reload_meta   #=> {"family"=>"qwerty", "name"=>"asdfg"}
@@ -595,7 +598,7 @@ module Aws
       def reload_meta
         @meta_headers = self.class.split_meta(@bucket.s3.interface.head(@bucket, @name)).last
       end
-      
+
         # Replace meta-headers by new hash at S3. Returns new meta-headers hash.
         #
         #  key.reload_meta   #=> {"family"=>"qwerty", "name"=>"asdfg"}
@@ -607,9 +610,9 @@ module Aws
         @bucket.s3.interface.copy(@bucket.name, @name, @bucket.name, @name, :replace, meta)
         @meta_headers = self.class.split_meta(meta)[1]
       end
- 
-        # Check for existence of the key in the given bucket. 
-        # Returns +true+ or +false+. 
+
+        # Check for existence of the key in the given bucket.
+        # Returns +true+ or +false+.
         #
         #  key = Aws::S3::Key.create(bucket,'logs/today/1.log')
         #  key.exists?        #=> false
@@ -619,53 +622,53 @@ module Aws
       def exists?
         @bucket.key(self).last_modified ? true : false
       end
-      
-        # Remove key from bucket. 
-        # Returns +true+. 
+
+        # Remove key from bucket.
+        # Returns +true+.
         #
         #  key.delete #=> true
         #
       def delete
         raise 'Key name must be specified.' if @name.blank?
-        @bucket.s3.interface.delete(@bucket, @name) 
+        @bucket.s3.interface.delete(@bucket, @name)
       end
-      
-        # Return a list of grantees. 
+
+        # Return a list of grantees.
         #
       def grantees
         Grantee::grantees(self)
       end
-      
+
     end
-    
+
 
     class Owner
       attr_reader :id, :name
-      
+
       def initialize(id, name)
         @id   = id
         @name = name
       end
-      
+
         # Return Owner name as a +String+.
       def to_s
         @name
       end
     end
-    
-    
+
+
       # There are 2 ways to set permissions for a bucket or key (called a +thing+ below):
       #
-      # 1 . Use +perms+ param to set 'Canned Access Policies' when calling the <tt>bucket.create</tt>, 
-      # <tt>bucket.put</tt> and <tt>key.put</tt> methods. 
+      # 1 . Use +perms+ param to set 'Canned Access Policies' when calling the <tt>bucket.create</tt>,
+      # <tt>bucket.put</tt> and <tt>key.put</tt> methods.
       # The +perms+ param can take these values: 'private', 'public-read', 'public-read-write' and
-      # 'authenticated-read'. 
+      # 'authenticated-read'.
       # (see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTAccessPolicy.html).
       #
       #  bucket = s3.bucket('bucket_for_kd_test_13', true, 'public-read')
       #  key.put('Woohoo!','public-read-write' )
       #
-      # 2 . Use Grantee instances (the permission is a +String+ or an +Array+ of: 'READ', 'WRITE', 
+      # 2 . Use Grantee instances (the permission is a +String+ or an +Array+ of: 'READ', 'WRITE',
       # 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'):
       #
       #  bucket  = s3.bucket('my_awesome_bucket', true)
@@ -690,9 +693,9 @@ module Aws
       attr_reader :name
         # Array of permissions.
       attr_accessor :perms
-        
+
         # Retrieve Owner information and a list of Grantee instances that have
-        # a access to this thing (bucket or key). 
+        # a access to this thing (bucket or key).
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
         #   ...
@@ -706,7 +709,7 @@ module Aws
         end
         hash = bucket.s3.interface.get_acl_parse(bucket.to_s, key.to_s)
         owner = Owner.new(hash[:owner][:id], hash[:owner][:display_name])
-        
+
         grantees = []
         hash[:grantees].each do |id, params|
           grantees << new(thing, id, params[:permissions], nil, params[:display_name])
@@ -714,7 +717,7 @@ module Aws
         [owner, grantees]
       end
 
-        # Retrieves a list of Grantees instances that have an access to this thing(bucket or key). 
+        # Retrieves a list of Grantees instances that have an access to this thing(bucket or key).
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
         #   ...
@@ -742,11 +745,11 @@ module Aws
         bucket.s3.interface.put_acl(bucket.to_s, key.to_s, body)
       end
 
-        # Create a new Grantee instance. 
+        # Create a new Grantee instance.
         # Grantee +id+ must exist on S3. If +action+ == :refresh, then retrieve
         # permissions from S3 and update @perms. If +action+ == :apply, then apply
         # perms to +thing+ at S3. If +action+ == :apply_and_refresh then it performs.
-        # both the actions. This is used for the new grantees that had no perms to 
+        # both the actions. This is used for the new grantees that had no perms to
         # this thing before. The default action is :refresh.
         #
         #  bucket = s3.bucket('my_awesome_bucket', true, 'public-read')
@@ -766,7 +769,7 @@ module Aws
           when :apply_and_refresh then apply; refresh
         end
       end
-      
+
         # Return +true+ if the grantee has any permissions to the thing.
       def exists?
         self.class.grantees(@thing).each do |grantee|
@@ -774,26 +777,26 @@ module Aws
         end
         false
       end
-      
+
         # Return Grantee type (+String+): "Group" or "CanonicalUser".
       def type
         @id[/^http:/] ? "Group" : "CanonicalUser"
       end
- 
+
         # Return a name or an id.
       def to_s
         @name || @id
       end
-      
-        # Add permissions for grantee. 
-        # Permissions: 'READ', 'WRITE', 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'. 
+
+        # Add permissions for grantee.
+        # Permissions: 'READ', 'WRITE', 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'.
         # See http://docs.amazonwebservices.com/AmazonS3/2006-03-01/UsingPermissions.html .
-        # Returns +true+. 
+        # Returns +true+.
         #
         #  grantee.grant('FULL_CONTROL')                  #=> true
         #  grantee.grant('FULL_CONTROL','WRITE','READ')   #=> true
         #  grantee.grant(['WRITE_ACP','READ','READ_ACP']) #=> true
-        #  
+        #
       def grant(*permissions)
         permissions.flatten!
         old_perms = @perms.dup
@@ -802,11 +805,11 @@ module Aws
         return true if @perms == old_perms
         apply
       end
-      
-        # Revoke permissions for grantee. 
+
+        # Revoke permissions for grantee.
         # Permissions: 'READ', 'WRITE', 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'
         # See http://docs.amazonwebservices.com/AmazonS3/2006-03-01/UsingPermissions.html .
-        # Default value is 'FULL_CONTROL'. 
+        # Default value is 'FULL_CONTROL'.
         # Returns +true+.
         #
         #  grantee.revoke('READ')                   #=> true
@@ -821,8 +824,8 @@ module Aws
         return true if @perms == old_perms
         apply
       end
-     
-        # Revoke all permissions for this grantee. 
+
+        # Revoke all permissions for this grantee.
         # Returns +true+.
         #
         #  grantee.drop #=> true
@@ -831,7 +834,7 @@ module Aws
         @perms = []
         apply
       end
-         
+
         # Refresh grantee perms for its +thing+.
         # Returns +true+ if the grantee has perms for this +thing+ or
         # +false+ otherwise, and updates @perms value as a side-effect.
@@ -856,7 +859,7 @@ module Aws
         # Apply current grantee @perms to +thing+. This method is called internally by the +grant+
         # and +revoke+ methods. In normal use this method should not
         # be called directly.
-        # 
+        #
         #  grantee.perms = ['FULL_CONTROL']
         #  grantee.apply #=> true
         #
@@ -885,7 +888,7 @@ module Aws
       end
 
     end
-    
+
   end
 
     # Aws::S3Generator and Aws::S3Generator::Bucket methods:
@@ -927,11 +930,11 @@ module Aws
     #
   class S3Generator
     attr_reader :interface
-    
+
     def initialize(aws_access_key_id, aws_secret_access_key, params={})
       @interface = S3Interface.new(aws_access_key_id, aws_secret_access_key, params)
     end
-    
+
       # Generate link to list all buckets
       #
       #  s3.buckets(1.hour)
@@ -947,41 +950,41 @@ module Aws
     def bucket(name, expires=nil, headers={})
       Bucket.create(self, name.to_s)
     end
-  
+
     class Bucket
       attr_reader :s3, :name
-      
+
       def to_s
         @name
       end
       alias_method :full_name, :to_s
-        
+
         # Return a public link to bucket.
-        # 
+        #
         #  bucket.public_link #=> 'https://s3.amazonaws.com:443/my_awesome_bucket'
         #
       def public_link
         params = @s3.interface.params
         "#{params[:protocol]}://#{params[:server]}:#{params[:port]}/#{full_name}"
       end
-      
-        #  Create new S3LinkBucket instance and generate creation link for it. 
+
+        #  Create new S3LinkBucket instance and generate creation link for it.
       def self.create(s3, name, expires=nil, headers={})
         new(s3, name.to_s)
       end
-        
-        #  Create new S3LinkBucket instance. 
+
+        #  Create new S3LinkBucket instance.
       def initialize(s3, name)
         @s3, @name = s3, name.to_s
       end
-        
-        # Return a link to create this bucket. 
+
+        # Return a link to create this bucket.
         #
       def create_link(expires=nil, headers={})
         @s3.interface.create_bucket_link(@name, expires, headers)
       end
 
-        # Generate link to list keys. 
+        # Generate link to list keys.
         #
         #  bucket.keys
         #  bucket.keys('prefix'=>'logs')
@@ -999,7 +1002,7 @@ module Aws
         Key.new(self, name)
       end
 
-        # Generates link to PUT key data. 
+        # Generates link to PUT key data.
         #
         #  puts bucket.put('logs/today/1.log', 2.hour)
         #
@@ -1007,16 +1010,16 @@ module Aws
         meta = Aws::S3::Key.add_meta_prefix(meta_headers)
         @s3.interface.put_link(@name, key.to_s, nil, expires, meta.merge(headers))
       end
-        
-        # Generate link to GET key data. 
+
+        # Generate link to GET key data.
         #
         #  bucket.get('logs/today/1.log', 1.hour)
         #
       def get(key, expires=nil, headers={})
         @s3.interface.get_link(@name, key.to_s, expires, headers)
       end
-       
-        # Generate link to delete bucket. 
+
+        # Generate link to delete bucket.
         #
         #  bucket.delete(2.hour)
         #
@@ -1028,60 +1031,60 @@ module Aws
 
     class Key
       attr_reader :bucket, :name
-      
+
       def to_s
         @name
       end
-      
+
         # Return a full S# name (bucket/key).
-        # 
+        #
         #  key.full_name #=> 'my_awesome_bucket/cool_key'
         #
       def full_name(separator='/')
         "#{@bucket.to_s}#{separator}#{@name}"
       end
-        
+
         # Return a public link to key.
-        # 
+        #
         #  key.public_link #=> 'https://s3.amazonaws.com:443/my_awesome_bucket/cool_key'
         #
       def public_link
         params = @bucket.s3.interface.params
         "#{params[:protocol]}://#{params[:server]}:#{params[:port]}/#{full_name('/')}"
       end
-      
+
       def initialize(bucket, name, meta_headers={})
         @bucket       = bucket
         @name         = name.to_s
         @meta_headers = meta_headers
         raise 'Key name can not be empty.' if @name.blank?
       end
-      
-        # Generate link to PUT key data. 
+
+        # Generate link to PUT key data.
         #
         #  puts bucket.put('logs/today/1.log', '123', 2.hour) #=> https://s3.amazonaws.com:443/my_awesome_bucket/logs%2Ftoday%2F1.log?Signature=B...D&Expires=1180820032&AWSAccessKeyId=1...2
         #
       def put(expires=nil, headers={})
         @bucket.put(@name.to_s, @meta_headers, expires, headers)
       end
-        
-        # Generate link to GET key data. 
+
+        # Generate link to GET key data.
         #
         #  bucket.get('logs/today/1.log', 1.hour) #=> https://s3.amazonaws.com:443/my_awesome_bucket/logs%2Ftoday%2F1.log?Signature=h...M%3D&Expires=1180820032&AWSAccessKeyId=1...2
         #
       def get(expires=nil, headers={})
         @bucket.s3.interface.get_link(@bucket.to_s, @name, expires, headers)
       end
-       
-        # Generate link to delete key. 
+
+        # Generate link to delete key.
         #
         #  bucket.delete(2.hour) #=> https://s3.amazonaws.com:443/my_awesome_bucket/logs%2Ftoday%2F1.log?Signature=4...D&Expires=1180820032&AWSAccessKeyId=1...2
         #
       def delete(expires=nil,  headers={})
         @bucket.s3.interface.delete_link(@bucket.to_s, @name, expires,  headers)
       end
-      
-        # Generate link to head key. 
+
+        # Generate link to head key.
         #
         #  bucket.head(2.hour) #=> https://s3.amazonaws.com:443/my_awesome_bucket/logs%2Ftoday%2F1.log?Signature=4...D&Expires=1180820032&AWSAccessKeyId=1...2
         #
