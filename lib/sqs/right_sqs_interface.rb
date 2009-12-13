@@ -38,10 +38,10 @@ module Aws
   class SqsInterface < AwsBase
     include AwsBaseInterface
 
-    API_VERSION       = "2008-01-01"
+    API_VERSION       = "2009-02-01"
     DEFAULT_HOST      = "queue.amazonaws.com"
-    DEFAULT_PORT      = 80
-    DEFAULT_PROTOCOL  = 'http'
+    DEFAULT_PORT      = 443
+    DEFAULT_PROTOCOL  = 'https'
     REQUEST_TTL       = 30
     DEFAULT_VISIBILITY_TIMEOUT = 30
 

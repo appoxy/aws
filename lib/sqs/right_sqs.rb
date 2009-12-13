@@ -87,8 +87,9 @@ module Aws
       #  Aws::Sqs.queue('my_awesome_queue') #=> #<Aws::Sqs::Queue:0xb7b626e4 ... >
       #
     def queue(queue_name, create=true, visibility=nil)
-      url = @interface.queue_url_by_name(queue_name)
-      url = (create ? @interface.create_queue(queue_name, visibility) : nil) unless url
+#      url = @interface.queue_url_by_name(queue_name)
+#      url = (create ? @interface.create_queue(queue_name, visibility) : nil) unless url
+      url = @interface.create_queue(queue_name, visibility) # this returns the url even if it exists
       url ? Queue.new(self, url) : nil
     end
 
