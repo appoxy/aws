@@ -383,7 +383,8 @@ module Aws
                     @next_token = query_result[:next_token]
                     items = query_result[:items].map do |hash|
                         id, attributes = hash.shift
-                        new_item = self.new( attributes.merge({ 'id' => id }))
+                        new_item = self.new( )
+                        new_item.initialize_from_db(attributes.merge({ 'id' => id }))
                         new_item.mark_as_old
                         new_item
                     end
@@ -600,6 +601,11 @@ module Aws
                 @new_record = true
             end
 
+            # This is to separate initialization from user vs coming from db (ie: find())
+            def initialize_from_db(attrs={})
+                initialize(attrs)
+            end
+
             # Create and save new Item instance.
             # +Attributes+ is a hash: { attribute1 => values1, ..., attributeN => valuesN }.
             #
@@ -794,6 +800,7 @@ module Aws
             def save(options={})
                 pre_save2
                 atts_to_save = @attributes.dup
+                #puts 'atts_to_save=' + atts_to_save.inspect
                 #options = params.first.is_a?(Hash) ? params.pop : {}
                 if options[:except]
                     options[:except].each do |e|
@@ -805,6 +812,7 @@ module Aws
                     dirty_atts = options[:dirty_atts]
                     atts_to_save.delete_if { |key, value| !dirty_atts.has_key?(key) }
                 end
+                #puts 'atts_to_save2=' + atts_to_save.inspect
                 connection.put_attributes(domain, id, atts_to_save, :replace)
                 apres_save2
                 @attributes
