@@ -122,7 +122,20 @@ module Aws
       conn_mode = @params[:connection_mode]
       if conn_mode == :per_request
         http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
-        ret = request_info_impl(http_conn, @@bench, request, parser)
+        retry_count = 1
+        count = 0
+        while count < retry_count
+            puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
+            begin
+                ret = request_info_impl(http_conn, @@bench, request, parser)
+                break
+            rescue Aws::AwsError => ex
+                if !ex.include?(/QueryTimeout/)
+                    raise ex
+                end
+            end
+            count += 1
+        end
         http_conn.finish
       elsif conn_mode == :per_thread || conn_mode == :single
         thread = conn_mode == :per_thread ? Thread.current : Thread.main
