@@ -786,8 +786,7 @@ module Aws
             # Parse the xml text
             case @xml_lib
                 when 'libxml'
-                    xml = XML::SaxParser.new
-                    xml.string = xml_text
+                    xml = XML::SaxParser.string(xml_text)
                     # check libxml-ruby version
                     if XML::Parser::VERSION >= '0.5.1.0'
                         xml.callbacks = RightSaxParserCallback.new(self)
