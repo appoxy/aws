@@ -82,38 +82,7 @@ module Aws
     #-----------------------------------------------------------------
     #      Requests
     #-----------------------------------------------------------------
-    def generate_request(action, params={}) #:nodoc:
-      # remove empty params from request
-      params.delete_if {|key,value| value.nil? }
-      #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
-      # prepare service data
-        service = @params[:service]
-#      puts 'service=' + service.to_s
-      service_hash = {"Action"         => action,
-                      "AWSAccessKeyId" => @aws_access_key_id,
-                      "Version"        => API_VERSION }
-      service_hash.update(params)
-      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-      #
-      # use POST method if the length of the query string is too large
-      # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
-      if service_params.size > 2000
-        if signature_version == '2'
-          # resign the request because HTTP verb is included into signature
-          service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
-        end
-        request      = Net::HTTP::Post.new(service)
-        request.body = service_params
-        request['Content-Type'] = 'application/x-www-form-urlencoded'
-      else
-        request = Net::HTTP::Get.new("#{service}?#{service_params}")
-      end
-      # prepare output hash
-      { :request  => request,
-        :server   => @params[:server],
-        :port     => @params[:port],
-        :protocol => @params[:protocol] }
-    end
+
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened

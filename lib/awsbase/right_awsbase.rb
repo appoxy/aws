@@ -27,6 +27,7 @@ module Aws
     require 'pp'
     require 'cgi'
     require 'uri'
+    require 'xmlsimple'
 
     class AwsUtils #:nodoc:
         @@digest1 = OpenSSL::Digest::Digest.new("sha1")
@@ -269,6 +270,120 @@ module Aws
             end
         end
 
+        # FROM SDB
+        def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}) #:nodoc:
+            # remove empty params from request
+            user_params.delete_if {|key, value| value.nil? }
+            #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
+            # prepare service data
+            service = lib_params[:service]
+#      puts 'service=' + service.to_s
+            service_hash = {"Action"         => action,
+                            "AWSAccessKeyId" => aws_access_key }
+            service_hash.update("Version" => api_version) if api_version
+            service_hash.update(user_params)
+            service_params = signed_service_params(aws_secret_key, service_hash, :get, lib_params[:server], lib_params[:service])
+            #
+            # use POST method if the length of the query string is too large
+            # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
+            if service_params.size > 2000
+                if signature_version == '2'
+                    # resign the request because HTTP verb is included into signature
+                    service_params = signed_service_params(aws_secret_key, service_hash, :post, lib_params[:server], service)
+                end
+                request      = Net::HTTP::Post.new(service)
+                request.body = service_params
+                request['Content-Type'] = 'application/x-www-form-urlencoded'
+            else
+                request = Net::HTTP::Get.new("#{service}?#{service_params}")
+            end
+
+            #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
+            #puts "#{@params[:service]}?#{service_params}\n\n"
+
+            # prepare output hash
+            { :request  => request,
+              :server   => lib_params[:server],
+              :port     => lib_params[:port],
+              :protocol => lib_params[:protocol] }
+        end
+
+        def get_conn(connection_name, lib_params, logger)
+            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
+            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
+            conn = thread[connection_name]
+            return conn
+        end
+
+        def request_info2(request, parser, lib_params, connection_name, logger, bench)
+            t = get_conn(connection_name, lib_params, logger)
+            request_info_impl(t, bench, request, parser)
+        end
+
+        # This is the direction we should head instead of writing our own parsers for everything, much simpler
+        def request_info_xml_simple(connection_name, lib_params, request, logger)
+
+            @connection = get_conn(connection_name, lib_params, logger)
+            @last_request = request[:request]
+            @last_response = nil
+            response=nil
+            blockexception = nil
+
+            response = @connection.request(request)
+#            benchblock.service.add!{ response = @connection.request(request) }
+            # check response for errors...
+            @last_response = response
+            if response.is_a?(Net::HTTPSuccess)
+                @error_handler = nil
+#                benchblock.xml.add! { parser.parse(response) }
+#                return parser.result
+                return XmlSimple.xml_in(response.body, {"KeyToSymbol"=>false, 'ForceArray' => false})
+            else
+                @error_handler = AWSErrorHandler.new(self, nil, :errors_list => self.class.amazon_problems) unless @error_handler
+                check_result = @error_handler.check(request)
+                if check_result
+                    @error_handler = nil
+                    return check_result
+                end
+                request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
+                raise AwsError2.new(@last_response.code, @last_request_id, request_text_data, @last_response.body)
+            end
+
+        end
+
+        # FROM ELB
+=begin
+ def generate_request2(action, params={})
+            service_hash = {"Action" => action,
+                            "AWSAccessKeyId" => @aws_access_key_id,
+                            "Version" => @@api }
+            service_hash.update(params)
+            service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
+
+            # use POST method if the length of the query string is too large
+            if service_params.size > 2000
+                if signature_version == '2'
+                    # resign the request because HTTP verb is included into signature
+                    service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
+                end
+                request = Net::HTTP::Post.new(service)
+                request.body = service_params
+                request['Content-Type'] = 'application/x-www-form-urlencoded'
+            else
+                request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
+            end
+
+            #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
+            #puts "#{@params[:service]}?#{service_params}\n\n"
+
+            # prepare output hash
+            { :request => request,
+              :server => @params[:server],
+              :port => @params[:port],
+              :protocol => @params[:protocol] }
+        end
+=end
+
         # Returns +true+ if the describe_xxx responses are being cached
         def caching?
             @params.key?(:cache) ? @params[:cache] : @@caching
@@ -443,11 +558,14 @@ module Aws
         # Raw request text data to AWS
         attr_reader :request_data
 
-        def initialize(errors=nil, http_code=nil, request_id=nil, request_data=nil)
+        attr_reader :response
+
+        def initialize(errors=nil, http_code=nil, request_id=nil, request_data=nil, response=nil)
             @errors = errors
             @request_id = request_id
             @http_code = http_code
             @request_data = request_data
+            @response = response
             msg = @errors.is_a?(Array) ? @errors.map{|code, msg| "#{code}: #{msg}"}.join("; ") : @errors.to_s
             msg += "\nREQUEST(#{@request_data})" unless @request_data.nil?
             super(msg)
@@ -479,6 +597,7 @@ module Aws
                 if options[:log]
                     request = aws.last_request ? aws.last_request.path : '-none-'
                     response = aws.last_response ? "#{aws.last_response.code} -- #{aws.last_response.message} -- #{aws.last_response.body}" : '-none-'
+                    @response = response
                     aws.logger.error error_text
                     aws.logger.error "Request was:  #{request}"
                     aws.logger.error "Response was: #{response}"
@@ -493,6 +612,42 @@ module Aws
         def self.system_error?(e)
             !e.is_a?(self) || e.message =~ /InternalError|InsufficientInstanceCapacity|Unavailable/
         end
+
+    end
+
+    # Simplified version
+    class AwsError2 < RuntimeError
+        # Request id (if exists)
+        attr_reader :request_id
+
+        # Response HTTP error code
+        attr_reader :http_code
+
+        # Raw request text data to AWS
+        attr_reader :request_data
+
+        attr_reader :response
+
+        attr_reader :errors
+
+        def initialize(http_code=nil, request_id=nil, request_data=nil, response=nil)
+
+            @request_id = request_id
+            @http_code = http_code
+            @request_data = request_data
+            @response = response
+#            puts '@response=' + @response.inspect
+
+            if @response
+                ref = XmlSimple.xml_in(@response, { "ForceArray"=>false })
+#                puts "refxml=" + ref.inspect
+                msg = "#{ref['Error']['Code']}: #{ref['Error']['Message']}"
+            else
+                msg = "#{@http_code}: REQUEST(#{@request_data})"
+            end
+            super(msg)
+        end
+
 
     end
 

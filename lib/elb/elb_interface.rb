@@ -24,7 +24,7 @@ module Aws
         end
 
         # Current API version (sometimes we have to check it outside the GEM).
-        @@api = ENV['EC2_API_VERSION'] || API_VERSION
+        @@api = ENV['ELB_API_VERSION'] || API_VERSION
 
         def self.api
             @@api
@@ -44,42 +44,14 @@ module Aws
 
 
         def generate_request(action, params={})
-            service_hash = {"Action" => action,
-                            "AWSAccessKeyId" => @aws_access_key_id,
-                            "Version" => @@api }
-            service_hash.update(params)
-            service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-
-            # use POST method if the length of the query string is too large
-            if service_params.size > 2000
-                if signature_version == '2'
-                    # resign the request because HTTP verb is included into signature
-                    service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
-                end
-                request = Net::HTTP::Post.new(service)
-                request.body = service_params
-                request['Content-Type'] = 'application/x-www-form-urlencoded'
-            else
-                request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
-            end
-
-            #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
-            #puts "#{@params[:service]}?#{service_params}\n\n"
-
-            # prepare output hash
-            { :request => request,
-              :server => @params[:server],
-              :port => @params[:port],
-              :protocol => @params[:protocol] }
+            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
         end
 
 
         # Sends request to Amazon and parses the response
         # Raises AwsError if any banana happened
         def request_info(request, parser)
-            thread = @params[:multi_thread] ? Thread.current : Thread.main
-            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
-            request_info_impl(thread[:elb_connection], @@bench, request, parser)
+            request_info2(request, parser, @params, :elb_connection, @logger, @@bench)
         end
 
 
@@ -309,7 +281,7 @@ module Aws
 #                puts 'tagstart ' + name + ' -- ' + @xmlpath
                 if (name == 'member' &&
                         (@xmlpath == 'RegisterInstancesWithLoadBalancerResponse/RegisterInstancesWithLoadBalancerResult/Instances' ||
-                        @xmlpath == 'DeregisterInstancesFromLoadBalancerResponse/DeregisterInstancesFromLoadBalancerResult/Instances')
+                                @xmlpath == 'DeregisterInstancesFromLoadBalancerResponse/DeregisterInstancesFromLoadBalancerResult/Instances')
                 )
                     @member = { }
                 end

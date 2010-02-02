@@ -939,11 +939,16 @@ module Aws
                 attrs = {}
                 attributes.each do |attribute, values|
                     attribute = attribute.to_s
-                    attrs[attribute] = attribute == 'id' ? values.to_s : values.is_a?(Array) ? values.uniq : [values]
-                    attrs.delete(attribute) if values.blank?
+                    newval = attribute == 'id' ? values.to_s : values.is_a?(Array) ? values.uniq : [values]
+                    attrs[attribute] = newval
+                    if newval.blank?
+#                        puts "VALUE IS BLANK " + attribute.to_s + " val=" + values.inspect
+                        attrs.delete(attribute)
+                    end
                 end
                 attrs
             end
+
         end
     end
 end

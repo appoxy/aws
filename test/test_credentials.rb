@@ -42,10 +42,8 @@ class TestCredentials
             Dir.chdir(File.expand_path("~/.test-configs")) do
                 credentials = YAML::load(File.open("aws.yml"))
                 @@config = credentials
-                puts 'creds=' + credentials.inspect
                 self.aws_access_key_id = credentials["amazon"]["access_key"]
                 self.aws_secret_access_key = credentials["amazon"]["secret_key"]
-                puts 'akey=' + self.aws_access_key_id
             end
         rescue Exception => e
             puts "#{e.message}"
