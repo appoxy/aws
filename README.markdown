@@ -8,7 +8,7 @@ The Appoxy AWS gem is a forked version of RightScale's AWS library.
 1. It didn't work with Ruby 1.9 - this version does
 1. RightScale doesn't have the source hosted for the community
 1. We needed fixes and changes for [http://code.google.com/p/simple-record/ SimpleRecord] and didn't want to wait for RightScale to do it.
-1. We needed Elastic Load Balancing support
+1. We needed support for new AWS services.
 
 ## Discussion Group
 
@@ -27,11 +27,6 @@ http://rdoc.info/projects/appoxy/aws
 Published by Appoxy LLC, under the MIT License. Special thanks to RightScale from which this project is forked.
 
 ## INSTALL:
-
-ONE TIME: Be sure to add the new gemcutter source:
-
-    gem install gemcutter
-    gem tumble
 
 THEN (you should have http://gemcutter.org in your sources and it MUST be above rubyforge.org):
 
