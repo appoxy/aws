@@ -144,7 +144,7 @@ module Aws
           # resign the request because HTTP verb is included into signature
           service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
         end
-        request      = Net::HTTP::Post.new(service)
+        request = Net::HTTP::Post.new(@params[:service])
         request.body = service_params
         request['Content-Type'] = 'application/x-www-form-urlencoded'
       else
