@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{aws}
-  s.version = "2.1.13"
+  s.version = "2.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-  s.date = %q{2010-02-01}
+  s.date = %q{2010-02-02}
   s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services.}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
      "lib/ec2/right_ec2.rb",
      "lib/ec2/right_mon_interface.rb",
      "lib/elb/elb_interface.rb",
+     "lib/rds/rds.rb",
      "lib/right_aws.rb",
      "lib/s3/right_s3.rb",
      "lib/s3/right_s3_interface.rb",
@@ -45,6 +46,7 @@ Gem::Specification.new do |s|
      "test/ec2/test_right_ec2.rb",
      "test/elb/test_elb.rb",
      "test/http_connection.rb",
+     "test/rds/test_rds.rb",
      "test/s3/test_helper.rb",
      "test/s3/test_right_s3.rb",
      "test/s3/test_right_s3_stubbed.rb",
@@ -64,13 +66,16 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<uuidtools>, [">= 0"])
       s.add_runtime_dependency(%q<http_connection>, [">= 0"])
+      s.add_runtime_dependency(%q<xml-simple>, [">= 0"])
     else
       s.add_dependency(%q<uuidtools>, [">= 0"])
       s.add_dependency(%q<http_connection>, [">= 0"])
+      s.add_dependency(%q<xml-simple>, [">= 0"])
     end
   else
     s.add_dependency(%q<uuidtools>, [">= 0"])
     s.add_dependency(%q<http_connection>, [">= 0"])
+    s.add_dependency(%q<xml-simple>, [">= 0"])
   end
 end
 
