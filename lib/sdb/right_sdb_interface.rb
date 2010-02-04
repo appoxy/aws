@@ -82,6 +82,9 @@ module Aws
     #-----------------------------------------------------------------
     #      Requests
     #-----------------------------------------------------------------
+    def generate_request(action, params={}) #:nodoc:
+      generate_request2(@aws_access_key_id, @aws_secret_access_key, action, API_VERSION, @params, params)
+    end
 
 
     # Sends request to Amazon and parses the response
