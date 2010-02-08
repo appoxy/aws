@@ -17,19 +17,24 @@ module Aws
 
         @@api = ENV['RDS_API_VERSION'] || API_VERSION
 
+
         def self.api
             @@api
         end
 
+
         @@bench = AwsBenchmarkingBlock.new
+
 
         def self.bench_xml
             @@bench.xml
         end
 
+
         def self.bench_ec2
             @@bench.service
         end
+
 
         def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
             uri = ENV['RDS_URL'] ? URI.parse(ENV['RDS_URL']) : nil
@@ -42,6 +47,7 @@ module Aws
                  aws_secret_access_key|| ENV['AWS_SECRET_ACCESS_KEY'],
                  params)
         end
+
 
         def generate_request(action, params={})
             generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
@@ -84,6 +90,7 @@ module Aws
             on_exception
         end
 
+
         # options:
         #      DBInstanceIdentifier
         #      MaxRecords
@@ -118,6 +125,63 @@ module Aws
             link = generate_request("DeleteDBInstance", params)
             resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
 
+        rescue Exception
+            on_exception
+        end
+
+
+        def create_db_security_groups(group_name, description, options={})
+            params = {}
+            params['DBSecurityGroupName'] = group_name
+            params['DBSecurityGroupDescription'] = description
+            params['Engine'] = options[:engine] || "MySQL5.1"
+            link = generate_request("CreateDBSecurityGroup", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+        rescue Exception
+            on_exception
+        end
+
+
+        def describe_db_security_groups(options={})
+            params = {}
+            params['DBSecurityGroupName'] = options[:DBSecurityGroupName] if options[:DBSecurityGroupName]
+            params['MaxRecords'] = options[:MaxRecords] if options[:MaxRecords]
+            link = generate_request("DescribeDBSecurityGroups", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+        rescue Exception
+            on_exception
+        end
+
+
+        def authorize_db_security_group_ingress(group_name, ec2_group_name, ec2_group_owner_id, options={})
+            params = {}
+            params['DBSecurityGroupName'] = group_name
+            params['EC2SecurityGroupOwnerId'] = ec2_group_owner_id
+            params['EC2Security-GroupName'] = ec2_group_name
+            link = generate_request("AuthorizeDBSecurityGroupIngress", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+        rescue Exception
+            on_exception
+        end
+
+
+        def authorize_db_security_group_ingress(group_name, ip_range, options={})
+            params = {}
+            params['DBSecurityGroupName'] = group_name
+            params['CIDRIP'] = ip_range
+            link = generate_request("AuthorizeDBSecurityGroupIngress", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+        rescue Exception
+            on_exception
+        end
+
+
+        def revoke_db_security_group_ingress(group_name, ip_range, options={})
+            params = {}
+            params['DBSecurityGroupName'] = group_name
+            params['CIDRIP'] = ip_range
+            link = generate_request("RevokeDBSecurityGroupIngress", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
         rescue Exception
             on_exception
         end
