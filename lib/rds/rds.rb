@@ -153,11 +153,11 @@ module Aws
         end
 
 
-        def authorize_db_security_group_ingress(group_name, ec2_group_name, ec2_group_owner_id, options={})
+        def authorize_db_security_group_ingress_ec2group(group_name, ec2_group_name, ec2_group_owner_id, options={})
             params = {}
             params['DBSecurityGroupName'] = group_name
             params['EC2SecurityGroupOwnerId'] = ec2_group_owner_id
-            params['EC2Security-GroupName'] = ec2_group_name
+            params['EC2SecurityGroupName'] = ec2_group_name
             link = generate_request("AuthorizeDBSecurityGroupIngress", params)
             resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
         rescue Exception
@@ -165,7 +165,7 @@ module Aws
         end
 
 
-        def authorize_db_security_group_ingress(group_name, ip_range, options={})
+        def authorize_db_security_group_ingress_range(group_name, ip_range, options={})
             params = {}
             params['DBSecurityGroupName'] = group_name
             params['CIDRIP'] = ip_range
