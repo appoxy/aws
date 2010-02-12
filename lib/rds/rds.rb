@@ -1,6 +1,4 @@
 module Aws
-
-
     require 'xmlsimple'
 
     # API Reference: http://docs.amazonwebservices.com/AmazonRDS/latest/APIReference/
@@ -142,12 +140,25 @@ module Aws
         end
 
 
+        def delete_db_security_group(group_name, options={})
+            params = {}
+            params['DBSecurityGroupName'] = group_name
+            link = generate_request("DeleteDBSecurityGroup", params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+        rescue Exception
+            on_exception
+        end
+
+
         def describe_db_security_groups(options={})
             params = {}
             params['DBSecurityGroupName'] = options[:DBSecurityGroupName] if options[:DBSecurityGroupName]
             params['MaxRecords'] = options[:MaxRecords] if options[:MaxRecords]
+
+            force_array = options[:force_array].nil? ? false : options[:force_array]
+
             link = generate_request("DescribeDBSecurityGroups", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger, :force_array => force_array)
         rescue Exception
             on_exception
         end
@@ -185,6 +196,7 @@ module Aws
         rescue Exception
             on_exception
         end
+
 
     end
 

@@ -4,7 +4,7 @@ require 'rds/rds'
 require 'pp'
 require File.dirname(__FILE__) + '/../test_credentials.rb'
 
-class TestElb < Test::Unit::TestCase
+class TestRds < Test::Unit::TestCase
 
     # Some of RightEc2 instance methods concerning instance launching and image registration
     # are not tested here due to their potentially risk.
@@ -15,55 +15,143 @@ class TestElb < Test::Unit::TestCase
         @rds = Aws::Rds.new(TestCredentials.aws_access_key_id,
                             TestCredentials.aws_secret_access_key)
 
-        @identifier = 'my-db-instance'
-         @identifier2 = 'my-db-instance2'
+        @identifier = 'test-db-instance1'
 
+        # deleting this one....
+        @identifier2 = 'test-db-instance2'
     end
 
+
     def test_01_create_db_instance
-
-
         begin
             db_instance2 = @rds.create_db_instance('right_ec2_awesome_test_key', "db.m1.small", 5, "master", "masterpass")
         rescue => ex
-            puts "msg=" + ex.message
-            puts "response=" + ex.response
-            assert ex.message[0,"InvalidParameterValue".size] == "InvalidParameterValue"
+            #puts "msg=" + ex.message
+            #puts "response=" + ex.response
+            assert ex.message[0, "InvalidParameterValue".size] == "InvalidParameterValue"
         end
 
         db_instance = @rds.create_db_instance(@identifier, "db.m1.small", 5, "master", "masterpass")
-        puts 'db_instance=' + db_instance.inspect
+        #db_instance2 = @rds.create_db_instance(@identifier2, "db.m1.small", 5, "master", "masterpass")
 
-        db_instance2 = @rds.create_db_instance(@identifier2, "db.m1.small", 5, "master", "masterpass")
-        puts 'db_instance2=' + db_instance2.inspect
 
-        sleep 10
-        
+        tries=0
+        while tries < 100
 
+            instances_result = @rds.describe_db_instances
+            instances = instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
+
+            if instances["DBInstanceStatus"] == "available"
+                break
+            end
+
+            puts "Database not ready yet.... trying again until 100, at --> " + tries.to_s
+
+            tries+=1
+            sleep 2
+        end
     end
+
 
     def test_02_describe_db_instances
         instances_result = @rds.describe_db_instances
-        puts "instances_result=" + instances_result.inspect
+        #puts "instances_result=" + instances_result.inspect
         instances = instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
-        puts 'instances=' + instances.inspect
-        assert instances.size == 2
+        #puts "\n\ninstances count = " + instances.count.to_s + " \n\n "
+
+        assert instances.size > 0
     end
 
-    def test_06_delete_db_instance
 
+    def test_03_describe_security_groups
+        security_result = @rds.describe_db_security_groups()
+        #puts "security_result=" + security_result.inspect
+        security_groups=security_result["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+        default_present = false
+        if security_groups.is_a?(Array)
+            security_groups.each do |security_group|
+                security_group.inspect
+                if security_group["DBSecurityGroupName"]=="default"
+                    default_present=true
+                end
+            end
+        else
+            if security_groups["DBSecurityGroupName"]=="default"
+                default_present=true
+            end
+        end
+        assert default_present
+    end
+
+
+    def test_04_authorize_security_groups_ingress
+        # Create
+        @security_info = @rds.describe_db_security_groups({:force_array => ["DBSecurityGroup", "IPRange"]})["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+        @rds.authorize_db_security_group_ingress_range("default", "122.122.122.122/12")
+
+        # Check
+        @security_info = @rds.describe_db_security_groups({:force_array => ["DBSecurityGroup", "IPRange"]})["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+
+        ip_found = @security_info.inspect.include? "122.122.122.122/12"
+        assert ip_found
+    end
+
+
+    def test_05_delete_db_instance
         @rds.delete_db_instance(@identifier)
         @rds.delete_db_instance(@identifier2)
-
-        sleep 2
+        sleep 3
 
         instances_result = @rds.describe_db_instances
-        puts "instances_result=" + instances_result.inspect
+        #puts "instances_result=" + instances_result.inspect
+
         instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"].each do |i|
+            puts "Trying to delete and getting i[DBInstanceStatus] -----------> " + i["DBInstanceStatus"]
             assert i["DBInstanceStatus"] == "deleting"
         end
-#        assert instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"].size == 0
 
+        assert instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"].size < 2
+    end
+
+
+    def test_06_create_security_groups
+        group_present=false
+
+        @rds.create_db_security_groups("new_sample_group", "new_sample_group_description")
+
+        @security_info = @rds.describe_db_security_groups({:force_array => ["DBSecurityGroup", "IPRange"]})["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+
+        @security_info.each do |security_group|
+            if (security_group["DBSecurityGroupName"]=="new_sample_group")&&(security_group["DBSecurityGroupDescription"]=="new_sample_group_description")
+                group_present = true
+            end
+        end
+
+        assert group_present
+    end
+
+
+    def test_07_revoking_security_groups_ingress
+        sleep 15
+        @rds.revoke_db_security_group_ingress("default", "122.122.122.122/12")
+        sleep 2
+        @security_info = @rds.describe_db_security_groups({:force_array => ["DBSecurityGroup", "IPRange"]})["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+        revoking = @security_info[0].inspect.include? "revoking"
+        assert revoking
+    end
+
+
+    def test_08_delete_security_group
+        group_present=false
+        @rds.delete_db_security_group("new_sample_group")
+        sleep 2
+        @security_info = @rds.describe_db_security_groups({:force_array => ["DBSecurityGroup", "IPRange"]})["DescribeDBSecurityGroupsResult"]["DBSecurityGroups"]["DBSecurityGroup"]
+        @security_info.each do |security_group|
+            if (security_group["DBSecurityGroupName"]=="new_sample_group")
+                group_present=true
+            end
+        end
+        assert !group_present
     end
 
 
