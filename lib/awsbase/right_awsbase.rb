@@ -321,12 +321,13 @@ module Aws
         end
 
         # This is the direction we should head instead of writing our own parsers for everything, much simpler
-        def request_info_xml_simple(connection_name, lib_params, request, logger)
+        def request_info_xml_simple(connection_name, lib_params, request, logger, params = {})
 
             @connection = get_conn(connection_name, lib_params, logger)
             @last_request = request[:request]
             @last_response = nil
-            response=nil
+
+            response = nil
             blockexception = nil
 
             response = @connection.request(request)
@@ -337,7 +338,8 @@ module Aws
                 @error_handler = nil
 #                benchblock.xml.add! { parser.parse(response) }
 #                return parser.result
-                return XmlSimple.xml_in(response.body, {"KeyToSymbol"=>false, 'ForceArray' => false})
+                force_array = params[:force_array] || false
+                return XmlSimple.xml_in(response.body, {"KeyToSymbol"=>false, 'ForceArray' => force_array})
             else
                 @error_handler = AWSErrorHandler.new(self, nil, :errors_list => self.class.amazon_problems) unless @error_handler
                 check_result = @error_handler.check(request)
