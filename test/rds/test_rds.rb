@@ -16,39 +16,38 @@ class TestRds < Test::Unit::TestCase
                             TestCredentials.aws_secret_access_key)
 
         @identifier = 'test-db-instance1'
-
         # deleting this one....
-        @identifier2 = 'test-db-instance2'
+        #@identifier2 = 'my-db-instance2'
     end
 
 
     def test_01_create_db_instance
         begin
-            db_instance2 = @rds.create_db_instance('right_ec2_awesome_test_key', "db.m1.small", 5, "master", "masterpass")
+            db_instance3 = @rds.create_db_instance('right_ec2_awesome_test_key', "db.m1.small", 5, "master", "masterpass")
         rescue => ex
             #puts "msg=" + ex.message
             #puts "response=" + ex.response
             assert ex.message[0, "InvalidParameterValue".size] == "InvalidParameterValue"
         end
 
-        db_instance = @rds.create_db_instance(@identifier, "db.m1.small", 5, "master", "masterpass")
-        #db_instance2 = @rds.create_db_instance(@identifier2, "db.m1.small", 5, "master", "masterpass")
-
+        #db_instance = @rds.create_db_instance(@identifier, "db.m1.small", 5, "master", "masterpass")
 
         tries=0
         while tries < 100
-
             instances_result = @rds.describe_db_instances
             instances = instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
 
-            if instances["DBInstanceStatus"] == "available"
-                break
+            #puts "INSTANCES -----> " + instances.inspect
+
+            instances.each do |i|
+                next unless i["DBInstanceIdentifier"] == @identifier
+                break if i["DBInstanceStatus"] == "available"
+                puts "Database not ready yet.... attempt #{tries.to_s} of 100, db state --> #{i["DBInstanceStatus"].to_s}"
+                tries += 1
+                sleep 5
             end
 
-            puts "Database not ready yet.... trying again until 100, at --> " + tries.to_s
 
-            tries+=1
-            sleep 2
         end
     end
 
@@ -99,7 +98,7 @@ class TestRds < Test::Unit::TestCase
 
     def test_05_delete_db_instance
         @rds.delete_db_instance(@identifier)
-        @rds.delete_db_instance(@identifier2)
+        #@rds.delete_db_instance(@identifier2)
         sleep 3
 
         instances_result = @rds.describe_db_instances
@@ -139,6 +138,7 @@ class TestRds < Test::Unit::TestCase
         revoking = @security_info[0].inspect.include? "revoking"
         assert revoking
     end
+
 
 
     def test_08_delete_security_group
