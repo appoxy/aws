@@ -16,6 +16,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'awsbase/benchmark_fix'
 require 'awsbase/support'
 require 'awsbase/right_awsbase'
+require 'awsbase/aws_response_array'
 require 'ec2/right_ec2'
 require 'ec2/right_mon_interface'
 require 's3/right_s3_interface'

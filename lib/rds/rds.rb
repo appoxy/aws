@@ -51,6 +51,24 @@ module Aws
             generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
         end
 
+        def do_request(action, params, options={})
+            link = generate_request(action, params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger,
+                                           :group_tags=>{"DBInstances"=>"DBInstance",
+                                                            "DBParameterGroups"=>"DBParameterGroup",
+                                                            "DBSecurityGroups"=>"DBSecurityGroup",
+                                                            "EC2SecurityGroups"=>"EC2SecurityGroup",
+                                                            "IPRanges"=>"IPRange"},
+                                           :force_array=>["DBInstances",
+                                                          "DBParameterGroups",
+                                                          "DBSecurityGroups",
+                                                          "EC2SecurityGroups",
+                                                          "IPRanges"],
+                                           :pull_out_array=>options[:pull_out_array],
+                                           :pull_out_single=>options[:pull_out_single],
+                                           :wrapper=>options[:wrapper])
+        end
+
 
         #-----------------------------------------------------------------
         #      REQUESTS
@@ -81,8 +99,7 @@ module Aws
 
             @logger.info("Creating DB Instance called #{identifier}")
 
-            link = generate_request("CreateDBInstance", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            link = do_request("CreateDBInstance", params, :pull_out_single=>[:create_db_instance_result, :db_instance])
 
         rescue Exception
             on_exception
@@ -93,14 +110,16 @@ module Aws
         #      DBInstanceIdentifier
         #      MaxRecords
         #      Marker
+        #
+        # Returns array of instances as hashes.
+        # Response metadata can be retreived by calling array.response_metadata on the returned array.
         def describe_db_instances(options={})
             params = {}
-            params['DBInstanceIdentifier'] = options[:DBInstanceIdentifier] if options[:DBInstanceIdentifier]
-            params['MaxRecords'] = options[:MaxRecords] if options[:MaxRecords]
-            params['Marker'] = options[:Marker] if options[:Marker]
+            params['DBInstanceIdentifier'] = options[:db_instance_identifier] if options[:db_instance_identifier]
+            params['MaxRecords'] = options[:max_records] if options[:max_records]
+            params['Marker'] = options[:marker] if options[:marker]
 
-            link = generate_request("DescribeDBInstances", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            resp = do_request("DescribeDBInstances", params, :pull_out_array=>[:describe_db_instances_result, :db_instances])
 
         rescue Exception
             on_exception
@@ -120,21 +139,20 @@ module Aws
                 params['SkipFinalSnapshot'] = true
             end
 
-            link = generate_request("DeleteDBInstance", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            link = do_request("DeleteDBInstance", params, :pull_out_single=>[:delete_db_instance_result, :db_instance])
 
         rescue Exception
             on_exception
         end
 
 
-        def create_db_security_groups(group_name, description, options={})
+        def create_db_security_group(group_name, description, options={})
             params = {}
             params['DBSecurityGroupName'] = group_name
             params['DBSecurityGroupDescription'] = description
-            params['Engine'] = options[:engine] || "MySQL5.1"
-            link = generate_request("CreateDBSecurityGroup", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+
+            link = do_request("CreateDBSecurityGroup", params, :pull_out_single => [:create_db_security_group_result, :db_security_group])
+
         rescue Exception
             on_exception
         end
@@ -143,8 +161,9 @@ module Aws
         def delete_db_security_group(group_name, options={})
             params = {}
             params['DBSecurityGroupName'] = group_name
-            link = generate_request("DeleteDBSecurityGroup", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+
+            link = do_request("DeleteDBSecurityGroup", params)
+
         rescue Exception
             on_exception
         end
@@ -155,10 +174,9 @@ module Aws
             params['DBSecurityGroupName'] = options[:DBSecurityGroupName] if options[:DBSecurityGroupName]
             params['MaxRecords'] = options[:MaxRecords] if options[:MaxRecords]
 
-            force_array = options[:force_array].nil? ? false : options[:force_array]
+            link = do_request("DescribeDBSecurityGroups", params, :pull_out_array=>[:describe_db_security_groups_result, :db_security_groups], :wrapper=>:db_security_group)
 
-            link = generate_request("DescribeDBSecurityGroups", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger, :force_array => force_array)
+
         rescue Exception
             on_exception
         end
@@ -169,8 +187,7 @@ module Aws
             params['DBSecurityGroupName'] = group_name
             params['EC2SecurityGroupOwnerId'] = ec2_group_owner_id
             params['EC2SecurityGroupName'] = ec2_group_name
-            link = generate_request("AuthorizeDBSecurityGroupIngress", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            link = do_request("AuthorizeDBSecurityGroupIngress", params)
         rescue Exception
             on_exception
         end
@@ -180,8 +197,7 @@ module Aws
             params = {}
             params['DBSecurityGroupName'] = group_name
             params['CIDRIP'] = ip_range
-            link = generate_request("AuthorizeDBSecurityGroupIngress", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            link = do_request("AuthorizeDBSecurityGroupIngress", params)
         rescue Exception
             on_exception
         end
@@ -191,11 +207,11 @@ module Aws
             params = {}
             params['DBSecurityGroupName'] = group_name
             params['CIDRIP'] = ip_range
-            link = generate_request("RevokeDBSecurityGroupIngress", params)
-            resp = request_info_xml_simple(:rds_connection, @params, link, @logger)
+            link = do_request("RevokeDBSecurityGroupIngress", params)
         rescue Exception
             on_exception
         end
+
 
 
     end

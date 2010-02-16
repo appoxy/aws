@@ -28,6 +28,7 @@ module Aws
     require 'cgi'
     require 'uri'
     require 'xmlsimple'
+    require 'active_support'
 
     class AwsUtils #:nodoc:
         @@digest1 = OpenSSL::Digest::Digest.new("sha1")
@@ -321,14 +322,15 @@ module Aws
         end
 
         # This is the direction we should head instead of writing our own parsers for everything, much simpler
+        # params:
+        #  - :group_tags => hash of indirection to eliminate, see: http://xml-simple.rubyforge.org/
+        #  - :force_array => true for all or an array of tag names to force
+        #  - :pull_out_array => an array of levels to dig into when generating return value (see rds.rb for example)
         def request_info_xml_simple(connection_name, lib_params, request, logger, params = {})
 
             @connection = get_conn(connection_name, lib_params, logger)
             @last_request = request[:request]
             @last_response = nil
-
-            response = nil
-            blockexception = nil
 
             response = @connection.request(request)
 #            benchblock.service.add!{ response = @connection.request(request) }
@@ -339,7 +341,51 @@ module Aws
 #                benchblock.xml.add! { parser.parse(response) }
 #                return parser.result
                 force_array = params[:force_array] || false
-                return XmlSimple.xml_in(response.body, {"KeyToSymbol"=>false, 'ForceArray' => force_array})
+                # Force_array and group_tags don't work nice together so going to force array manually
+                xml_simple_options = {"KeyToSymbol"=>false, 'ForceArray' => false}
+                xml_simple_options["GroupTags"] = params[:group_tags] if params[:group_tags]
+
+#                { 'GroupTags' => { 'searchpath' => 'dir' }
+#                'ForceArray' => %r(_list$)
+                parsed = XmlSimple.xml_in(response.body, xml_simple_options)
+                # todo: we may want to consider stripping off a couple of layers when doing this, for instance:
+                # <DescribeDBInstancesResponse xmlns="http://rds.amazonaws.com/admin/2009-10-16/">
+                #  <DescribeDBInstancesResult>
+                #    <DBInstances>
+                # <DBInstance>....
+                # Strip it off and only return an array or hash of <DBInstance>'s (hash by identifier).
+                # would have to be able to make the RequestId available somehow though, perhaps some special array subclass which included that?
+                unless force_array.is_a? Array
+                    force_array = []
+                end
+                parsed = symbolize(parsed, force_array)
+#                puts 'parsed=' + parsed.inspect
+                if params[:pull_out_array]
+                    ret = Aws::AwsResponseArray.new(parsed[:response_metadata])
+                    level_hash = parsed
+                    params[:pull_out_array].each do |x|
+                        level_hash = level_hash[x]
+                    end
+                    if level_hash.is_a? Hash # When there's only one
+                        ret << level_hash
+                    else # should be array
+                        level_hash.each do |x|
+                            ret << x
+                        end
+                    end
+                elsif params[:pull_out_single]
+                    # returns a single object
+                    ret = AwsResponseObjectHash.new(parsed[:response_metadata])
+                    level_hash = parsed
+                    params[:pull_out_single].each do |x|
+                        level_hash = level_hash[x]
+                    end
+                    ret.merge!(level_hash)
+                else
+                    ret = parsed
+                end
+                return ret
+
             else
                 @error_handler = AWSErrorHandler.new(self, nil, :errors_list => self.class.amazon_problems) unless @error_handler
                 check_result = @error_handler.check(request)
@@ -353,38 +399,22 @@ module Aws
 
         end
 
-        # FROM ELB
-=begin
- def generate_request2(action, params={})
-            service_hash = {"Action" => action,
-                            "AWSAccessKeyId" => @aws_access_key_id,
-                            "Version" => @@api }
-            service_hash.update(params)
-            service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-
-            # use POST method if the length of the query string is too large
-            if service_params.size > 2000
-                if signature_version == '2'
-                    # resign the request because HTTP verb is included into signature
-                    service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
+        def symbolize(hash, force_array)
+            ret = {}
+            hash.keys.each do |key|
+                val = hash[key]
+                if val.is_a? Hash
+                    val = symbolize(val, force_array)
+                    if force_array.include? key
+                        val = [val]
+                    end
+                elsif val.is_a? Array
+                    val = val.collect { |x| symbolize(x, force_array) }
                 end
-                request = Net::HTTP::Post.new(service)
-                request.body = service_params
-                request['Content-Type'] = 'application/x-www-form-urlencoded'
-            else
-                request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
+                ret[key.underscore.to_sym] = val
             end
-
-            #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
-            #puts "#{@params[:service]}?#{service_params}\n\n"
-
-            # prepare output hash
-            { :request => request,
-              :server => @params[:server],
-              :port => @params[:port],
-              :protocol => @params[:protocol] }
+            ret
         end
-=end
 
         # Returns +true+ if the describe_xxx responses are being cached
         def caching?
