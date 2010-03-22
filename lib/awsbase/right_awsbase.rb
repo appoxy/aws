@@ -86,24 +86,116 @@ module Aws
             string_to_sign = "#{http_verb.to_s.upcase}\n#{host.downcase}\n#{uri}\n#{canonical_string}"
             # sign the string
             signature = escape_sig(Base64.encode64(OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)).strip)
-            "#{canonical_string}&Signature=#{signature}"
+            ret = "#{canonical_string}&Signature=#{signature}"
+#            puts 'full=' + ret.inspect
+            ret
         end
+
+        HEX = [
+                 "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+                "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+                "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+                "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+                "%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+                "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+                "%30", "%31", "%32", "%33", "%34", "%35", "%36", "%37",
+                "%38", "%39", "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+                "%40", "%41", "%42", "%43", "%44", "%45", "%46", "%47",
+                "%48", "%49", "%4A", "%4B", "%4C", "%4D", "%4E", "%4F",
+                "%50", "%51", "%52", "%53", "%54", "%55", "%56", "%57",
+                "%58", "%59", "%5A", "%5B", "%5C", "%5D", "%5E", "%5F",
+                "%60", "%61", "%62", "%63", "%64", "%65", "%66", "%67",
+                "%68", "%69", "%6A", "%6B", "%6C", "%6D", "%6E", "%6F",
+                "%70", "%71", "%72", "%73", "%74", "%75", "%76", "%77",
+                "%78", "%79", "%7A", "%7B", "%7C", "%7D", "%7E", "%7F",
+                "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+                "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+                "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+                "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+                "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+                "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+                "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+                "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+                "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+                "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+                "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+                "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+                "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+                "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+                "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+                "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+        ]
+        TO_REMEMBER = 'AZaz09 -_.!~*\'()'
+        ASCII = {} # {'A'=>65, 'Z'=>90, 'a'=>97, 'z'=>122, '0'=>48, '9'=>57, ' '=>32, '-'=>45, '_'=>95, '.'=>}
+        TO_REMEMBER.each_char do |c| #unpack("c*").each do |c|
+            ASCII[c] = c.unpack("c")[0]
+        end
+#        puts 'ascii=' + ASCII.inspect
 
         # Escape a string accordingly Amazon rulles
         # http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?REST_RESTAuth.html
         def self.amz_escape(param)
+
+            param = param.to_s
+#            param = param.force_encoding("UTF-8")
+
+            e = "x" # escape2(param.to_s)
+#            puts 'ESCAPED=' + e.inspect
+
+
             #return CGI.escape(param.to_s).gsub("%7E", "~").gsub("+", "%20") # from: http://umlaut.rubyforge.org/svn/trunk/lib/aws_product_sign.rb
 
             #param.to_s.gsub(/([^a-zA-Z0-9._~-]+)/n) do
             #  '%' + $1.unpack('H2' * $1.size).join('%').upcase
             #end
-            e = CGI.escape(param.to_s)
-            e = e.gsub("%7E", "~")
-            e = e.gsub("+", "%20")
-            e = e.gsub("*", "%2A")
+
+#            puts 'e in=' + e.inspect
+#            converter = Iconv.new('ASCII', 'UTF-8')
+#            e = converter.iconv(e) #.unpack('U*').select{ |cp| cp < 127 }.pack('U*')
+#            puts 'e out=' + e.inspect
+
+            e2 = CGI.escape(param)
+            e2 = e2.gsub("%7E", "~")
+            e2 = e2.gsub("+", "%20")
+            e2 = e2.gsub("*", "%2A")
+
+#            puts 'E2=' + e2.inspect
+#            puts e == e2.to_s
+
+            e2
 
         end
 
+        def self.escape2(s)
+            # home grown
+            ret = ""
+            s.unpack("U*") do |ch|
+#                puts 'ch=' + ch.inspect
+                if ASCII['A'] <= ch && ch <= ASCII['Z'] # A to Z
+                    ret << ch
+                elsif ASCII['a'] <= ch && ch <= ASCII['z'] # a to z
+                    ret << ch
+                elsif ASCII['0'] <= ch && ch <= ASCII['9'] # 0 to 9
+                    ret << ch
+                elsif ch == ASCII[' '] # space
+                    ret << "%20" # "+"
+                elsif ch == ASCII['-'] || ch == ASCII['_'] || ch == ASCII['.'] || ch == ASCII['~']
+                    ret << ch
+                elsif ch <= 0x007f # other ascii
+                    ret << HEX[ch]
+                elsif ch <= 0x07FF # non-ascii
+                    ret << HEX[0xc0 | (ch >> 6)]
+                    ret << HEX[0x80 | (ch & 0x3F)]
+                else
+                    ret << HEX[0xe0 | (ch >> 12)]
+                    ret << HEX[0x80 | ((ch >> 6) & 0x3F)]
+                    ret << HEX[0x80 | (ch & 0x3F)]
+                end
+
+            end
+            ret
+
+        end
 
         def self.escape_sig(raw)
             e = CGI.escape(raw)
@@ -275,6 +367,9 @@ module Aws
         def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}) #:nodoc:
             # remove empty params from request
             user_params.delete_if {|key, value| value.nil? }
+#            user_params.each_pair do |k,v|
+#                user_params[k] = v.force_encoding("UTF-8")
+#            end
             #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
             # prepare service data
             service = lib_params[:service]
@@ -571,10 +666,10 @@ module Aws
     end
 
 
-    # Exception class to signal any Amazon errors. All errors occuring during calls to Amazon's
-    # web services raise this type of error.
-    # Attribute inherited by RuntimeError:
-    #  message    - the text of the error, generally as returned by AWS in its XML response.
+# Exception class to signal any Amazon errors. All errors occuring during calls to Amazon's
+# web services raise this type of error.
+# Attribute inherited by RuntimeError:
+#  message    - the text of the error, generally as returned by AWS in its XML response.
     class AwsError < RuntimeError
 
         # either an array of errors where each item is itself an array of [code, message]),
@@ -647,7 +742,7 @@ module Aws
 
     end
 
-    # Simplified version
+# Simplified version
     class AwsError2 < RuntimeError
         # Request id (if exists)
         attr_reader :request_id
@@ -851,7 +946,7 @@ module Aws
     end
 
 
-    #-----------------------------------------------------------------
+#-----------------------------------------------------------------
 
     class RightSaxParserCallback #:nodoc:
         def self.include_callback
@@ -1018,9 +1113,9 @@ module Aws
         end
     end
 
-    #-----------------------------------------------------------------
-    #      PARSERS: Errors
-    #-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#      PARSERS: Errors
+#-----------------------------------------------------------------
 
 #<Error>
 #  <Code>TemporaryRedirect</Code>
@@ -1056,8 +1151,8 @@ module Aws
         end
     end
 
-    # Dummy parser - does nothing
-    # Returns the original params back
+# Dummy parser - does nothing
+# Returns the original params back
     class RightDummyParser # :nodoc:
         attr_accessor :result
 

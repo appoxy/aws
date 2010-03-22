@@ -169,7 +169,8 @@ module Aws
     # Convert a Ruby language value to a SDB value by replacing Ruby nil with the user's chosen string representation of nil.
     # Non-nil values are unaffected by this filter.
     def ruby_to_sdb(value)
-      value.nil? ? @nil_rep : value
+#        puts "value #{value} is frozen? #{value.frozen?}"
+      value.nil? ? @nil_rep : ((value.frozen? || !value.is_a?(String)) ? value : value.force_encoding("UTF-8"))
     end
 
     # Convert a SDB value to a Ruby language value by replacing the user's chosen string representation of nil with Ruby nil.

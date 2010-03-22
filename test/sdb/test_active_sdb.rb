@@ -92,13 +92,13 @@ class TestSdb < Test::Unit::TestCase
     ids = clients.map{|client| client.id }[0..1]
     assert_equal @clients.size + 1, clients.size
     # retrieve all presidents (must find: Bush, Putin, Medvedev)
-    assert_equal 3, Client.find(:all, :conditions => ["[?=?]",'post','president']).size
+    assert_equal 3, Client.find(:all, :conditions => ["post=?",'president']).size
     # retrieve all russian presidents (must find: Putin, Medvedev)
-    assert_equal 2, Client.find(:all, :conditions => ["['post'=?] intersection ['country'=?]",'president', 'Russia']).size
+    assert_equal 2, Client.find(:all, :conditions => ["post=? and country=?",'president', 'Russia']).size
     # retrieve all russian presidents and all women (must find: Putin, Medvedev, 2 Maries and Sandy)
-    assert_equal 5, Client.find(:all, :conditions => ["['post'=?] intersection ['country'=?] union ['gender'=?]",'president', 'Russia','female']).size
+    assert_equal 5, Client.find(:all, :conditions => ["post=? and country=? or gender=?",'president', 'Russia','female']).size
     # find all rissian presidents Bushes
-    assert_equal 0, Client.find(:all, :conditions => ["['post'=?] intersection ['country'=?] intersection ['name'=?]",'president', 'Russia','Bush']).size
+    assert_equal 0, Client.find(:all, :conditions => ["post=? and country=? and name=?",'president', 'Russia','Bush']).size
     # --- find by ids
     # must find 1 rec (by rec id) and return it
     assert_equal ids.first, Client.find(ids.first).id
