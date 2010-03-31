@@ -1,4 +1,5 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require 'test/unit'
+require File.dirname(__FILE__) + '/../../lib/aws'
 require 'pp'
 require File.dirname(__FILE__) + '/../test_credentials.rb'
 
@@ -21,47 +22,28 @@ class TestElb < Test::Unit::TestCase
 
     def test_01_create_elb
 
-        # Create elb
-
-        # Launch instance and add to elb
-        new_key = @ec2.create_key_pair(@key)
-        assert @ec2.create_security_group(@group, 'My awesone test group'), 'Create_security_group fail'
-        # LAUNCH HERE
-
-        # SHUTDOWN HERE
-
-        # Remove artifacts
-        assert @ec2.delete_security_group(@group), 'Delete_security_group fail'
-        assert @ec2.delete_key_pair(@key), 'Delete_key_pair fail'
-
     end
 
     def test_02_register_instances
-        assert @ec2.create_security_group(@group, 'My awesone test group'), 'Create_security_group fail'
-        group = @ec2.describe_security_groups([@group])[0]
-        assert_equal @group, group[:aws_group_name], 'Group must be created but does not exist'
+
     end
 
     def test_03_deregister_instances
-        assert @ec2.authorize_security_group_named_ingress(@group, TestCredentials.account_number, 'default')
-        assert @ec2.authorize_security_group_IP_ingress(@group, 80, 80, 'udp', '192.168.1.0/8')
+
     end
 
-    def test_04_describe_instance_health
-        assert_equal 2, @ec2.describe_security_groups([@group])[0][:aws_perms].size
+
+    def test_04_describe_elb
+        desc = @elb.describe_load_balancers
     end
 
-    def test_05_describe_elb
-        assert @ec2.revoke_security_group_IP_ingress(@group, 80, 80, 'udp', '192.168.1.0/8')
-        assert @ec2.revoke_security_group_named_ingress(@group,
-                                                        TestCredentials.account_number, 'default')
+    def test_06_describe_instance_health
+
     end
 
-    def test_06_delete_elb
-        images = @ec2.describe_images
-        assert images.size>0, 'Amazon must have at least some public images'
-        # unknown image
-        assert_raise(Aws::AwsError){ @ec2.describe_images(['ami-ABCDEFGH'])}
+
+    def test_15_delete_elb
+
     end
 
 

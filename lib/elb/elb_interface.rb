@@ -1,7 +1,9 @@
 module Aws
 
+    require 'xmlsimple'
 
     class Elb < AwsBase
+
         include AwsBaseInterface
 
 
@@ -43,15 +45,29 @@ module Aws
         end
 
 
-        def generate_request(action, params={})
-            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
-        end
-
-
         # Sends request to Amazon and parses the response
         # Raises AwsError if any banana happened
         def request_info(request, parser)
             request_info2(request, parser, @params, :elb_connection, @logger, @@bench)
+        end
+
+        # todo: convert to xml-simple version and get rid of parser below
+        def do_request(action, params, options={})
+            link = generate_request(action, params)
+            resp = request_info_xml_simple(:rds_connection, @params, link, @logger,
+                                           :group_tags=>{"LoadBalancersDescriptions"=>"LoadBalancersDescription",
+                                                            "DBParameterGroups"=>"DBParameterGroup",
+                                                            "DBSecurityGroups"=>"DBSecurityGroup",
+                                                            "EC2SecurityGroups"=>"EC2SecurityGroup",
+                                                            "IPRanges"=>"IPRange"},
+                                           :force_array=>["DBInstances",
+                                                          "DBParameterGroups",
+                                                          "DBSecurityGroups",
+                                                          "EC2SecurityGroups",
+                                                          "IPRanges"],
+                                           :pull_out_array=>options[:pull_out_array],
+                                           :pull_out_single=>options[:pull_out_single],
+                                           :wrapper=>options[:wrapper])
         end
 
 

@@ -47,10 +47,6 @@ module Aws
         end
 
 
-        def generate_request(action, params={})
-            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
-        end
-
         def do_request(action, params, options={})
             link = generate_request(action, params)
             resp = request_info_xml_simple(:rds_connection, @params, link, @logger,

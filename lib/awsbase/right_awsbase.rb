@@ -363,6 +363,11 @@ module Aws
             end
         end
 
+
+        def generate_request(action, params={})
+            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
+        end
+
         # FROM SDB
         def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}) #:nodoc:
             # remove empty params from request
@@ -428,6 +433,7 @@ module Aws
             @last_response = nil
 
             response = @connection.request(request)
+           # puts "response=" + response.body
 #            benchblock.service.add!{ response = @connection.request(request) }
             # check response for errors...
             @last_response = response
