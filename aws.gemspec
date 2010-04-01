@@ -53,7 +53,7 @@ Gem::Specification.new do |s|
      "test/s3/test_s3_stubbed.rb",
      "test/sdb/test_active_sdb.rb",
      "test/sdb/test_helper.rb",
-     "test/sdb/test_right_sdb.rb",
+     "test/sdb/test_sdb.rb",
      "test/sqs/test_helper.rb",
      "test/sqs/test_right_sqs.rb",
      "test/test_credentials.rb",

@@ -75,7 +75,7 @@ desc "Test just the SDB interface"
 task :testsdb do
     require 'test/test_credentials'
     TestCredentials.get_credentials
-    require 'test/sdb/test_right_sdb.rb'
+    require 'test/sdb/test_sdb.rb'
 end
 
 desc "Test active SDB interface"

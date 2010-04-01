@@ -92,7 +92,7 @@ module Aws
         end
 
         HEX = [
-                 "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+                "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
                 "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
                 "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
                 "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
@@ -409,17 +409,52 @@ module Aws
               :protocol => lib_params[:protocol] }
         end
 
-        def get_conn(connection_name, lib_params, logger)
-            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
-            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
-            conn = thread[connection_name]
-            return conn
+#        def get_conn(connection_name, lib_params, logger)
+#            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
+#            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
+#            conn = thread[connection_name]
+#            return conn
+#        end
+#
+#        def request_info2(request, parser, lib_params, connection_name, logger, bench)
+#            t = get_conn(connection_name, lib_params, logger)
+#            request_info_impl(t, bench, request, parser)
+#        end
+
+        # Sends request to Amazon and parses the response
+        # Raises AwsError if any banana happened
+        def request_info2(request, parser, lib_params, connection_name, logger, bench, &block)  #:nodoc:
+            ret = nil
+            conn_mode = lib_params[:connection_mode]
+            if conn_mode == :per_request
+                http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+                begin
+                    retry_count = 1
+                    count = 0
+                    while count < retry_count
+                        puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
+                        begin
+                            ret = request_info_impl(http_conn, bench, request, parser)
+                            break
+                        rescue Aws::AwsError => ex
+                            if !ex.include?(/QueryTimeout/)
+                                raise ex
+                            end
+                        end
+                        count += 1
+                    end
+                ensure
+                    http_conn.finish if http_conn
+                end
+            elsif conn_mode == :per_thread || conn_mode == :single
+                thread = conn_mode == :per_thread ? Thread.current : Thread.main
+                thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+                http_conn =  thread[connection_name]
+                ret = request_info_impl(http_conn, bench, request, parser, &block)
+            end
+            ret
         end
 
-        def request_info2(request, parser, lib_params, connection_name, logger, bench)
-            t = get_conn(connection_name, lib_params, logger)
-            request_info_impl(t, bench, request, parser)
-        end
 
         # This is the direction we should head instead of writing our own parsers for everything, much simpler
         # params:
@@ -433,7 +468,7 @@ module Aws
             @last_response = nil
 
             response = @connection.request(request)
-           # puts "response=" + response.body
+            # puts "response=" + response.body
 #            benchblock.service.add!{ response = @connection.request(request) }
             # check response for errors...
             @last_response = response
@@ -569,6 +604,7 @@ module Aws
         def multi_thread
             @params[:multi_thread]
         end
+
 
         def request_info_impl(connection, benchblock, request, parser, &block) #:nodoc:
             @connection = connection

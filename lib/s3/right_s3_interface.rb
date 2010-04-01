@@ -164,9 +164,8 @@ module Aws
       # Sends request to Amazon and parses the response.
       # Raises AwsError if any banana happened.
     def request_info(request, parser, &block) # :nodoc:
-      thread = @params[:multi_thread] ? Thread.current : Thread.main
-      thread[:s3_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
-      request_info_impl(thread[:s3_connection], @@bench, request, parser, &block)
+        request_info2(request, parser, @params, :s3_connection, @logger, @@bench, &block)
+
     end
 
 
