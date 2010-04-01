@@ -53,7 +53,7 @@ task :tests3 do
     require 'test/test_credentials'
     require 'test/http_connection'
     TestCredentials.get_credentials
-    require 'test/s3/test_right_s3.rb'
+    require 'test/s3/test_s3.rb'
 end
 
 desc "Test just the S3 interface using local stubs"
@@ -61,7 +61,7 @@ task :tests3local do
     require 'test/test_credentials'
     require 'test/http_connection'
     TestCredentials.get_credentials
-    require 'test/s3/test_right_s3_stubbed.rb'
+    require 'test/s3/test_s3_stubbed.rb'
 end
 
 desc "Test just the EC2 interface"
