@@ -40,7 +40,8 @@ module Aws
                    :default_host => uri ? uri.host : DEFAULT_HOST,
                    :default_port => uri ? uri.port : DEFAULT_PORT,
                    :default_service => uri ? uri.path : DEFAULT_PATH,
-                   :default_protocol => uri ? uri.scheme : DEFAULT_PROTOCOL },
+                   :default_protocol => uri ? uri.scheme : DEFAULT_PROTOCOL,
+            :api_version => API_VERSION },
                  aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
                  aws_secret_access_key|| ENV['AWS_SECRET_ACCESS_KEY'],
                  params)

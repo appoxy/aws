@@ -38,7 +38,8 @@ module Aws
                    :default_host => ENV['ELB_URL'] ? URI.parse(ENV['ELB_URL']).host : DEFAULT_HOST,
                    :default_port => ENV['ELB_URL'] ? URI.parse(ENV['ELB_URL']).port : DEFAULT_PORT,
                    :default_service => ENV['ELB_URL'] ? URI.parse(ENV['ELB_URL']).path : DEFAULT_PATH,
-                   :default_protocol => ENV['ELB_URL'] ? URI.parse(ENV['ELB_URL']).scheme : DEFAULT_PROTOCOL },
+                   :default_protocol => ENV['ELB_URL'] ? URI.parse(ENV['ELB_URL']).scheme : DEFAULT_PROTOCOL,
+            :api_version => API_VERSION },
                  aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
                  aws_secret_access_key|| ENV['AWS_SECRET_ACCESS_KEY'],
                  params)

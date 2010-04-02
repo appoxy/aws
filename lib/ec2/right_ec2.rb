@@ -118,7 +118,8 @@ module Aws
              :default_host     => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).host   : DEFAULT_HOST,
              :default_port     => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).port   : DEFAULT_PORT,
              :default_service  => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).path   : DEFAULT_PATH,
-             :default_protocol => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).scheme : DEFAULT_PROTOCOL },
+             :default_protocol => ENV['EC2_URL'] ? URI.parse(ENV['EC2_URL']).scheme : DEFAULT_PROTOCOL,
+            :api_version => API_VERSION },
            aws_access_key_id    || ENV['AWS_ACCESS_KEY_ID'] ,
            aws_secret_access_key|| ENV['AWS_SECRET_ACCESS_KEY'],
            params)

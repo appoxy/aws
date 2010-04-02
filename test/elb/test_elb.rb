@@ -35,6 +35,7 @@ class TestElb < Test::Unit::TestCase
 
     def test_04_describe_elb
         desc = @elb.describe_load_balancers
+        puts desc.inspect
     end
 
     def test_06_describe_instance_health

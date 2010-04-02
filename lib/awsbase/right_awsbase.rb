@@ -334,6 +334,7 @@ module Aws
                 @params[:port] ||= service_info[:default_port]
                 @params[:service] ||= service_info[:default_service]
                 @params[:protocol] ||= service_info[:default_protocol]
+                @params[:api_version] ||= service_info[:api_version]
             end
             if !@params[:multi_thread].nil? && @params[:connection_mode].nil? # user defined this
                 @params[:connection_mode] = @params[:multi_thread] ? :per_thread : :single
@@ -365,7 +366,7 @@ module Aws
 
 
         def generate_request(action, params={})
-            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @@api, @params, params)
+            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @params[:api_version], @params, params)
         end
 
         # FROM SDB
