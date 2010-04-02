@@ -37,7 +37,7 @@ task :testsqs do
     require 'test/test_credentials'
     require 'test/http_connection'
     TestCredentials.get_credentials
-    require 'test/sqs/test_right_sqs.rb'
+    require 'test/sqs/test_sqs.rb'
 end
 
 desc "Test just the second generation SQS interface"
@@ -68,7 +68,7 @@ desc "Test just the EC2 interface"
 task :testec2 do
     require 'test/test_credentials'
     TestCredentials.get_credentials
-    require 'test/ec2/test_right_ec2.rb'
+    require 'test/ec2/test_ec2.rb'
 end
 
 desc "Test just the SDB interface"
@@ -89,7 +89,7 @@ desc "Test CloudFront interface"
 task :testacf do
     require 'test/test_credentials'
     TestCredentials.get_credentials
-    require 'test/acf/test_right_acf.rb'
+    require 'test/acf/test_acf.rb'
 end
 
 # vim: syntax=Ruby

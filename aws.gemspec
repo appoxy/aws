@@ -41,10 +41,10 @@ Gem::Specification.new do |s|
   s.summary = %q{AWS Ruby Library for interfacing with Amazon Web Services.}
   s.test_files = [
     "test/acf/test_helper.rb",
-     "test/acf/test_right_acf.rb",
+     "test/acf/test_acf.rb",
      "test/ec2/test_helper.rb",
      "test/ec2/test_mon.rb",
-     "test/ec2/test_right_ec2.rb",
+     "test/ec2/test_ec2.rb",
      "test/elb/test_elb.rb",
      "test/http_connection.rb",
      "test/rds/test_rds.rb",
@@ -55,7 +55,7 @@ Gem::Specification.new do |s|
      "test/sdb/test_helper.rb",
      "test/sdb/test_sdb.rb",
      "test/sqs/test_helper.rb",
-     "test/sqs/test_right_sqs.rb",
+     "test/sqs/test_sqs.rb",
      "test/test_credentials.rb",
      "test/ts_right_aws.rb"
   ]
