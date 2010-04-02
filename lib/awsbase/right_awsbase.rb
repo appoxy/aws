@@ -410,12 +410,26 @@ module Aws
               :protocol => lib_params[:protocol] }
         end
 
-#        def get_conn(connection_name, lib_params, logger)
+        def get_conn(connection_name, lib_params, logger)
 #            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
 #            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
 #            conn = thread[connection_name]
 #            return conn
-#        end
+            http_conn = nil
+            conn_mode = lib_params[:connection_mode]
+            if conn_mode == :per_request
+                http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+
+            elsif conn_mode == :per_thread || conn_mode == :single
+                thread = conn_mode == :per_thread ? Thread.current : Thread.main
+                thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+                http_conn =  thread[connection_name]
+#                ret = request_info_impl(http_conn, bench, request, parser, &block)
+            end
+            return http_conn
+
+        end
+
 #
 #        def request_info2(request, parser, lib_params, connection_name, logger, bench)
 #            t = get_conn(connection_name, lib_params, logger)
@@ -426,32 +440,24 @@ module Aws
         # Raises AwsError if any banana happened
         def request_info2(request, parser, lib_params, connection_name, logger, bench, &block)  #:nodoc:
             ret = nil
-            conn_mode = lib_params[:connection_mode]
-            if conn_mode == :per_request
-                http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
-                begin
-                    retry_count = 1
-                    count = 0
-                    while count < retry_count
-                        puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
-                        begin
-                            ret = request_info_impl(http_conn, bench, request, parser)
-                            break
-                        rescue Aws::AwsError => ex
-                            if !ex.include?(/QueryTimeout/)
-                                raise ex
-                            end
+            http_conn = get_conn(connection_name, lib_params, logger)
+            begin
+                retry_count = 1
+                count = 0
+                while count <= retry_count
+                    puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
+                    begin
+                        ret = request_info_impl(http_conn, bench, request, parser, &block)
+                        break
+                    rescue Aws::AwsError => ex
+                        if !ex.include?(/QueryTimeout/) || count == retry_count
+                            raise ex
                         end
-                        count += 1
                     end
-                ensure
-                    http_conn.finish if http_conn
+                    count += 1
                 end
-            elsif conn_mode == :per_thread || conn_mode == :single
-                thread = conn_mode == :per_thread ? Thread.current : Thread.main
-                thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
-                http_conn =  thread[connection_name]
-                ret = request_info_impl(http_conn, bench, request, parser, &block)
+            ensure
+                http_conn.finish if http_conn && lib_params[:connection_mode] == :per_request
             end
             ret
         end
@@ -465,73 +471,77 @@ module Aws
         def request_info_xml_simple(connection_name, lib_params, request, logger, params = {})
 
             @connection = get_conn(connection_name, lib_params, logger)
-            @last_request = request[:request]
-            @last_response = nil
+            begin
+                @last_request = request[:request]
+                @last_response = nil
 
-            response = @connection.request(request)
-            # puts "response=" + response.body
+                response = @connection.request(request)
+                # puts "response=" + response.body
 #            benchblock.service.add!{ response = @connection.request(request) }
-            # check response for errors...
-            @last_response = response
-            if response.is_a?(Net::HTTPSuccess)
-                @error_handler = nil
+                # check response for errors...
+                @last_response = response
+                if response.is_a?(Net::HTTPSuccess)
+                    @error_handler = nil
 #                benchblock.xml.add! { parser.parse(response) }
 #                return parser.result
-                force_array = params[:force_array] || false
-                # Force_array and group_tags don't work nice together so going to force array manually
-                xml_simple_options = {"KeyToSymbol"=>false, 'ForceArray' => false}
-                xml_simple_options["GroupTags"] = params[:group_tags] if params[:group_tags]
+                    force_array = params[:force_array] || false
+                    # Force_array and group_tags don't work nice together so going to force array manually
+                    xml_simple_options = {"KeyToSymbol"=>false, 'ForceArray' => false}
+                    xml_simple_options["GroupTags"] = params[:group_tags] if params[:group_tags]
 
 #                { 'GroupTags' => { 'searchpath' => 'dir' }
 #                'ForceArray' => %r(_list$)
-                parsed = XmlSimple.xml_in(response.body, xml_simple_options)
-                # todo: we may want to consider stripping off a couple of layers when doing this, for instance:
-                # <DescribeDBInstancesResponse xmlns="http://rds.amazonaws.com/admin/2009-10-16/">
-                #  <DescribeDBInstancesResult>
-                #    <DBInstances>
-                # <DBInstance>....
-                # Strip it off and only return an array or hash of <DBInstance>'s (hash by identifier).
-                # would have to be able to make the RequestId available somehow though, perhaps some special array subclass which included that?
-                unless force_array.is_a? Array
-                    force_array = []
-                end
-                parsed = symbolize(parsed, force_array)
+                    parsed = XmlSimple.xml_in(response.body, xml_simple_options)
+                    # todo: we may want to consider stripping off a couple of layers when doing this, for instance:
+                    # <DescribeDBInstancesResponse xmlns="http://rds.amazonaws.com/admin/2009-10-16/">
+                    #  <DescribeDBInstancesResult>
+                    #    <DBInstances>
+                    # <DBInstance>....
+                    # Strip it off and only return an array or hash of <DBInstance>'s (hash by identifier).
+                    # would have to be able to make the RequestId available somehow though, perhaps some special array subclass which included that?
+                    unless force_array.is_a? Array
+                        force_array = []
+                    end
+                    parsed = symbolize(parsed, force_array)
 #                puts 'parsed=' + parsed.inspect
-                if params[:pull_out_array]
-                    ret = Aws::AwsResponseArray.new(parsed[:response_metadata])
-                    level_hash = parsed
-                    params[:pull_out_array].each do |x|
-                        level_hash = level_hash[x]
-                    end
-                    if level_hash.is_a? Hash # When there's only one
-                        ret << level_hash
-                    else # should be array
-                        level_hash.each do |x|
-                            ret << x
+                    if params[:pull_out_array]
+                        ret = Aws::AwsResponseArray.new(parsed[:response_metadata])
+                        level_hash = parsed
+                        params[:pull_out_array].each do |x|
+                            level_hash = level_hash[x]
                         end
+                        if level_hash.is_a? Hash # When there's only one
+                            ret << level_hash
+                        else # should be array
+                            level_hash.each do |x|
+                                ret << x
+                            end
+                        end
+                    elsif params[:pull_out_single]
+                        # returns a single object
+                        ret = AwsResponseObjectHash.new(parsed[:response_metadata])
+                        level_hash = parsed
+                        params[:pull_out_single].each do |x|
+                            level_hash = level_hash[x]
+                        end
+                        ret.merge!(level_hash)
+                    else
+                        ret = parsed
                     end
-                elsif params[:pull_out_single]
-                    # returns a single object
-                    ret = AwsResponseObjectHash.new(parsed[:response_metadata])
-                    level_hash = parsed
-                    params[:pull_out_single].each do |x|
-                        level_hash = level_hash[x]
-                    end
-                    ret.merge!(level_hash)
-                else
-                    ret = parsed
-                end
-                return ret
+                    return ret
 
-            else
-                @error_handler = AWSErrorHandler.new(self, nil, :errors_list => self.class.amazon_problems) unless @error_handler
-                check_result = @error_handler.check(request)
-                if check_result
-                    @error_handler = nil
-                    return check_result
+                else
+                    @error_handler = AWSErrorHandler.new(self, nil, :errors_list => self.class.amazon_problems) unless @error_handler
+                    check_result = @error_handler.check(request)
+                    if check_result
+                        @error_handler = nil
+                        return check_result
+                    end
+                    request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
+                    raise AwsError2.new(@last_response.code, @last_request_id, request_text_data, @last_response.body)
                 end
-                request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
-                raise AwsError2.new(@last_response.code, @last_request_id, request_text_data, @last_response.body)
+            ensure
+                @connection.finish if @connection && lib_params[:connection_mode] == :per_request
             end
 
         end
