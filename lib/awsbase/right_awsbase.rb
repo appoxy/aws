@@ -476,7 +476,7 @@ module Aws
                 @last_response = nil
 
                 response = @connection.request(request)
-                # puts "response=" + response.body
+          #       puts "response=" + response.body
 #            benchblock.service.add!{ response = @connection.request(request) }
                 # check response for errors...
                 @last_response = response
@@ -513,6 +513,7 @@ module Aws
                         if level_hash.is_a? Hash # When there's only one
                             ret << level_hash
                         else # should be array
+#                            puts 'level_hash=' + level_hash.inspect
                             level_hash.each do |x|
                                 ret << x
                             end

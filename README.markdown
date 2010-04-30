@@ -1,14 +1,8 @@
 # Appoxy AWS Library
 
-The Appoxy AWS gem is a forked version of RightScale's AWS library.
+A Ruby gem for all Amazon Web Services.
 
-## Why the Fork?
-
-1. RightScale wasn't fixing critical bugs that were reported in their forums.
-1. It didn't work with Ruby 1.9 - this version does
-1. RightScale doesn't have the source hosted for the community
-1. We needed fixes and changes for [http://code.google.com/p/simple-record/ SimpleRecord] and didn't want to wait for RightScale to do it.
-1. We needed support for new AWS services.
+Brought to you by: [![Appoxy](http://www.simpledeployr.com/images/global/appoxy-small.png)](http://www.appoxy.com)
 
 ## Discussion Group
 

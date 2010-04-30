@@ -21,6 +21,16 @@ class TestRds < Test::Unit::TestCase
     end
 
 
+    def test_00_describe_db_instances_empty
+        instances = @rds.describe_db_instances
+#        puts "instances_result=" + instances_result.inspect
+#        instances = instances_result["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
+        puts "instances count = " + instances.count.to_s
+        puts 'instances=' + instances.inspect
+        assert instances.size == 0
+    end
+
+
     def test_01_create_db_instance
         begin
             db_instance3 = @rds.create_db_instance('bad_test_key', "db.m1.small", 5, "master", "masterpass")
@@ -64,8 +74,9 @@ class TestRds < Test::Unit::TestCase
         puts 'instances=' + instances.inspect
         assert instances.size > 0
         i_describe = nil
-        instances.each do |x|
-            i_describe = x if x[:db_instance_identifier] == @identifier
+        instances.each do |rdi|
+            puts 'rdi=' + rdi.inspect
+            i_describe = rdi if rdi[:db_instance_identifier] == @identifier
         end
         assert i_describe
 

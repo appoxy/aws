@@ -65,6 +65,7 @@ class TestSqs < Test::Unit::TestCase
         assert @sqs.send_message(queue_url, RIGHT_MESSAGE_TEXT)
         assert @sqs.send_message(queue_url, RIGHT_MESSAGE_TEXT)
         assert @sqs.send_message(queue_url, RIGHT_MESSAGE_TEXT)
+        sleep 2
     end
 
     def test_07_get_queue_length
@@ -147,10 +148,12 @@ class TestSqs < Test::Unit::TestCase
         assert queue.push('a3')
         assert queue.push('a4')
         assert queue.push('a5')
+        sleep 2
         # check queue size
         assert_equal 5, queue.size
         # send one more
         assert queue.push('a6')
+        sleep 2
         # check queue size again
         assert_equal 6, queue.size
     end
@@ -198,15 +201,6 @@ class TestSqs < Test::Unit::TestCase
         assert(!@sqs.multi_thread)
         newsqs = Aws::SqsInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, {:multi_thread => true})
         assert(newsqs.multi_thread)
-    end
-
-    def test_29_signature_version_0
-        sqs = Aws::SqsInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :signature_version => '0')
-        assert_nothing_raised do
-            sqs.list_queues
-        end
-        # check that the request has correct signature version
-        assert sqs.last_request.path.include?('SignatureVersion=0')
     end
 
 end
