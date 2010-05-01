@@ -64,6 +64,10 @@ module Aws
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       @interface = S3Interface.new(aws_access_key_id, aws_secret_access_key, params)
     end
+    
+    def close_connection
+        @interface.close_connection
+    end
 
     # Retrieve a list of buckets.
     # Returns an array of Aws::S3::Bucket instances.

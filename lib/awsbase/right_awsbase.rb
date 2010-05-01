@@ -430,6 +430,17 @@ module Aws
 
         end
 
+        def close_conn(conn_name)
+            conn_mode = @params[:connection_mode]
+            if conn_mode == :per_thread || conn_mode == :single
+                thread = conn_mode == :per_thread ? Thread.current : Thread.main
+                if !thread[conn_name].nil?
+                    thread[conn_name].finish
+                    thread[conn_name] = nil
+                end
+            end
+        end
+
 #
 #        def request_info2(request, parser, lib_params, connection_name, logger, bench)
 #            t = get_conn(connection_name, lib_params, logger)
@@ -476,7 +487,7 @@ module Aws
                 @last_response = nil
 
                 response = @connection.request(request)
-          #       puts "response=" + response.body
+                #       puts "response=" + response.body
 #            benchblock.service.add!{ response = @connection.request(request) }
                 # check response for errors...
                 @last_response = response
