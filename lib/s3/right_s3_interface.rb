@@ -402,7 +402,8 @@ module Aws
          (data.respond_to?(:size)  && data.size       >= USE_100_CONTINUE_PUT_SIZE)
         headers['expect'] = '100-continue'
       end
-      req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}/#{CGI::escape key}", :data=>data))
+      req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}/#{CGI::escape key}", :data=>data,
+                                                            'Content-Length' => ((data && data.size) || 0).to_s))
       request_info(req_hash, RightHttp2xxParser.new)
     rescue
       on_exception
