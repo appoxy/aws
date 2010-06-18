@@ -433,6 +433,8 @@ module Aws
       request_info(link, QEc2ConfirmProductInstanceParser.new(:logger => @logger))
     end
 
+      # DEPRECATED, USE launch_instances instead.
+      #
       # Launch new EC2 instances. Returns a list of launched instances or an exception.
       #
       #  ec2.run_instances('ami-e444444d',1,1,['my_awesome_group'],'my_awesome_key', 'Woohoo!!!', 'public') #=>
@@ -514,30 +516,34 @@ module Aws
       #     :aws_availability_zone => "us-east-1c"
       #     }]
       #
-    def launch_instances(image_id, lparams={})
+    def launch_instances(image_id, options={})
       @logger.info("Launching instance of image #{image_id} for #{@aws_access_key_id}, " +
-                   "key: #{lparams[:key_name]}, groups: #{(lparams[:group_ids]).to_a.join(',')}")
+                   "key: #{options[:key_name]}, groups: #{(options[:group_ids]).to_a.join(',')}")
       # careful: keyName and securityGroups may be nil
-      params = hash_params('SecurityGroup', lparams[:group_ids].to_a)
+      params = hash_params('SecurityGroup', options[:group_ids].to_a)
       params.update( {'ImageId'        => image_id,
-                      'MinCount'       => (lparams[:min_count] || 1).to_s,
-                      'MaxCount'       => (lparams[:max_count] || 1).to_s,
-                      'AddressingType' => lparams[:addressing_type] || DEFAULT_ADDRESSING_TYPE,
-                      'InstanceType'   => lparams[:instance_type]   || DEFAULT_INSTANCE_TYPE })
+                      'MinCount'       => (options[:min_count] || 1).to_s,
+                      'MaxCount'       => (options[:max_count] || 1).to_s,
+                      'AddressingType' => options[:addressing_type] || DEFAULT_ADDRESSING_TYPE,
+                      'InstanceType'   => options[:instance_type]   || DEFAULT_INSTANCE_TYPE })
       # optional params
-      params['KeyName']                    = lparams[:key_name]              unless lparams[:key_name].blank?
-      params['KernelId']                   = lparams[:kernel_id]             unless lparams[:kernel_id].blank?
-      params['RamdiskId']                  = lparams[:ramdisk_id]            unless lparams[:ramdisk_id].blank?
-      params['Placement.AvailabilityZone'] = lparams[:availability_zone]     unless lparams[:availability_zone].blank?
-      params['BlockDeviceMappings']        = lparams[:block_device_mappings] unless lparams[:block_device_mappings].blank?
-      params['Monitoring.Enabled']         = lparams[:monitoring_enabled]    unless lparams[:monitoring_enabled].blank?
-      unless lparams[:user_data].blank?
-        lparams[:user_data].strip!
+      params['KeyName']                    = options[:key_name]              unless options[:key_name].blank?
+      params['KernelId']                   = options[:kernel_id]             unless options[:kernel_id].blank?
+      params['RamdiskId']                  = options[:ramdisk_id]            unless options[:ramdisk_id].blank?
+      params['Placement.AvailabilityZone'] = options[:availability_zone]     unless options[:availability_zone].blank?
+      params['BlockDeviceMappings']        = options[:block_device_mappings] unless options[:block_device_mappings].blank?
+      params['Monitoring.Enabled']         = options[:monitoring_enabled]    unless options[:monitoring_enabled].blank?
+      params['SubnetId']                          = options[:subnet_id]                            unless options[:subnet_id].blank?
+      params['AdditionalInfo']                    = options[:additional_info]                      unless options[:additional_info].blank?
+      params['DisableApiTermination']             = options[:disable_api_termination].to_s         unless options[:disable_api_termination].nil?
+      params['InstanceInitiatedShutdownBehavior'] = options[:instance_initiated_shutdown_behavior] unless options[:instance_initiated_shutdown_behavior].blank?
+      unless options[:user_data].blank?
+        options[:user_data].strip!
           # Do not use CGI::escape(encode64(...)) as it is done in Amazons EC2 library.
           # Amazon 169.254.169.254 does not like escaped symbols!
           # And it doesn't like "\n" inside of encoded string! Grrr....
           # Otherwise, some of UserData symbols will be lost...
-        params['UserData'] = Base64.encode64(lparams[:user_data]).delete("\n").strip unless lparams[:user_data].blank?
+        params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless options[:user_data].blank?
       end
       link = generate_request("RunInstances", params)
         #debugger
