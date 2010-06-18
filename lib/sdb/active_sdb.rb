@@ -260,14 +260,35 @@ module Aws
                 #
                 def find(*args)
                       options = args.last.is_a?(Hash) ? args.pop : {}
-#           puts 'first=' + args.first.to_s
+                    case args.first
+                        when nil then
+                            raise "Invalid parameters passed to find: nil."
+                        when :all then
+                            sql_select(options)[:items]
+                        when :first then
+                            sql_select(options.merge(:limit => 1))[:items].first
+                        when :count then
+                            res = sql_select(options.merge(:count => true))[:count]
+                            res
+                        else
+                            res = select_from_ids(args, options)
+                            return res[:single] if res[:single]
+                            return res[:items]
+                    end
+                end
+
+                #
+                # Same as find, but will return SimpleDB metadata like :request_id and :box_usage
+                #
+                def find_with_metadata(*args)
+                      options = args.last.is_a?(Hash) ? args.pop : {}
                     case args.first
                         when nil then
                             raise "Invalid parameters passed to find: nil."
                         when :all   then
                             sql_select(options)
                         when :first then
-                            sql_select(options.merge(:limit => 1)).first
+                            sql_select(options.merge(:limit => 1))
                         when :count then
                             res = sql_select(options.merge(:count => true))
                             res
@@ -349,24 +370,27 @@ module Aws
                     options[:conditions] = build_conditions(options[:conditions])
                     # join ids condition and user defined conditions
                     options[:conditions] = options[:conditions].blank? ? ids_cond : "(#{options[:conditions]}) AND #{ids_cond}"
+                    puts 'options=' + options.inspect
                     result = sql_select(options)
+                    puts 'select_from_ids result=' + result.inspect
                     # if one record was requested then return it
                     unless bunch_of_records_requested
-                        record = result.first
+                        record = result[:items].first
                         # railse if nothing was found
                         raise ActiveSdbError.new("Couldn't find #{name} with ID #{args}") unless record
-                        record
+                        result[:single] = record
                     else
                         # if a bunch of records was requested then return check that we found all of them
                         # and return as an array
-                        unless args.size == result.size
+                        unless args.size == result[:items].size
                             # todo: might make sense to return the array but with nil values in the slots where an item wasn't found?
                             id_list = args.map{|i| "'#{i}'"}.join(',')
-                            raise ActiveSdbError.new("Couldn't find all #{name} with IDs (#{id_list}) (found #{result.size} results, but was looking for #{args.size})")
+                            raise ActiveSdbError.new("Couldn't find all #{name} with IDs (#{id_list}) (found #{result[:items].size} results, but was looking for #{args.size})")
                         else
                             result
                         end
                     end
+                    result
                 end
 
                 def sql_select(options) # :nodoc:
@@ -376,19 +400,24 @@ module Aws
                     select_expression = build_select(options)
                     # request items
                     query_result = self.connection.select(select_expression, @next_token)
-                    #puts 'QR=' + query_result.inspect
+                    # puts 'QR=' + query_result.inspect
+                    ret = {}
                     if count
-                        return query_result[:items][0]["Domain"]["Count"][0].to_i
+                        ret[:count] = query_result.delete(:items)[0]["Domain"]["Count"][0].to_i
+                        ret.merge!(query_result)
+                        return ret
                     end
                     @next_token = query_result[:next_token]
-                    items = query_result[:items].map do |hash|
+                    items = query_result.delete(:items).map do |hash|
                         id, attributes = hash.shift
                         new_item = self.new( )
                         new_item.initialize_from_db(attributes.merge({ 'id' => id }))
                         new_item.mark_as_old
                         new_item
                     end
-                    items
+                    ret[:items] = items
+                    ret.merge!(query_result)
+                    ret
                 end
 
                 # select_by helpers

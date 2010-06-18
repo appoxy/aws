@@ -121,7 +121,7 @@ class TestSdb < Test::Unit::TestCase
 
   def test_04b_find_all_dashed
     # retrieve all the DB, make sure all are in place
-    clients = DashedClient.find(:all)
+    clients = DashClient.find(:all)
     ids = clients.map{|client| client.id }[0..1]
     assert_equal @clients.size + 1, clients.size
     # retrieve all presidents (must find: Bush, Putin, Medvedev)
@@ -156,11 +156,11 @@ class TestSdb < Test::Unit::TestCase
     # find any record
     assert Client.find(:first)
     # find any president
-    assert Client.find(:first, :conditions => ["[?=?]",'post','president'])
+    assert Client.find(:first, :conditions => ["post=? and country=?",'president','Russia'])
     # find any rissian president
-    assert Client.find(:first, :conditions => ["['post'=?] intersection ['country'=?]",'president','Russia'])
+    assert_nil Client.find(:first, :conditions => ["post=? and country=?",'president','Rwanda'])
     # find any unexistent record
-    assert_nil Client.find(:first, :conditions => ["['post'=?] intersection ['country'=?]",'president','Rwanda'])
+    assert Client.find(:first, :conditions => ["?=?",'post','president'])
   end
 
   def test_06_find_all_by_helpers
