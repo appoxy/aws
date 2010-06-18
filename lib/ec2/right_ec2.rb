@@ -106,7 +106,7 @@ module Aws
     # * <tt>:port</tt>: EC2 service port, default: DEFAULT_PORT
     # * <tt>:protocol</tt>: 'http' or 'https', default: DEFAULT_PROTOCOL
     # * <tt>:multi_thread</tt>: true=HTTP connection per thread, false=per process
-    # * <tt>:logger</tt>: for log messages, default: RAILS_DEFAULT_LOGGER else STDOUT
+    # * <tt>:logger</tt>: for log messages, default: Rails.logger else STDOUT
     # * <tt>:signature_version</tt>:  The signature version : '0' or '1'(default)
     # * <tt>:cache</tt>: true/false: caching for: ec2_describe_images, describe_instances,
     # describe_images_by_owner, describe_images_by_executable_by, describe_availability_zones,

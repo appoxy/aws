@@ -97,7 +97,7 @@ module Aws
     # * <tt>:port</tt>: CloudFront service port, default: DEFAULT_PORT
     # * <tt>:protocol</tt>: 'http' or 'https', default: DEFAULT_PROTOCOL
     # * <tt>:multi_thread</tt>: true=HTTP connection per thread, false=per process
-    # * <tt>:logger</tt>: for log messages, default: RAILS_DEFAULT_LOGGER else STDOUT
+    # * <tt>:logger</tt>: for log messages, default: Rails.logger else STDOUT
     # * <tt>:cache</tt>: true/false: caching for list_distributions method, default: false.
     #
     #  acf = Aws::AcfInterface.new('1E3GDYEOGFJPIT7XXXXXX','hgTHt68JY07JKUY08ftHYtERkjgtfERn57XXXXXX',
