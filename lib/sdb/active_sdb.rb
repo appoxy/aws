@@ -370,9 +370,9 @@ module Aws
                     options[:conditions] = build_conditions(options[:conditions])
                     # join ids condition and user defined conditions
                     options[:conditions] = options[:conditions].blank? ? ids_cond : "(#{options[:conditions]}) AND #{ids_cond}"
-                    puts 'options=' + options.inspect
+                    #puts 'options=' + options.inspect
                     result = sql_select(options)
-                    puts 'select_from_ids result=' + result.inspect
+                    #puts 'select_from_ids result=' + result.inspect
                     # if one record was requested then return it
                     unless bunch_of_records_requested
                         record = result[:items].first
@@ -397,9 +397,10 @@ module Aws
                     count = options[:count] || false
                     #puts 'count? ' + count.to_s
                     @next_token = options[:next_token]
+                    @consistent_read = options[:consistent_read]
                     select_expression = build_select(options)
                     # request items
-                    query_result = self.connection.select(select_expression, @next_token)
+                    query_result = self.connection.select(select_expression, @next_token, @consistent_read)
                     # puts 'QR=' + query_result.inspect
                     ret = {}
                     if count
@@ -464,6 +465,7 @@ module Aws
                 #
                 def query(options) # :nodoc:
                     @next_token = options[:next_token]
+                    @consistent_read = options[:consistent_read]
                     query_expression = build_conditions(options[:query_expression])
                     # add sort_options to the query_expression
                     if options[:sort_option]
@@ -482,7 +484,7 @@ module Aws
                         query_expression += sort_by_expression
                     end
                     # request items
-                    query_result = self.connection.query(domain, query_expression, options[:max_number_of_items], @next_token)
+                    query_result = self.connection.query(domain, query_expression, options[:max_number_of_items], @next_token, @consistent_read)
                     @next_token = query_result[:next_token]
                     items = query_result[:items].map do |name|
                         new_item = self.new('id' => name)
@@ -506,7 +508,8 @@ module Aws
                     records = query( :query_expression    => options[:conditions],
                                      :max_number_of_items => options[:limit],
                                      :next_token          => options[:next_token],
-                                     :sort_option         => options[:sort] || options[:order] )
+                                     :sort_option         => options[:sort] || options[:order],
+                                     :consistent_read     => options[:consistent_read] )
                     options[:auto_load] ? reload_all_records(records) : records
                 end
 

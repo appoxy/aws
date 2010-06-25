@@ -407,10 +407,11 @@ module Aws
         #
         # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_GetAttributes.html
         #
-        def get_attributes(domain_name, item_name, attribute_name=nil)
+        def get_attributes(domain_name, item_name, attribute_name=nil, consistent_read = nil)
             link = generate_request("GetAttributes", 'DomainName'    => domain_name,
-                                    'ItemName'      => item_name,
-                                    'AttributeName' => attribute_name )
+                                    'ItemName'       => item_name,
+                                    'AttributeName'  => attribute_name,
+                                    'ConsistentRead' => consistent_read )
             res = request_info(link, QSdbGetAttributesParser.new)
             res[:attributes].each_value do |values|
                 values.collect! { |e| sdb_to_ruby(e) }
@@ -482,14 +483,15 @@ module Aws
         # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_Query.html
         #      http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?SortingData.html
         #
-        def query(domain_name, query_expression = nil, max_number_of_items = nil, next_token = nil)
+        def query(domain_name, query_expression = nil, max_number_of_items = nil, next_token = nil, consistent_read = nil)
             query_expression = query_expression_from_array(query_expression) if query_expression.is_a?(Array)
             @last_query_expression = query_expression
             #
             request_params = { 'DomainName'       => domain_name,
                                'QueryExpression'  => query_expression,
                                'MaxNumberOfItems' => max_number_of_items,
-                               'NextToken'        => next_token }
+                               'NextToken'        => next_token,
+                               'ConsistentRead'   => consistent_read }
             link   = generate_request("Query", request_params)
             result = request_info( link, QSdbQueryParser.new )
             # return result if no block given
@@ -550,7 +552,7 @@ module Aws
         #
         # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?SDB_API_QueryWithAttributes.html
         #
-        def query_with_attributes(domain_name, attributes=[], query_expression = nil, max_number_of_items = nil, next_token = nil)
+        def query_with_attributes(domain_name, attributes=[], query_expression = nil, max_number_of_items = nil, next_token = nil, consistent_read = nil)
             attributes = attributes.to_a
             query_expression = query_expression_from_array(query_expression) if query_expression.is_a?(Array)
             @last_query_expression = query_expression
@@ -558,7 +560,8 @@ module Aws
             request_params = { 'DomainName'       => domain_name,
                                'QueryExpression'  => query_expression,
                                'MaxNumberOfItems' => max_number_of_items,
-                               'NextToken'        => next_token }
+                               'NextToken'        => next_token,
+                               'ConsistentRead'   => consistent_read }
             attributes.each_with_index do |attribute, idx|
                 request_params["AttributeName.#{idx+1}"] = attribute
             end
@@ -616,12 +619,13 @@ module Aws
         #      http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?UsingSelect.html
         #      http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?SDBLimits.html
         #
-        def select(select_expression, next_token = nil)
+        def select(select_expression, next_token = nil, consistent_read = nil)
             select_expression      = query_expression_from_array(select_expression) if select_expression.is_a?(Array)
             @last_query_expression = select_expression
             #
             request_params = { 'SelectExpression' => select_expression,
-                               'NextToken'        => next_token }
+                               'NextToken'        => next_token,
+                               'ConsistentRead'   => consistent_read }
             link   = generate_request("Select", request_params)
             result = select_response_to_ruby(request_info( link, QSdbSelectParser.new ))
             return result unless block_given?
