@@ -1467,6 +1467,7 @@ module Aws
           when 'ramdiskId'        then @instance[:aws_ramdisk_id]     = @text
           when 'platform'         then @instance[:aws_platform]       = @text
           when 'availabilityZone' then @instance[:aws_availability_zone] = @text
+          when 'privateIpAddress' then @instance[:aws_private_ip_address] = @text
           when 'state'
             if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/monitoring' || # DescribeInstances property
                @xmlpath == 'RunInstancesResponse/instancesSet/item/monitoring'            # RunInstances property
