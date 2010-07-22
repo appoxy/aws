@@ -1,4 +1,8 @@
-#
+# THIS IS DEPRECATED NOW, PLEASE USE SimpleRecord instead:
+# http://github.com/appoxy/simple_record
+
+
+
 # Copyright (c) 2008 RightScale Inc
 #
 # Permission is hereby granted, free of charge, to any person obtaining
