@@ -68,7 +68,7 @@ module Aws
     include AwsBaseInterface
 
     # Amazon EC2 API version being used
-    API_VERSION       = "2009-08-15"
+    API_VERSION       = "2010-08-31"
     DEFAULT_HOST      = "ec2.amazonaws.com"
     DEFAULT_PATH      = '/'
     DEFAULT_PROTOCOL  = 'https'
