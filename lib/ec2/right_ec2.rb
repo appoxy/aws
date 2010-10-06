@@ -1252,6 +1252,59 @@ module Aws
     rescue Exception
       on_exception
     end
+    
+    # Add/replace one tag to a resource
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/index.html?ApiReference_query_CreateTags.html
+    #
+    #  ec2.create_tag('ami-1a2b3c4d', 'webserver') #=> true
+    #  ec2.create_tag('i-7f4d3a2b',   'stack', 'Production') #=> true
+    #
+    def create_tag(resource_id, key, value = nil)
+      link = generate_request("CreateTags",
+                              "ResourceId.1" => resource_id.to_s,
+                              "Tag.1.Key" => key.to_s,
+                              "Tag.1.Value" => value.to_s)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
+    # Describe tags
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/index.html?ApiReference_query_DescribeTags.html
+    #
+    #  ec2.describe_tags
+    #  ec2.describe_tags(
+    #    'Filter.1.Name' => 'resource-type', 'Filter.1.Value.1' => 'instance',
+    #    'Filter.2.Name' => 'value',         'Filter.2.Value.1' => 'Test', 'Filter.2.Value.2' => 'Production'
+    #  )
+    #
+    def describe_tags(filters = {})
+      link = generate_request("DescribeTags", filters)
+      request_info(link, QEc2DescribeTagsParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
+    # Delete one or all tags from a resource
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/index.html?ApiReference_query_DeleteTags.html
+    #
+    #  ec2.delete_tag('i-7f4d3a2b', 'stack') #=> true
+    #  ec2.delete_tag('i-7f4d3a2b', 'stack', 'Production') #=> true
+    #
+    # "If you omit Tag.n.Value, we delete the tag regardless of its value. If
+    # you specify this parameter with an empty string as the value, we delete the
+    # key only if its value is an empty string."
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference_query_DeleteTags.html
+    #
+    def delete_tag(resource_id, key, value = nil)
+      request_args = {"ResourceId.1" => resource_id.to_s, "Tag.1.Key" => key.to_s}
+      request_args["Tag.1.Value"] = value.to_s if value
+      
+      link = generate_request("DeleteTags", request_args)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
 
   #-----------------------------------------------------------------
   #      PARSERS: Boolean Response Parser
@@ -1789,6 +1842,28 @@ module Aws
       end
       def reset
         @result = {}
+      end
+    end
+
+  #-----------------------------------------------------------------
+  #      PARSERS: Tags
+  #-----------------------------------------------------------------
+
+    class QEc2DescribeTagsParser < AwsParser #:nodoc:
+      def tagstart(name, attributes)
+        @tag = {} if name == 'item'
+      end
+      def tagend(name)
+        case name
+          when 'resourceId'   then @tag[:aws_resource_id]   = @text
+          when 'resourceType' then @tag[:aws_resource_type] = @text
+          when 'key'          then @tag[:aws_key]           = @text
+          when 'value'        then @tag[:aws_value]         = @text
+          when 'item'         then @result                  << @tag
+        end
+      end
+      def reset
+        @result = []
       end
     end
 
