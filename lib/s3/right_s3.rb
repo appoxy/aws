@@ -59,7 +59,11 @@ module Aws
     #    {:server       => 's3.amazonaws.com'   # Amazon service host: 's3.amazonaws.com'(default)
     #     :port         => 443                  # Amazon service port: 80 or 443(default)
     #     :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
-    #     :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+    #     DEPRECATED :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+    #     :connection_mode  => :default         # options are :default (will use best known option, may change in the future)#                                                  :per_request (opens and closes a connection on every request to SDB)
+    #                                                  :single - one connection shared across app (same as old multi_thread=>false)
+    #                                                  :per_thread - one connection per ruby thread (same as old multi_thread=>true)
+    #                                                  :pool (uses a connection pool with a maximum number of connections - NOT IMPLEMENTED YET)
     #     :logger       => Logger Object}       # Logger instance: logs to STDOUT if omitted }
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       @interface = S3Interface.new(aws_access_key_id, aws_secret_access_key, params)
