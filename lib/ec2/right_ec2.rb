@@ -68,7 +68,7 @@ module Aws
     include AwsBaseInterface
 
     # Amazon EC2 API version being used
-    API_VERSION       = "2009-08-15"
+    API_VERSION       = "2010-08-31"
     DEFAULT_HOST      = "ec2.amazonaws.com"
     DEFAULT_PATH      = '/'
     DEFAULT_PROTOCOL  = 'https'
@@ -460,7 +460,7 @@ module Aws
       #  ec2.create_tags('ami-e444444d',{"name"=>"Name"})
       #
     def create_tags(resource_ids, tags = {})
-      raise "Requires API_VERSION > 2010-08-31" unless API_VERSION >= "2010-08-31"
+      raise "Requires API_VERSION > 2010-08-31" unless @@api >= "2010-08-31"
       request = {}
       resource_ids.each_with_index do |resource_id, index| 
         request["ResourceId.#{index+1}"] = resource_id
