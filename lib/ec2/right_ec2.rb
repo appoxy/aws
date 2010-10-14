@@ -453,6 +453,28 @@ module Aws
       request_info(link, QEc2ConfirmProductInstanceParser.new(:logger => @logger))
     end
 
+      # Edit tags for an instance
+      #
+      #  requires Ec2 API_VERSION
+      #  API_VERSION       = "2010-08-31"
+      #  ec2.create_tags('ami-e444444d',{"name"=>"Name"})
+      #
+    def create_tags(resource_ids, tags = {})
+      raise "Requires API_VERSION > 2010-08-31" unless API_VERSION >= "2010-08-31"
+      request = {}
+      resource_ids.each_with_index do |resource_id, index| 
+        request["ResourceId.#{index+1}"] = resource_id
+      end
+      i = 1
+      tags.each do |tag, value|
+        request["Tag.#{i}.Key"] = tag
+        request["Tag.#{i}.Value"] = value
+        i += 1
+      end      
+      link = generate_request("CreateTags", request)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    end
+
       # DEPRECATED, USE launch_instances instead.
       #
       # Launch new EC2 instances. Returns a list of launched instances or an exception.
