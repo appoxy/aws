@@ -455,8 +455,8 @@ module Aws
 
       # Edit tags for an instance
       #
-      #  requires Ec2 API_VERSION
-      #  API_VERSION       = "2010-08-31"
+      #  requires Ec2 API_VERSION >= "2010-08-31"
+      #  Example:
       #  ec2.create_tags('ami-e444444d',{"name"=>"Name"})
       #
     def create_tags(resource_ids, tags = {})
