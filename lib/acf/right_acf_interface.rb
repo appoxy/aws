@@ -76,10 +76,10 @@ module Aws
     
     include AwsBaseInterface
 
-    API_VERSION      = "2008-06-30"
+    API_VERSION      = "2010-08-01"
     DEFAULT_HOST     = 'cloudfront.amazonaws.com'
-    DEFAULT_PORT     = 80
-    DEFAULT_PROTOCOL = 'http'
+    DEFAULT_PORT     = 443
+    DEFAULT_PROTOCOL = 'https'
     DEFAULT_PATH     = '/'
 
     @@bench = AwsBenchmarkingBlock.new
