@@ -29,17 +29,17 @@ module Aws
 
         include AwsBaseInterface
 
-        DEFAULT_HOST           = 's3.amazonaws.com'
-        DEFAULT_PORT           = 443
-        DEFAULT_PROTOCOL       = 'https'
-        DEFAULT_SERVICE        = '/'
-        REQUEST_TTL            = 30
-        DEFAULT_EXPIRES_AFTER  =   1 * 24 * 60 * 60 # One day's worth of seconds
-        ONE_YEAR_IN_SECONDS    = 365 * 24 * 60 * 60
-        AMAZON_HEADER_PREFIX   = 'x-amz-'
-        AMAZON_METADATA_PREFIX = 'x-amz-meta-'
+        DEFAULT_HOST              = 's3.amazonaws.com'
+        DEFAULT_PORT              = 443
+        DEFAULT_PROTOCOL          = 'https'
+        DEFAULT_SERVICE           = '/'
+        REQUEST_TTL               = 30
+        DEFAULT_EXPIRES_AFTER     =   1 * 24 * 60 * 60 # One day's worth of seconds
+        ONE_YEAR_IN_SECONDS       = 365 * 24 * 60 * 60
+        AMAZON_HEADER_PREFIX      = 'x-amz-'
+        AMAZON_METADATA_PREFIX    = 'x-amz-meta-'
 
-        @@bench = AwsBenchmarkingBlock.new
+        @@bench                   = AwsBenchmarkingBlock.new
 
         def self.bench_xml
             @@bench.xml
@@ -59,7 +59,11 @@ module Aws
         #    {:server       => 's3.amazonaws.com'   # Amazon service host: 's3.amazonaws.com'(default)
         #     :port         => 443                  # Amazon service port: 80 or 443(default)
         #     :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
-        #     :multi_thread => true|false           # Multi-threaded (connection per each thread): true or false(default)
+        #     :connection_mode  => :default         # options are
+        #                                                  :default (will use best known safe (as in won't need explicit close) option, may change in the future)
+        #                                                  :per_request (opens and closes a connection on every request)
+        #                                                  :single (one thread across entire app)
+        #                                                  :per_thread (one connection per thread)
         #     :logger       => Logger Object}       # Logger instance: logs to STDOUT if omitted }
         #
         def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
@@ -83,7 +87,7 @@ module Aws
         #-----------------------------------------------------------------
         # Produces canonical string for signing.
         def canonical_string(method, path, headers={}, expires=nil) # :nodoc:
-            s3_headers = {}
+            s3_headers                 = {}
             headers.each do |key, value|
                 key = key.downcase
                 s3_headers[key] = value.join("").strip if key[/^#{AMAZON_HEADER_PREFIX}|^content-md5$|^content-type$|^date$/o]
@@ -93,7 +97,7 @@ module Aws
             s3_headers['date']           = '' if s3_headers.has_key? 'x-amz-date'
             s3_headers['date']           = expires if expires
             # prepare output string
-            out_string = "#{method}\n"
+            out_string                 = "#{method}\n"
             s3_headers.sort { |a, b| a[0] <=> b[0] }.each do |key, value|
                 out_string << (key[/^#{AMAZON_HEADER_PREFIX}/o] ? "#{key}:#{value}\n" : "#{value}\n")
             end
@@ -119,8 +123,8 @@ module Aws
 
         def fetch_request_params(headers) #:nodoc:
             # default server to use
-            server  = @params[:server]
-            service = @params[:service].to_s
+            server       = @params[:server]
+            service      = @params[:service].to_s
             service.chop! if service[%r{/$}] # remove trailing '/' from service
             # extract bucket name and check it's dns compartibility
             headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
@@ -128,9 +132,9 @@ module Aws
             # select request model
             if is_dns_bucket?(bucket_name)
                 # fix a path
-                server = "#{bucket_name}.#{server}"
+                server   = "#{bucket_name}.#{server}"
                 key_path ||= '/'
-                path = "#{service}#{key_path}#{params_list}"
+                path     = "#{service}#{key_path}#{params_list}"
             else
                 path = "#{service}/#{bucket_name}#{key_path}#{params_list}"
             end
@@ -144,22 +148,22 @@ module Aws
         def generate_rest_request(method, headers) # :nodoc:
             # calculate request data
             server, path, path_to_sign = fetch_request_params(headers)
-            data = headers[:data]
+            data                      = headers[:data]
             # remove unset(==optional) and symbolyc keys
             headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
             #
-            headers['content-type'] ||= ''
+            headers['content-type']   ||= ''
             headers['date']           = Time.now.httpdate
             # create request
-            request      = "Net::HTTP::#{method.capitalize}".constantize.new(path)
+            request                   = "Net::HTTP::#{method.capitalize}".constantize.new(path)
             request.body = data if data
             # set request headers and meta headers
             headers.each { |key, value| request[key.to_s] = value }
             #generate auth strings
-            auth_string = canonical_string(request.method, path_to_sign, request.to_hash)
-            signature   = AwsUtils::sign(@aws_secret_access_key, auth_string)
+            auth_string               = canonical_string(request.method, path_to_sign, request.to_hash)
+            signature                 = AwsUtils::sign(@aws_secret_access_key, auth_string)
             # set other headers
-            request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
+            request['Authorization']  = "AWS #{@aws_access_key_id}:#{signature}"
             # prepare output hash
             {:request  => request,
              :server   => server,
@@ -198,7 +202,7 @@ module Aws
         #  s3.create_bucket('my-awesome-bucket-eu', :location => :eu) #=> true
         #
         def create_bucket(bucket, headers={})
-            data = nil
+            data     = nil
             unless headers[:location].blank?
                 data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
             end
@@ -322,14 +326,14 @@ module Aws
         def incrementally_list_bucket(bucket, options={}, headers={}, &block)
             internal_options = options.symbolize_keys
             begin
-                internal_bucket = bucket.dup
+                internal_bucket     = bucket.dup
                 internal_bucket  += '?'+internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless internal_options.blank?
-                req_hash = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
-                response = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
+                req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
+                response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
                 there_are_more_keys = response[:is_truncated]
                 if (there_are_more_keys)
                     internal_options[:marker] = decide_marker(response)
-                    total_results = response[:contents].length + response[:common_prefixes].length
+                    total_results             = response[:contents].length + response[:common_prefixes].length
                     internal_options[:'max-keys'] ? (internal_options[:'max-keys'] -= total_results) : nil
                 end
                 yield response
@@ -343,7 +347,7 @@ module Aws
         private
         def decide_marker(response)
             return response[:next_marker].dup if response[:next_marker]
-            last_key = response[:contents].last[:key]
+            last_key    = response[:contents].last[:key]
             last_prefix = response[:common_prefixes].last
             if (!last_key)
                 return nil if (!last_prefix)
@@ -402,11 +406,11 @@ module Aws
             end
             data_size = data.respond_to?(:lstat) ? data.lstat.size :
                     (data.respond_to?(:size) ? data.size : 0)
-             if (data_size >= USE_100_CONTINUE_PUT_SIZE)
+            if (data_size >= USE_100_CONTINUE_PUT_SIZE)
                 headers['expect'] = '100-continue'
             end
-            req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}/#{CGI::escape key}", :data=>data,
-                                                                  'Content-Length' => data_size.to_s))
+            req_hash  = generate_rest_request('PUT', headers.merge(:url             =>"#{bucket}/#{CGI::escape key}", :data=>data,
+                                                                   'Content-Length' => data_size.to_s))
             request_info(req_hash, RightHttp2xxParser.new)
         rescue
             on_exception
@@ -453,7 +457,7 @@ module Aws
             end
 
             req_hash = generate_rest_request('PUT', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}", :data=>params[:data]))
-            resp = request_info(req_hash, S3HttpResponseHeadParser.new)
+            resp     = request_info(req_hash, S3HttpResponseHeadParser.new)
             if (params[:md5])
                 resp[:verified_md5] = (resp['etag'].gsub(/\"/, '') == params[:md5]) ? true : false
             else
@@ -570,8 +574,8 @@ module Aws
             AwsUtils.mandatory_arguments([:bucket, :key], params)
             AwsUtils.allow_only([:bucket, :key, :headers, :md5], params)
             params[:headers] = {} unless params[:headers]
-            req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"))
-            resp = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
+            req_hash            = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"))
+            resp                = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
             resp[:verified_md5] = false
             if (params[:md5] && (resp[:headers]['etag'].gsub(/\"/, '') == params[:md5]))
                 resp[:verified_md5] = true
@@ -636,10 +640,10 @@ module Aws
         #      http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTObjectCOPY.html
         #
         def copy(src_bucket, src_key, dest_bucket, dest_key=nil, directive=:copy, headers={})
-            dest_key ||= src_key
+            dest_key                            ||= src_key
             headers['x-amz-metadata-directive'] = directive.to_s.upcase
             headers['x-amz-copy-source']        = "#{src_bucket}/#{CGI::escape src_key}"
-            req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"))
+            req_hash                            = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"))
             request_info(req_hash, S3CopyParser.new)
         rescue
             on_exception
@@ -687,7 +691,7 @@ module Aws
         #                  <Permission>FULL_CONTROL</Permission></Grant></AccessControlList></AccessControlPolicy>" }
         #
         def get_acl(bucket, key='', headers={})
-            key = key.blank? ? '' : "/#{CGI::escape key}"
+            key      = key.blank? ? '' : "/#{CGI::escape key}"
             req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
             request_info(req_hash, S3HttpResponseBodyParser.new)
         rescue
@@ -717,10 +721,10 @@ module Aws
         #       :display_name=>"root"}}
         #
         def get_acl_parse(bucket, key='', headers={})
-            key = key.blank? ? '' : "/#{CGI::escape key}"
-            req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
-            acl = request_info(req_hash, S3AclParser.new(:logger => @logger))
-            result = {}
+            key               = key.blank? ? '' : "/#{CGI::escape key}"
+            req_hash          = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
+            acl               = request_info(req_hash, S3AclParser.new(:logger => @logger))
+            result            = {}
             result[:owner]    = acl[:owner]
             result[:grantees] = {}
             acl[:grantees].each do |grantee|
@@ -741,7 +745,7 @@ module Aws
 
         # Sets the ACL on a bucket or object.
         def put_acl(bucket, key, acl_xml_doc, headers={})
-            key = key.blank? ? '' : "/#{CGI::escape key}"
+            key      = key.blank? ? '' : "/#{CGI::escape key}"
             req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}#{key}?acl", :data=>acl_xml_doc))
             request_info(req_hash, S3HttpResponseBodyParser.new)
         rescue
@@ -824,17 +828,17 @@ module Aws
             # calculate request data
             server, path, path_to_sign = fetch_request_params(headers)
             # expiration time
-            expires ||= DEFAULT_EXPIRES_AFTER
+            expires     ||= DEFAULT_EXPIRES_AFTER
             expires   = Time.now.utc + expires if expires.is_a?(Fixnum) && (expires < ONE_YEAR_IN_SECONDS)
-            expires   = expires.to_i
+            expires     = expires.to_i
             # remove unset(==optional) and symbolyc keys
             headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
             #generate auth strings
             auth_string = canonical_string(method, path_to_sign, headers, expires)
             signature   = CGI::escape(Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new("sha1"), @aws_secret_access_key, auth_string)).strip)
             # path building
-            addon = "Signature=#{signature}&Expires=#{expires}&AWSAccessKeyId=#{@aws_access_key_id}"
-            path += path[/\?/] ? "&#{addon}" : "?#{addon}"
+            addon       = "Signature=#{signature}&Expires=#{expires}&AWSAccessKeyId=#{@aws_access_key_id}"
+            path        += path[/\?/] ? "&#{addon}" : "?#{addon}"
             "#{@params[:protocol]}://#{server}:#{@params[:port]}#{path}"
         rescue
             on_exception
@@ -1049,13 +1053,13 @@ module Aws
 
         class S3ImprovedListBucketParser < AwsParser # :nodoc:
             def reset
-                @result      = {}
-                @result[:contents] = []
+                @result                   = {}
+                @result[:contents]        = []
                 @result[:common_prefixes] = []
-                @contents    = []
-                @current_key = {}
-                @common_prefixes = []
-                @in_common_prefixes = false
+                @contents                 = []
+                @current_key              = {}
+                @common_prefixes          = []
+                @in_common_prefixes       = false
             end
 
             def tagstart(name, attributes)
@@ -1164,12 +1168,12 @@ module Aws
                     when 'TargetBucket'
                         if @xmlpath == 'BucketLoggingStatus/LoggingEnabled'
                             @result[:targetbucket] = @text
-                            @result[:enabled] = true
+                            @result[:enabled]      = true
                         end
                     when 'TargetPrefix'
                         if @xmlpath == 'BucketLoggingStatus/LoggingEnabled'
                             @result[:targetprefix] = @text
-                            @result[:enabled] = true
+                            @result[:enabled]      = true
                         end
                 end
             end
