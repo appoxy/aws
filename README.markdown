@@ -69,9 +69,10 @@ The RightScale AWS gems comprise:
 
 ## THREADING:
 
-All RightScale AWS interfaces offer two threading options:
-1. Use a single persistent HTTP connection per process.
-2. Use a persistent HTTP connection per Ruby thread.
+All AWS interfaces offer three threading options:
+1. Use a single persistent HTTP connection per process. :single
+2. Use a persistent HTTP connection per Ruby thread. :per_thread
+3. Open a new connection for each request. :per_request
  
 Either way, it doesn't matter how many (for example) Aws::S3 objects you create,
 they all use the same per-program or per-thread
@@ -91,7 +92,7 @@ Note that due to limitations in the I/O of the Ruby interpreter you
 may not get the degree of parallelism you may expect with the multi-threaded setting.
 
 By default, EC2/S3/SQS/SDB/ACF interface instances are created in single-threaded mode.  Set
-params[:connection_mode] to :multi_thread in the initialization arguments to use
+params[:connection_mode] to :per_thread in the initialization arguments to use
 multithreaded mode.
 
 ## GETTING STARTED:
