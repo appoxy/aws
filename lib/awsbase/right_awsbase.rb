@@ -28,7 +28,7 @@ module Aws
     require 'cgi'
     require 'uri'
     require 'xmlsimple'
-    require 'active_support'
+    require 'active_support/core_ext'
 
     class AwsUtils #:nodoc:
         @@digest1 = OpenSSL::Digest::Digest.new("sha1")
