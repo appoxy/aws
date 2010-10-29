@@ -22,6 +22,7 @@ begin
         gem.add_dependency 'http_connection'
         gem.add_dependency 'xml-simple'
     end
+    Jeweler::Tasks.new
 rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
