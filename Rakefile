@@ -21,6 +21,7 @@ begin
         gem.add_dependency 'uuidtools'
         gem.add_dependency 'http_connection'
         gem.add_dependency 'xml-simple'
+        gem.add_dependency 'activesupport', '<3.0.0'
     end
 rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
