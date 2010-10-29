@@ -68,15 +68,18 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<uuidtools>, [">= 0"])
       s.add_runtime_dependency(%q<http_connection>, [">= 0"])
       s.add_runtime_dependency(%q<xml-simple>, [">= 0"])
+      s.add_runtime_dependency(%q<activesupport>, [">= 0"])
     else
       s.add_dependency(%q<uuidtools>, [">= 0"])
       s.add_dependency(%q<http_connection>, [">= 0"])
       s.add_dependency(%q<xml-simple>, [">= 0"])
+      s.add_dependency(%q<activesupport>, [">= 0"])
     end
   else
     s.add_dependency(%q<uuidtools>, [">= 0"])
     s.add_dependency(%q<http_connection>, [">= 0"])
     s.add_dependency(%q<xml-simple>, [">= 0"])
+    s.add_dependency(%q<activesupport>, [">= 0"])
   end
 end
 
