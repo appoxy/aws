@@ -142,7 +142,7 @@ module Aws
       # Raises AwsError if any banana happened.
     def request_info(request, parser, &block) # :nodoc:
       thread = @params[:multi_thread] ? Thread.current : Thread.main
-      thread[:acf_connection] ||= Aws::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
+      thread[:acf_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
       request_info_impl(thread[:acf_connection], @@bench, request, parser, &block)
     end
 
