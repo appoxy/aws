@@ -298,6 +298,7 @@ module Aws
            #{cnames_str.lstrip}
            <Comment>#{AcfInterface::escape(config[:comment].to_s)}</Comment>
            <Enabled>#{config[:enabled]}</Enabled>
+           <DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>
         </DistributionConfig>
       EOXML
       request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,
