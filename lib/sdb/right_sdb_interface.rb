@@ -97,7 +97,7 @@ module Aws
         # Raises AwsError if any banana happened
         def request_info(request, parser)  #:nodoc:
 #       request_info2(request, parser, :sdb_connection)
-            request_info2(request, parser, @params, :s3_connection, @logger, @@bench)
+            request_info2(request, parser, @params, :sdb_connection, @logger, @@bench)
 
         end
 
