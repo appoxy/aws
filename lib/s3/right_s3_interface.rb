@@ -105,6 +105,7 @@ module Aws
             out_string << path.gsub(/\?.*$/, '')
             # ...unless there is an acl or torrent parameter
             out_string << '?acl' if path[/[&?]acl($|&|=)/]
+            out_string << '?policy' if path[/[&?]policy($|&|=)/]
             out_string << '?torrent' if path[/[&?]torrent($|&|=)/]
             out_string << '?location' if path[/[&?]location($|&|=)/]
             out_string << '?logging' if path[/[&?]logging($|&|=)/] # this one is beta, no support for now
@@ -766,6 +767,20 @@ module Aws
             on_exception
         end
 
+        def get_bucket_policy(bucket)
+            req_hash = generate_rest_request('GET', {:url=>"#{bucket}?policy"})
+            request_info(req_hash, S3HttpResponseBodyParser.new)
+        rescue
+            on_exception
+        end
+
+        def put_bucket_policy(bucket, policy)
+            key      = key.blank? ? '' : "/#{CGI::escape key}"
+            req_hash = generate_rest_request('PUT', {:url=>"#{bucket}?policy", :data=>policy})
+            request_info(req_hash, S3HttpResponseBodyParser.new)
+        rescue
+            on_exception
+        end
 
         # Removes all keys from bucket. Returns +true+ or an exception.
         #
