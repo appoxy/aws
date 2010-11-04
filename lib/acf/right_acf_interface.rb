@@ -278,7 +278,9 @@ module Aws
     #     :e_tag            => "E39OHHU1ON65SI",
     #     :cnames           => ["web1.my-awesome-site.net", "web2.my-awesome-site.net"]
     #     :comment          => "Woo-Hoo!",
-    #     :origin           => "my-bucket.s3.amazonaws.com"}
+    #     :origin           => "my-bucket.s3.amazonaws.com",
+    #     :default_root_object => 
+    #     }
     #  config[:comment] = 'Olah-lah!'
     #  config[:enabled] = false
     #  acf.set_distribution_config('E2REJM3VUN5RSI', config) #=> true
@@ -289,6 +291,7 @@ module Aws
       unless config[:cnames].blank?
         config[:cnames].to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
+      root_ob = config[:default_root_object] ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
       # format request's XML body
       body = <<-EOXML
         <?xml version="1.0" encoding="UTF-8"?>
@@ -298,6 +301,7 @@ module Aws
            #{cnames_str.lstrip}
            <Comment>#{AcfInterface::escape(config[:comment].to_s)}</Comment>
            <Enabled>#{config[:enabled]}</Enabled>
+           #{root_ob}
         </DistributionConfig>
       EOXML
       request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,
