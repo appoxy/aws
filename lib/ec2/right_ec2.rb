@@ -186,7 +186,10 @@ module Aws
       params.each do |list_by, list|
         request_hash.merge! hash_params(list_by, list.to_a)
       end
-      request_hash['ImageType'] = image_type if image_type
+      if image_type
+        request_hash['Filter.1.Name'] = "image-type"
+        request_hash['Filter.1.Value.1'] = image_type
+      end
       link = generate_request("DescribeImages", request_hash)
       request_cache_or_info cache_for, link,  QEc2DescribeImagesParser, @@bench, cache_for
     rescue Exception
