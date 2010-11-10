@@ -81,7 +81,7 @@ module Aws
     # Amazon EC2 Instance Types : http://www.amazon.com/b?ie=UTF8&node=370375011
     # Default EC2 instance type (platform)
     DEFAULT_INSTANCE_TYPE   =  'm1.small'
-    INSTANCE_TYPES          = ['m1.small','c1.medium','m1.large','m1.xlarge','c1.xlarge']
+    INSTANCE_TYPES          = ['t1.micro', 'm1.small','c1.medium','m1.large','m1.xlarge','c1.xlarge']
 
     @@bench = AwsBenchmarkingBlock.new
     def self.bench_xml
