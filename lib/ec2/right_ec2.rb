@@ -1433,6 +1433,8 @@ module Aws
       def tagend(name)
         case name
           when 'imageId'       then @image[:aws_id]       = @text
+          when 'name'          then @image[:aws_name]     = @text
+          when 'description'    then @image[:aws_description] = @text
           when 'imageLocation' then @image[:aws_location] = @text
           when 'imageState'    then @image[:aws_state]    = @text
           when 'imageOwnerId'  then @image[:aws_owner]    = @text
