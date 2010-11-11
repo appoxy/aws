@@ -94,4 +94,11 @@ task :testacf do
     require 'test/acf/test_acf.rb'
 end
 
+desc "Test Alexa interface"
+task :testalexa do
+    require 'test/test_credentials'
+    TestCredentials.get_credentials
+    require 'test/alexa/test_alexa.rb'
+end
+
 # vim: syntax=Ruby
