@@ -195,6 +195,11 @@ module Aws
       request_cache_or_info :list_distributions, request_hash,  AcfDistributionListParser, @@bench
     end
 
+    def list_streaming_distributions
+      request_hash = generate_request('GET', 'streaming-distribution')
+      request_cache_or_info :list_streaming_distributions, request_hash,  AcfStreamingDistributionListParser, @@bench
+    end
+
     # Create a new distribution.
     # Returns the just created distribution or Aws::AwsError exception.
     #
@@ -211,25 +216,37 @@ module Aws
     #     :caller_reference   => "200809102100536497863003"}
     #
     def create_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false)
+      request_hash = generate_request('POST', 'distribution', body.strip)
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
+
+    def create_streaming_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true)
+      request_hash = generate_request('POST', 'streaming-distribution', body.strip)
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
+    
+    def distribution_config_for(origin, comment='', enabled=true, cnames=[], caller_reference=nil, streaming = false)
+      rootElement = streaming ? "StreamingDistributionConfig" : "DistributionConfig"
       # join CNAMES
       cnames_str = ''
       unless cnames.blank?
         cnames.to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
-      # reference
       caller_reference ||= generate_call_reference
+      root_ob = config[:default_root_object] ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
       body = <<-EOXML
         <?xml version="1.0" encoding="UTF-8"?>
-        <DistributionConfig xmlns=#{xmlns}>
+        <#{rootElement} xmlns=#{xmlns}>
            <Origin>#{origin}</Origin>
            <CallerReference>#{caller_reference}</CallerReference>
            #{cnames_str.lstrip}
            <Comment>#{AcfInterface::escape(comment.to_s)}</Comment>
            <Enabled>#{enabled}</Enabled>
-        </DistributionConfig>
+           #{root_ob}
+        </#{rootElement}>
       EOXML
-      request_hash = generate_request('POST', 'distribution', body.strip)
-      merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
 
     # Get a distribution's information.
@@ -249,6 +266,11 @@ module Aws
     #
     def get_distribution(aws_id)
       request_hash = generate_request('GET', "distribution/#{aws_id}")
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
+
+    def get_streaming_distribution(aws_id)
+      request_hash = generate_request('GET', "streaming-distribution/#{aws_id}")
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
 
@@ -286,25 +308,14 @@ module Aws
     #  acf.set_distribution_config('E2REJM3VUN5RSI', config) #=> true
     #
     def set_distribution_config(aws_id, config)
-      # join CNAMES
-      cnames_str = ''
-      unless config[:cnames].blank?
-        config[:cnames].to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
-      end
-      root_ob = config[:default_root_object] ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
-      # format request's XML body
-      body = <<-EOXML
-        <?xml version="1.0" encoding="UTF-8"?>
-        <DistributionConfig xmlns=#{xmlns}>
-           <Origin>#{config[:origin]}</Origin>
-           <CallerReference>#{config[:caller_reference]}</CallerReference>
-           #{cnames_str.lstrip}
-           <Comment>#{AcfInterface::escape(config[:comment].to_s)}</Comment>
-           <Enabled>#{config[:enabled]}</Enabled>
-           #{root_ob}
-        </DistributionConfig>
-      EOXML
-      request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,
+      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], false)
+                                      'If-Match' => config[:e_tag])
+      request_info(request_hash, RightHttp2xxParser.new)
+    end
+
+    def set_streaming_distribution_config(aws_id, config)
+      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], true)
+      request_hash = generate_request('PUT', "streaming-distribution/#{aws_id}/config", body.strip,
                                       'If-Match' => config[:e_tag])
       request_info(request_hash, RightHttp2xxParser.new)
     end
@@ -320,46 +331,52 @@ module Aws
       request_info(request_hash, RightHttp2xxParser.new)
     end
 
+    def delete_streaming_distribution(aws_id, e_tag)
+      request_hash = generate_request('DELETE', "streaming-distribution/#{aws_id}", nil,
+                                      'If-Match' => e_tag)
+      request_info(request_hash, RightHttp2xxParser.new)
+    end
+
     #-----------------------------------------------------------------
     #      PARSERS:
     #-----------------------------------------------------------------
 
-    class AcfDistributionListParser < AwsParser # :nodoc:
+    # Parses attributes common to many CF distribution API calls
+    class AcfBaseDistributionParser < AwsParser # :nodoc:
       def reset
+        @distribution = { :cnames => [] }
         @result = []
-      end
-      def tagstart(name, attributes)
-        @distribution = { :cnames => [] } if name == 'DistributionSummary'
       end
       def tagend(name)
         case name
-          when 'Id'                  then @distribution[:aws_id]             = @text
-          when 'Status'              then @distribution[:status]             = @text
-          when 'LastModifiedTime'    then @distribution[:last_modified_time] = Time.parse(@text)
-          when 'DomainName'          then @distribution[:domain_name]        = @text
-          when 'Origin'              then @distribution[:origin]             = @text
-          when 'Comment'             then @distribution[:comment]            = AcfInterface::unescape(@text)
-          when 'CNAME'               then @distribution[:cnames]            << @text
-          when 'DistributionSummary' then @result << @distribution
+          when 'Id'               then @distribution[:aws_id]             = @text
+          when 'Status'           then @distribution[:status]             = @text
+          when 'LastModifiedTime' then @distribution[:last_modified_time] = Time.parse(@text)
+          when 'DomainName'       then @distribution[:domain_name]        = @text
+          when 'Origin'           then @distribution[:origin]             = @text
+          when 'CallerReference'  then @distribution[:caller_reference]   = @text
+          when 'Comment'          then @distribution[:comment]            = AcfInterface::unescape(@text)
+          when 'Enabled'          then @distribution[:enabled]            = @text == 'true' ? true : false
+          when 'CNAME'            then @distribution[:cnames]            << @text
         end
       end
     end
 
-    class AcfDistributionParser < AwsParser # :nodoc:
-      def reset
-        @result = { :cnames => [] }
+    class AcfDistributionParser < AcfBaseDistributionParser # :nodoc:
+      def tagend(name)
+        super
+        @result = @distribution
+      end
+    end
+
+    class AcfDistributionListParser < AcfBaseDistributionParser # :nodoc:
+      def tagstart(name, attributes)
+        @distribution = { :cnames => [] } if name == 'DistributionSummary'
       end
       def tagend(name)
+        super(name)
         case name
-          when 'Id'               then @result[:aws_id]             = @text
-          when 'Status'           then @result[:status]             = @text
-          when 'LastModifiedTime' then @result[:last_modified_time] = Time.parse(@text)
-          when 'DomainName'       then @result[:domain_name]        = @text
-          when 'Origin'           then @result[:origin]             = @text
-          when 'CallerReference'  then @result[:caller_reference]   = @text
-          when 'Comment'          then @result[:comment]            = AcfInterface::unescape(@text)
-          when 'Enabled'          then @result[:enabled]            = @text == 'true' ? true : false
-          when 'CNAME'            then @result[:cnames]            << @text
+          when 'DistributionSummary' then @result << @distribution
         end
       end
     end
@@ -375,6 +392,18 @@ module Aws
           when 'Comment'          then @result[:comment]          = AcfInterface::unescape(@text)
           when 'Enabled'          then @result[:enabled]          = @text == 'true' ? true : false
           when 'CNAME'            then @result[:cnames]          << @text
+        end
+      end
+    end
+
+    class AcfStreamingDistributionListParser < AcfBaseDistributionParser # :nodoc:
+      def tagstart(name, attributes)
+        @distribution = { :cnames => [] } if name == 'StreamingDistributionSummary'
+      end
+      def tagend(name)
+        super(name)
+        case name
+          when 'StreamingDistributionSummary' then @result << @distribution
         end
       end
     end
