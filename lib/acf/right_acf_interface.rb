@@ -216,25 +216,36 @@ module Aws
     #     :caller_reference   => "200809102100536497863003"}
     #
     def create_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
+      caller_reference ||= generate_call_reference
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false)
+      request_hash = generate_request('POST', 'distribution', body.strip)
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
+
+    def create_streaming_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
+      caller_reference ||= generate_call_reference
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true)
+      request_hash = generate_request('POST', 'streaming-distribution', body.strip)
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
+    
+    def distribution_config_for(origin, comment='', enabled=true, cnames=[], caller_reference=nil, streaming = false)
+      rootElement = streaming ? "StreamingDistributionConfig" : "DistributionConfig"
       # join CNAMES
       cnames_str = ''
       unless cnames.blank?
         cnames.to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
-      # reference
-      caller_reference ||= generate_call_reference
       body = <<-EOXML
         <?xml version="1.0" encoding="UTF-8"?>
-        <DistributionConfig xmlns=#{xmlns}>
+        <#{rootElement} xmlns=#{xmlns}>
            <Origin>#{origin}</Origin>
            <CallerReference>#{caller_reference}</CallerReference>
            #{cnames_str.lstrip}
            <Comment>#{AcfInterface::escape(comment.to_s)}</Comment>
            <Enabled>#{enabled}</Enabled>
-        </DistributionConfig>
+        </#{rootElement}>
       EOXML
-      request_hash = generate_request('POST', 'distribution', body.strip)
-      merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
 
     # Get a distribution's information.
@@ -296,25 +307,14 @@ module Aws
     #  acf.set_distribution_config('E2REJM3VUN5RSI', config) #=> true
     #
     def set_distribution_config(aws_id, config)
-      # join CNAMES
-      cnames_str = ''
-      unless config[:cnames].blank?
-        config[:cnames].to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
-      end
-      root_ob = config[:default_root_object] ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
-      # format request's XML body
-      body = <<-EOXML
-        <?xml version="1.0" encoding="UTF-8"?>
-        <DistributionConfig xmlns=#{xmlns}>
-           <Origin>#{config[:origin]}</Origin>
-           <CallerReference>#{config[:caller_reference]}</CallerReference>
-           #{cnames_str.lstrip}
-           <Comment>#{AcfInterface::escape(config[:comment].to_s)}</Comment>
-           <Enabled>#{config[:enabled]}</Enabled>
-           #{root_ob}
-        </DistributionConfig>
-      EOXML
-      request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,
+      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], false)
+                                      'If-Match' => config[:e_tag])
+      request_info(request_hash, RightHttp2xxParser.new)
+    end
+
+    def set_streaming_distribution_config(aws_id, config)
+      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], true)
+      request_hash = generate_request('PUT', "streaming-distribution/#{aws_id}/config", body.strip,
                                       'If-Match' => config[:e_tag])
       request_info(request_hash, RightHttp2xxParser.new)
     end
@@ -326,6 +326,12 @@ module Aws
     #
     def delete_distribution(aws_id, e_tag)
       request_hash = generate_request('DELETE', "distribution/#{aws_id}", nil,
+                                      'If-Match' => e_tag)
+      request_info(request_hash, RightHttp2xxParser.new)
+    end
+
+    def delete_streaming_distribution(aws_id, e_tag)
+      request_hash = generate_request('DELETE', "streaming-distribution/#{aws_id}", nil,
                                       'If-Match' => e_tag)
       request_info(request_hash, RightHttp2xxParser.new)
     end
