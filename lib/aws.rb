@@ -27,4 +27,5 @@ require 'sdb/right_sdb_interface'
 require 'acf/right_acf_interface'
 require 'elb/elb_interface'
 require 'rds/rds'
+require 'iam/iam'
 
