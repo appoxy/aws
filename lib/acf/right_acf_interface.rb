@@ -215,19 +215,19 @@ module Aws
     #     :last_modified_time => Wed Sep 10 17:00:54 UTC 2008,
     #     :caller_reference   => "200809102100536497863003"}
     #
-    def create_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
-      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false)
+    def create_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil, default_root_object=nil)
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false, default_root_object)
       request_hash = generate_request('POST', 'distribution', body.strip)
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
 
-    def create_streaming_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil)
-      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true)
+    def create_streaming_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil, default_root_object=nil)
+      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true, default_root_object)
       request_hash = generate_request('POST', 'streaming-distribution', body.strip)
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
     
-    def distribution_config_for(origin, comment='', enabled=true, cnames=[], caller_reference=nil, streaming = false)
+    def distribution_config_for(origin, comment='', enabled=true, cnames=[], caller_reference=nil, streaming = false, default_root_object=nil)
       rootElement = streaming ? "StreamingDistributionConfig" : "DistributionConfig"
       # join CNAMES
       cnames_str = ''
@@ -235,7 +235,7 @@ module Aws
         cnames.to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
       caller_reference ||= generate_call_reference
-      root_ob = config[:default_root_object] ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
+      root_ob = default_root_object ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
       body = <<-EOXML
         <?xml version="1.0" encoding="UTF-8"?>
         <#{rootElement} xmlns=#{xmlns}>
