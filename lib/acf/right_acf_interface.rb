@@ -309,6 +309,7 @@ module Aws
     #
     def set_distribution_config(aws_id, config)
       body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], false)
+      request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,      
                                       'If-Match' => config[:e_tag])
       request_info(request_hash, RightHttp2xxParser.new)
     end
