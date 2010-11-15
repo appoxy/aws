@@ -175,7 +175,7 @@ class Alexa
 
 		def response_groups_to_param(groups)
 			actual_groups = groups.is_a?(Array) ? groups : [groups]
-			actual_groups.collect{|g| String.camelize(g.to_s) }.join(",")
+			actual_groups.collect{|g| g.to_s.camelize }.join(",")
 		end
 
 end
