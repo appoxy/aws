@@ -31,7 +31,9 @@ unless defined? ActiveSupport
     #
     #
     class String #:nodoc:
-
+      # Ruby 1.9 introduces an inherit argument for Module#const_get and
+      # #const_defined? and changes their default behavior.
+      if Module.method(:const_get).arity == 1
         # Constantize tries to find a declared constant with the name specified
         # in the string. It raises a NameError when the name is not in CamelCase
         # or is not initialized.
@@ -40,17 +42,29 @@ unless defined? ActiveSupport
         #   "Module".constantize #=> Module
         #   "Class".constantize #=> Class
         def constantize()
-            camel_cased_word = self
-            names = camel_cased_word.split('::')
-            names.shift if names.empty? || names.first.empty?
-
-            constant = Object
-            names.each do |name|
-                constant = constant.const_get(name, false) || constant.const_missing(name)
-            end
-            constant
+          camel_cased_word = self
+          names = camel_cased_word.split('::')
+          names.shift if names.empty? || names.first.empty?
+          
+          constant = Object
+          names.each do |name|
+            constant = constant.const_defined?(name) ? constant.const_get(name) : constant.const_missing(name)
+          end
+          constant
         end
-
+      else
+        def constantize() #:nodoc:
+          camel_cased_word = self
+          names = camel_cased_word.split('::')
+          names.shift if names.empty? || names.first.empty?
+          
+          constant = Object
+          names.each do |name|
+            constant = constant.const_get(name, false) || constant.const_missing(name)
+          end
+          constant
+        end
+      end
     end
 
 
