@@ -204,7 +204,6 @@ module Aws
         def create_bucket(bucket, headers={})
             data = nil
             unless headers[:location].blank?
-#                data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
                 location = headers[:location].to_s
                 location.upcase! if location == 'eu'
                 data = "<CreateBucketConfiguration><LocationConstraint>#{location}</LocationConstraint></CreateBucketConfiguration>"
