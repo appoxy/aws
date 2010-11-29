@@ -1519,7 +1519,8 @@ module Aws
                           :ami_launch_index => '',
                           :ssh_key_name     => '',
                           :aws_state        => '',
-                          :aws_product_codes => [] }
+                          :aws_product_codes => [],
+                          :tags             => {} }
         end
       end
       def tagend(name)
@@ -1546,17 +1547,21 @@ module Aws
           when 'platform'         then @instance[:aws_platform]       = @text
           when 'availabilityZone' then @instance[:aws_availability_zone] = @text
           when 'privateIpAddress' then @instance[:aws_private_ip_address] = @text
+          when 'key'              then @tag_key = @text
+          when 'value'            then @tag_value = @text
           when 'state'
             if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/monitoring' || # DescribeInstances property
                @xmlpath == 'RunInstancesResponse/instancesSet/item/monitoring'            # RunInstances property
               @instance[:monitoring_state] = @text
             end
           when 'item'
-            if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet' || # DescribeInstances property
-               @xmlpath == 'RunInstancesResponse/instancesSet'            # RunInstances property
-              @reservation[:instances_set] << @instance
+            if @xmlpath=='DescribeInstancesResponse/reservationSet/item/instancesSet/item/tagSet'    # Tags
+              @instance[:tags][@tag_key] = @tag_value
+            elsif @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet' || # DescribeInstances property
+                @xmlpath == 'RunInstancesResponse/instancesSet'            # RunInstances property
+              @reservation[:instances_set] << @instance            
             elsif @xmlpath=='DescribeInstancesResponse/reservationSet'    # DescribeInstances property
-              @result << @reservation
+              @result << @reservation  
             end
           when 'RunInstancesResponse' then @result << @reservation            # RunInstances property
         end
