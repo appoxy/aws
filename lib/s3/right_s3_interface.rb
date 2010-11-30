@@ -29,17 +29,17 @@ module Aws
 
         include AwsBaseInterface
 
-        DEFAULT_HOST              = 's3.amazonaws.com'
-        DEFAULT_PORT              = 443
-        DEFAULT_PROTOCOL          = 'https'
-        DEFAULT_SERVICE           = '/'
-        REQUEST_TTL               = 30
-        DEFAULT_EXPIRES_AFTER     =   1 * 24 * 60 * 60 # One day's worth of seconds
-        ONE_YEAR_IN_SECONDS       = 365 * 24 * 60 * 60
-        AMAZON_HEADER_PREFIX      = 'x-amz-'
-        AMAZON_METADATA_PREFIX    = 'x-amz-meta-'
+        DEFAULT_HOST           = 's3.amazonaws.com'
+        DEFAULT_PORT           = 443
+        DEFAULT_PROTOCOL       = 'https'
+        DEFAULT_SERVICE        = '/'
+        REQUEST_TTL            = 30
+        DEFAULT_EXPIRES_AFTER  = 1 * 24 * 60 * 60 # One day's worth of seconds
+        ONE_YEAR_IN_SECONDS    = 365 * 24 * 60 * 60
+        AMAZON_HEADER_PREFIX   = 'x-amz-'
+        AMAZON_METADATA_PREFIX = 'x-amz-meta-'
 
-        @@bench                   = AwsBenchmarkingBlock.new
+        @@bench                = AwsBenchmarkingBlock.new
 
         def self.bench_xml
             @@bench.xml
@@ -87,17 +87,17 @@ module Aws
         #-----------------------------------------------------------------
         # Produces canonical string for signing.
         def canonical_string(method, path, headers={}, expires=nil) # :nodoc:
-            s3_headers                 = {}
+            s3_headers = {}
             headers.each do |key, value|
                 key = key.downcase
                 s3_headers[key] = value.join("").strip if key[/^#{AMAZON_HEADER_PREFIX}|^content-md5$|^content-type$|^date$/o]
             end
             s3_headers['content-type'] ||= ''
             s3_headers['content-md5']  ||= ''
-            s3_headers['date']           = '' if s3_headers.has_key? 'x-amz-date'
-            s3_headers['date']           = expires if expires
+            s3_headers['date'] = '' if s3_headers.has_key? 'x-amz-date'
+            s3_headers['date'] = expires if expires
             # prepare output string
-            out_string                 = "#{method}\n"
+            out_string = "#{method}\n"
             s3_headers.sort { |a, b| a[0] <=> b[0] }.each do |key, value|
                 out_string << (key[/^#{AMAZON_HEADER_PREFIX}/o] ? "#{key}:#{value}\n" : "#{value}\n")
             end
@@ -123,8 +123,8 @@ module Aws
 
         def fetch_request_params(headers) #:nodoc:
             # default server to use
-            server       = @params[:server]
-            service      = @params[:service].to_s
+            server  = @params[:server]
+            service = @params[:service].to_s
             service.chop! if service[%r{/$}] # remove trailing '/' from service
             # extract bucket name and check it's dns compartibility
             headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
@@ -148,22 +148,22 @@ module Aws
         def generate_rest_request(method, headers) # :nodoc:
             # calculate request data
             server, path, path_to_sign = fetch_request_params(headers)
-            data                      = headers[:data]
+            data = headers[:data]
             # remove unset(==optional) and symbolyc keys
             headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
             #
-            headers['content-type']   ||= ''
-            headers['date']           = Time.now.httpdate
+            headers['content-type'] ||= ''
+            headers['date']         = Time.now.httpdate
             # create request
-            request                   = "Net::HTTP::#{method.capitalize}".constantize.new(path)
+            request                 = "Net::HTTP::#{method.capitalize}".constantize.new(path)
             request.body = data if data
             # set request headers and meta headers
             headers.each { |key, value| request[key.to_s] = value }
             #generate auth strings
-            auth_string               = canonical_string(request.method, path_to_sign, request.to_hash)
-            signature                 = AwsUtils::sign(@aws_secret_access_key, auth_string)
+            auth_string              = canonical_string(request.method, path_to_sign, request.to_hash)
+            signature                = AwsUtils::sign(@aws_secret_access_key, auth_string)
             # set other headers
-            request['Authorization']  = "AWS #{@aws_access_key_id}:#{signature}"
+            request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
             # prepare output hash
             {:request  => request,
              :server   => server,
@@ -202,9 +202,12 @@ module Aws
         #  s3.create_bucket('my-awesome-bucket-eu', :location => :eu) #=> true
         #
         def create_bucket(bucket, headers={})
-            data     = nil
+            data = nil
             unless headers[:location].blank?
-                data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
+#                data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
+                location = headers[:location].to_s
+                location.upcase! if location == 'eu'
+                data = "<CreateBucketConfiguration><LocationConstraint>#{location}</LocationConstraint></CreateBucketConfiguration>"
             end
             req_hash = generate_rest_request('PUT', headers.merge(:url=>bucket, :data => data))
             request_info(req_hash, RightHttp2xxParser.new)
@@ -289,7 +292,7 @@ module Aws
         #                  'max-keys'     => "5"}, ..., {...}]
         #
         def list_bucket(bucket, options={}, headers={})
-            bucket  += '?'+options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.blank?
+            bucket += '?'+options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.blank?
             req_hash = generate_rest_request('GET', headers.merge(:url=>bucket))
             request_info(req_hash, S3ListBucketParser.new(:logger => @logger))
         rescue
@@ -326,8 +329,8 @@ module Aws
         def incrementally_list_bucket(bucket, options={}, headers={}, &block)
             internal_options = options.symbolize_keys
             begin
-                internal_bucket     = bucket.dup
-                internal_bucket  += '?'+internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless internal_options.blank?
+                internal_bucket = bucket.dup
+                internal_bucket += '?'+internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless internal_options.blank?
                 req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
                 response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
                 there_are_more_keys = response[:is_truncated]
@@ -409,8 +412,8 @@ module Aws
             if (data_size >= USE_100_CONTINUE_PUT_SIZE)
                 headers['expect'] = '100-continue'
             end
-            req_hash  = generate_rest_request('PUT', headers.merge(:url             =>"#{bucket}/#{CGI::escape key}", :data=>data,
-                                                                   'Content-Length' => data_size.to_s))
+            req_hash = generate_rest_request('PUT', headers.merge(:url             =>"#{bucket}/#{CGI::escape key}", :data=>data,
+                                                                  'Content-Length' => data_size.to_s))
             request_info(req_hash, RightHttp2xxParser.new)
         rescue
             on_exception
@@ -828,9 +831,9 @@ module Aws
             # calculate request data
             server, path, path_to_sign = fetch_request_params(headers)
             # expiration time
-            expires     ||= DEFAULT_EXPIRES_AFTER
-            expires   = Time.now.utc + expires if expires.is_a?(Fixnum) && (expires < ONE_YEAR_IN_SECONDS)
-            expires     = expires.to_i
+            expires ||= DEFAULT_EXPIRES_AFTER
+            expires = Time.now.utc + expires if expires.is_a?(Fixnum) && (expires < ONE_YEAR_IN_SECONDS)
+            expires = expires.to_i
             # remove unset(==optional) and symbolyc keys
             headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
             #generate auth strings
@@ -991,11 +994,11 @@ module Aws
             def tagend(name)
                 case name
                     when 'ID';
-                        @owner[:owner_id]               = @text
+                        @owner[:owner_id] = @text
                     when 'DisplayName';
-                        @owner[:owner_display_name]     = @text
+                        @owner[:owner_display_name] = @text
                     when 'Name';
-                        @current_bucket[:name]          = @text
+                        @current_bucket[:name] = @text
                     when 'CreationDate';
                         @current_bucket[:creation_date] = @text
                     when 'Bucket';
@@ -1019,34 +1022,34 @@ module Aws
                 case name
                     # service info
                     when 'Name';
-                        @service['name']         = @text
+                        @service['name'] = @text
                     when 'Prefix';
-                        @service['prefix']       = @text
+                        @service['prefix'] = @text
                     when 'Marker';
-                        @service['marker']       = @text
+                        @service['marker'] = @text
                     when 'MaxKeys';
-                        @service['max-keys']     = @text
+                        @service['max-keys'] = @text
                     when 'Delimiter';
-                        @service['delimiter']    = @text
+                        @service['delimiter'] = @text
                     when 'IsTruncated';
                         @service['is_truncated'] = (@text =~ /false/ ? false : true)
                     # key data
                     when 'Key';
-                        @current_key[:key]                = @text
+                        @current_key[:key] = @text
                     when 'LastModified';
-                        @current_key[:last_modified]      = @text
+                        @current_key[:last_modified] = @text
                     when 'ETag';
-                        @current_key[:e_tag]              = @text
+                        @current_key[:e_tag] = @text
                     when 'Size';
-                        @current_key[:size]               = @text.to_i
+                        @current_key[:size] = @text.to_i
                     when 'StorageClass';
-                        @current_key[:storage_class]      = @text
+                        @current_key[:storage_class] = @text
                     when 'ID';
-                        @current_key[:owner_id]           = @text
+                        @current_key[:owner_id] = @text
                     when 'DisplayName';
                         @current_key[:owner_display_name] = @text
                     when 'Contents';
-                        @current_key[:service]            = @service; @result << @current_key
+                        @current_key[:service] = @service; @result << @current_key
                 end
             end
         end
@@ -1071,35 +1074,35 @@ module Aws
                 case name
                     # service info
                     when 'Name';
-                        @result[:name]         = @text
+                        @result[:name] = @text
                     # Amazon uses the same tag for the search prefix and for the entries
                     # in common prefix...so use our simple flag to see which element
                     # we are parsing
                     when 'Prefix';
                         @in_common_prefixes ? @common_prefixes << @text : @result[:prefix] = @text
                     when 'Marker';
-                        @result[:marker]       = @text
+                        @result[:marker] = @text
                     when 'MaxKeys';
-                        @result[:max_keys]     = @text
+                        @result[:max_keys] = @text
                     when 'Delimiter';
-                        @result[:delimiter]    = @text
+                        @result[:delimiter] = @text
                     when 'IsTruncated';
                         @result[:is_truncated] = (@text =~ /false/ ? false : true)
                     when 'NextMarker';
-                        @result[:next_marker]  = @text
+                        @result[:next_marker] = @text
                     # key data
                     when 'Key';
-                        @current_key[:key]                = @text
+                        @current_key[:key] = @text
                     when 'LastModified';
-                        @current_key[:last_modified]      = @text
+                        @current_key[:last_modified] = @text
                     when 'ETag';
-                        @current_key[:e_tag]              = @text
+                        @current_key[:e_tag] = @text
                     when 'Size';
-                        @current_key[:size]               = @text.to_i
+                        @current_key[:size] = @text.to_i
                     when 'StorageClass';
-                        @current_key[:storage_class]      = @text
+                        @current_key[:storage_class] = @text
                     when 'ID';
-                        @current_key[:owner_id]           = @text
+                        @current_key[:owner_id] = @text
                     when 'DisplayName';
                         @current_key[:owner_display_name] = @text
                     when 'Contents';
@@ -1189,7 +1192,7 @@ module Aws
                     when 'LastModified' then
                         @result[:last_modified] = @text
                     when 'ETag' then
-                        @result[:e_tag]         = @text
+                        @result[:e_tag] = @text
                 end
             end
         end
@@ -1208,7 +1211,7 @@ module Aws
             def headers_to_string(headers)
                 result = {}
                 headers.each do |key, value|
-                    value       = value[0] if value.is_a?(Array) && value.size<2
+                    value = value[0] if value.is_a?(Array) && value.size<2
                     result[key] = value
                 end
                 result
