@@ -11,7 +11,7 @@ testglobs = ["test/ts_right_aws.rb"]
 begin
     require 'jeweler'
     Jeweler::Tasks.new do |gem|
-        gem.name = "aws"
+        gem.name = "steamcannon-aws"
         gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services."
         gem.email = "travis@appoxy.com"
         gem.homepage = "http://github.com/appoxy/aws/"
