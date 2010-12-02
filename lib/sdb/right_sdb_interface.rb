@@ -88,16 +88,16 @@ module Aws
         #-----------------------------------------------------------------
         #      Requests
         #-----------------------------------------------------------------
-        def generate_request(action, params={}) #:nodoc:
-            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, API_VERSION, @params, params)
+        def generate_request(action, params={}, options={}) #:nodoc:
+            generate_request2(@aws_access_key_id, @aws_secret_access_key, action, API_VERSION, @params, params, options)
         end
 
 
         # Sends request to Amazon and parses the response
         # Raises AwsError if any banana happened
-        def request_info(request, parser)  #:nodoc:
+        def request_info(request, parser, options={})  #:nodoc:
 #       request_info2(request, parser, :sdb_connection)
-            request_info2(request, parser, @params, :sdb_connection, @logger, @@bench)
+            request_info2(request, parser, @params, :sdb_connection, @logger, @@bench, options)
 
         end
 
@@ -615,6 +615,11 @@ module Aws
         #        { "37df6c36-75b0-11dd-9557-001bfc466dd7"=> {"name"=>["Mary"],     "country"=>["USA"]}    } ],
         #     :box_usage=>"0.0000777663"}
         #
+        # options:
+        #     :next_token
+        #     :consistent_read
+        #     :retries => maximum number of times to retry this query on an error response.
+        #
         # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?SDB_API_Select.html
         #      http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?UsingSelect.html
         #      http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/index.html?SDBLimits.html
@@ -622,12 +627,22 @@ module Aws
         def select(select_expression, next_token = nil, consistent_read = nil)
             select_expression      = query_expression_from_array(select_expression) if select_expression.is_a?(Array)
             @last_query_expression = select_expression
+
+            p next_token
+            options = {}
+            if next_token.is_a?(Hash)
+                puts 'is hash!'
+                options = next_token
+                next_token = options[:next_token]
+                consistent_read = options[:consistent_read]
+            end
+
             #
             request_params = { 'SelectExpression' => select_expression,
                                'NextToken'        => next_token,
                                'ConsistentRead'   => consistent_read }
-            link   = generate_request("Select", request_params)
-            result = select_response_to_ruby(request_info( link, QSdbSelectParser.new ))
+            link   = generate_request("Select", request_params, options)
+            result = select_response_to_ruby(request_info( link, QSdbSelectParser.new, options ))
             return result unless block_given?
             # loop if block if given
             begin
@@ -636,7 +651,7 @@ module Aws
                 # make new request
                 request_params['NextToken'] = result[:next_token]
                 link   = generate_request("Select", request_params)
-                result = select_response_to_ruby(request_info( link, QSdbSelectParser.new ))
+                result = select_response_to_ruby(request_info( link, QSdbSelectParser.new, options ))
             end while true
         rescue Exception
             on_exception
