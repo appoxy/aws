@@ -628,10 +628,8 @@ module Aws
             select_expression      = query_expression_from_array(select_expression) if select_expression.is_a?(Array)
             @last_query_expression = select_expression
 
-            p next_token
             options = {}
             if next_token.is_a?(Hash)
-                puts 'is hash!'
                 options = next_token
                 next_token = options[:next_token]
                 consistent_read = options[:consistent_read]

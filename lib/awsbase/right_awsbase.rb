@@ -452,7 +452,7 @@ module Aws
         # Raises AwsError if any banana happened
         def request_info2(request, parser, lib_params, connection_name, logger, bench, options={}, &block) #:nodoc:
             ret       = nil
-            puts 'OPTIONS=' + options.inspect
+#            puts 'OPTIONS=' + options.inspect
             http_conn = get_conn(connection_name, lib_params, logger)
             begin
                 retry_count = 1
@@ -638,7 +638,7 @@ module Aws
             response       =nil
             blockexception = nil
 
-             puts 'OPTIONS2=' + options.inspect
+#             puts 'OPTIONS2=' + options.inspect
 
             if (block != nil)
                 # TRB 9/17/07 Careful - because we are passing in blocks, we get a situation where
@@ -975,7 +975,7 @@ module Aws
                 if !redirect_detected && @close_on_error
                     @aws.connection.finish "#{self.class.name}: error match to pattern '#{error_match}'"
                 end
- puts 'OPTIONS3=' + options.inspect
+# puts 'OPTIONS3=' + options.inspect
                 if options[:retries].nil? || @retries < options[:retries]
                     if (Time.now < @stop_at)
                         @retries += 1
