@@ -140,10 +140,10 @@ module Aws
 
       # Sends request to Amazon and parses the response
       # Raises AwsError if any banana happened
-    def request_info(request, parser) # :nodoc:
+    def request_info(request, parser, options={}) # :nodoc:
       thread = @params[:multi_thread] ? Thread.current : Thread.main
       thread[:sqs_connection] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => @logger)
-      request_info_impl(thread[:sqs_connection], @@bench, request, parser)
+      request_info_impl(thread[:sqs_connection], @@bench, request, parser, options)
     end
 
 
