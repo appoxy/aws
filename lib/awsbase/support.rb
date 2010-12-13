@@ -46,7 +46,14 @@ unless defined? ActiveSupport
 
             constant = Object
             names.each do |name|
-                constant = constant.const_get(name, false) || constant.const_missing(name)
+#                constant = constant.const_get(name, false) || constant.const_missing(name)
+                 if Module.method(:const_get).arity == 1
+                    # ruby 1.8
+                    constant = constant.const_defined?(name) ? constant.const_get(name) : constant.const_missing(name)
+                else
+                    # ruby 1.9
+                    constant = constant.const_get(name, false) || constant.const_missing(name)
+                end
             end
             constant
         end
