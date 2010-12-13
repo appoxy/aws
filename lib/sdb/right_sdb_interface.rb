@@ -360,6 +360,7 @@ module Aws
         def put_attributes(domain_name, item_name, attributes, replace = false)
             params = { 'DomainName' => domain_name,
                        'ItemName'   => item_name }.merge(pack_attributes(attributes, replace))
+					   logger.debug 'PUT=' + params.inspect
             link = generate_request("PutAttributes", params)
             request_info( link, QSdbSimpleParser.new )
         rescue Exception
