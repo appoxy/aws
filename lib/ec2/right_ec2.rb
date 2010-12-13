@@ -1817,12 +1817,15 @@ module Aws
       end
       def tagend(name)
         case name
-          when 'volumeId'   then @snapshot[:aws_volume_id]  = @text
-          when 'snapshotId' then @snapshot[:aws_id]         = @text
-          when 'status'     then @snapshot[:aws_status]     = @text
-          when 'startTime'  then @snapshot[:aws_started_at] = Time.parse(@text)
-          when 'progress'   then @snapshot[:aws_progress]   = @text
-          when 'item'       then @result                   << @snapshot
+          when 'volumeId'     then @snapshot[:aws_volume_id]  = @text
+          when 'snapshotId'   then @snapshot[:aws_id]         = @text
+          when 'status'       then @snapshot[:aws_status]     = @text
+          when 'startTime'    then @snapshot[:aws_started_at] = Time.parse(@text)
+          when 'progress'     then @snapshot[:aws_progress]   = @text
+          when 'description'  then @snapshot[:aws_description] = @text
+          when 'ownerId'      then @snapshot[:aws_owner] = @text
+          when 'volumeSize'   then @snapshot[:aws_volume_size] = @text.to_i
+          when 'item'         then @result                   << @snapshot
         end
       end
       def reset
