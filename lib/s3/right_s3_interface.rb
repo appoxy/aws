@@ -173,8 +173,8 @@ module Aws
 
         # Sends request to Amazon and parses the response.
         # Raises AwsError if any banana happened.
-        def request_info(request, parser, &block) # :nodoc:
-            request_info2(request, parser, @params, :s3_connection, @logger, @@bench, &block)
+        def request_info(request, parser, options={}, &block) # :nodoc:
+            request_info2(request, parser, @params, :s3_connection, @logger, @@bench, options, &block)
 
         end
 
