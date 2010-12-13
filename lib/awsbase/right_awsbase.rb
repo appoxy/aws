@@ -418,12 +418,20 @@ module Aws
 #            return conn
             http_conn = nil
             conn_mode = lib_params[:connection_mode]
+            
+            # Slice all parameters accepted by Rightscale::HttpConnection#new
+            params = lib_params.slice(
+              :user_agent, :ca_file, :http_connection_retry_count, :http_connection_open_timeout,
+              :http_connection_read_timeout, :http_connection_retry_delay
+            )
+            params.merge!(:exception => AwsError, :logger => logger)
+            
             if conn_mode == :per_request
-                http_conn = Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+                http_conn = Rightscale::HttpConnection.new(params)
 
             elsif conn_mode == :per_thread || conn_mode == :single
                 thread                  = conn_mode == :per_thread ? Thread.current : Thread.main
-                thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => AwsError, :logger => logger)
+                thread[connection_name] ||= Rightscale::HttpConnection.new(params)
                 http_conn               = thread[connection_name]
 #                ret = request_info_impl(http_conn, bench, request, parser, &block)
             end
