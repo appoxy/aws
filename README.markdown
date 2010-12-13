@@ -6,15 +6,11 @@ Brought to you by: [![Appoxy](http://www.simpledeployr.com/images/global/appoxy-
 
 ## Discussion Group
 
-[http://groups.google.com/group/ruby-aws]()
-
-## Issue Tracker
-
-[http://appoxy.lighthouseapp.com/projects/38441-aws/overview]()
+[http://groups.google.com/group/ruby-aws](http://groups.google.com/group/ruby-aws)
 
 ## Documentation
 
-[http://rdoc.info/projects/appoxy/aws]()
+[http://rubydoc.info/gems/aws/](http://rubydoc.info/gems/aws/)
 
 ## Appoxy Amazon Web Services Ruby Gems
 
