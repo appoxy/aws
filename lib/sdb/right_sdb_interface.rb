@@ -384,6 +384,27 @@ module Aws
             on_exception
         end
 
+         #
+        # items is an array item_name's or Aws::SdbInterface::Item.new(o.id, o.attributes, true)
+        def batch_delete_attributes(domain_name, items)
+            params = { 'DomainName' => domain_name }
+            i = 0
+            items.each do |item|
+                prefix = "Item." + i.to_s + "."
+                if item.is_a?(String)
+                     params[prefix + "ItemName"] = item
+                else
+                    params[prefix + "ItemName"] = item.item_name
+                    params.merge!(pack_attributes(item.attributes, item.replace, prefix))
+                end
+                i += 1
+            end
+            link = generate_request("BatchDeleteAttributes", params)
+            request_info( link, QSdbSimpleParser.new )
+        rescue Exception
+            on_exception
+        end
+
         # Retrieve SDB item's attribute(s).
         #
         # Returns a hash:

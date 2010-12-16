@@ -6,11 +6,11 @@ class TestSdb < Test::Unit::TestCase
     def setup
         TestCredentials.get_credentials
         STDOUT.sync = true
-        @domain = 'right_sdb_awesome_test_domain'
-        @item = 'toys'
-        @attr = { 'Jon' => %w{beer car} }
+        @domain     = 'right_sdb_awesome_test_domain'
+        @item       = 'toys'
+        @attr       = {'Jon' => %w{beer car}}
         # Interface instance
-        @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
+        @sdb        = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     end
 
     SDB_DELAY = 2
@@ -112,8 +112,20 @@ class TestSdb < Test::Unit::TestCase
         assert_nil values
     end
 
+    def test_08_batch_put_and_delete_attributes
+        items = []
+        10.times do |i|
+            items << Aws::SdbInterface::Item.new("#{@item}_#{i}", {:name=>"name_#{i}"}, true)
+        end
+        @sdb.batch_put_attributes @domain, items
+        sleep 1
+
+        @sdb.batch_delete_attributes @domain, items.collect {|x| x.item_name }
+    end
+
+
     def test_11_signature_version_2
-        sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :signature_version => '2')
+        sdb     = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :signature_version => '2')
         domains = nil
         assert_nothing_thrown "Failed to use signature V2" do
             domains = sdb.list_domains
@@ -157,7 +169,7 @@ class TestSdb < Test::Unit::TestCase
 
     def test_17_nil_attrs
         item = 'nils'
-        res = nil
+        res  = nil
         assert_nothing_thrown do
             @sdb.put_attributes(@domain, item, {:one=>nil, :two=>nil, :three=>'chunder'})
         end
@@ -171,7 +183,7 @@ class TestSdb < Test::Unit::TestCase
     end
 
     def test_18_url_escape
-        item = 'urlescapes'
+        item    = 'urlescapes'
         content = {:a=>"one & two & three",
                    :b=>"one ? two / three"}
         @sdb.put_attributes(@domain, item, content)
@@ -183,11 +195,11 @@ class TestSdb < Test::Unit::TestCase
 
     def test_19_put_attrs_by_post
         item = 'reqgirth'
-        i = 0
-        sa = ""
+        i    = 0
+        sa   = ""
         while (i < 64) do
             sa += "aaaaaaaa"
-            i += 1
+            i  += 1
         end
         @sdb.put_attributes(@domain, item, {:a => sa, :b => sa, :c => sa, :d => sa, :e => sa})
     end
@@ -203,5 +215,6 @@ class TestSdb < Test::Unit::TestCase
         # check that domain does not exist
         assert !@sdb.list_domains[:domains].include?(@domain)
     end
+
 
 end
