@@ -369,7 +369,8 @@ module Aws
             rescue Aws::AwsError => ex
                 # puts "RESCUED in put_attributes: " + $!
                 if options[:create_domain] && create_domain_if_not_exist(ex, domain_name)
-                    save(options)
+                    options.delete(:create_domain)
+                    put_attributes(domain_name, item_name, attributes, replace, options)
                 else
                     raise ex
                 end
