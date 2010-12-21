@@ -80,9 +80,8 @@ module Aws
         # Sends request to Amazon and parses the response
         # Raises AwsError if any banana happened
         def request_info(request, parser, options={})
-            thread = @params[:multi_thread] ? Thread.current : Thread.main
-            thread[:elb_connection] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => @logger)
-            request_info_impl(thread[:elb_connection], @@bench, request, parser, options)
+            conn = get_conn(:mon_connection, @params, @logger)
+            request_info_impl(conn, @@bench, request, parser, options)
         end
 
         #-----------------------------------------------------------------

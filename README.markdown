@@ -6,23 +6,17 @@ Brought to you by: [![Appoxy](http://www.simpledeployr.com/images/global/appoxy-
 
 ## Discussion Group
 
-http://groups.google.com/group/ruby-aws
-
-## Issue Tracker
-
-http://appoxy.lighthouseapp.com/projects/38441-aws/overview
+[http://groups.google.com/group/ruby-aws](http://groups.google.com/group/ruby-aws)
 
 ## Documentation
 
-http://rdoc.info/projects/appoxy/aws
+[http://rubydoc.info/gems/aws/](http://rubydoc.info/gems/aws/)
 
 ## Appoxy Amazon Web Services Ruby Gems
 
-Published by Appoxy LLC, under the MIT License. Special thanks to RightScale from which this project is forked.
+Published by [Appoxy LLC](http://www.appoxy.com), under the MIT License. Special thanks to RightScale from which this project is forked.
 
 ## INSTALL:
-
-THEN (you should have http://gemcutter.org in your sources and it MUST be above rubyforge.org):
 
     gem install aws
 
@@ -70,6 +64,7 @@ The RightScale AWS gems comprise:
 ## THREADING:
 
 All AWS interfaces offer three threading options:
+
 1. Use a single persistent HTTP connection per process. :single
 2. Use a persistent HTTP connection per Ruby thread. :per_thread
 3. Open a new connection for each request. :per_request
@@ -81,6 +76,7 @@ persistent HTTP connection open to avoid paying connection
 overhead on every request. However, if you have multiple concurrent
 threads, you may want or need an HTTP connection per thread to enable
 concurrent requests to AWS. The way this plays out in practice is:
+
 1. If you have a non-multithreaded Ruby program, use the non-multithreaded setting.
 2. If you have a multi-threaded Ruby program, use the multithreaded setting to enable
    concurrent requests to S3 (or SQS, or SDB, or EC2).
@@ -91,7 +87,7 @@ concurrent requests to AWS. The way this plays out in practice is:
 Note that due to limitations in the I/O of the Ruby interpreter you
 may not get the degree of parallelism you may expect with the multi-threaded setting.
 
-By default, EC2/S3/SQS/SDB/ACF interface instances are created in single-threaded mode.  Set
+By default, EC2/S3/SQS/SDB/ACF interface instances are created in per_request mode.  Set
 params[:connection_mode] to :per_thread in the initialization arguments to use
 multithreaded mode.
 
@@ -155,10 +151,12 @@ multithreaded mode.
   
 ## REQUIREMENTS:
 
-Aws requires REXML and the right_http_connection gem.
+Aws requires REXML and the http_connection gem.
 If libxml and its Ruby bindings (distributed in the libxml-ruby gem) are
 present, Aws can be configured to use them:
-  Aws::AwsParser.xml_lib = 'libxml'
+
+    Aws::AwsParser.xml_lib = 'libxml'
+
 Any error with the libxml installation will result in Aws failing-safe to
 REXML parsing.
 
