@@ -381,6 +381,7 @@ module Aws
 
         def create_domain_if_not_exist(ex, domain_name)
             if ex.message().index("NoSuchDomain")
+                puts "Creating domain: #{domain_name}"
                 create_domain(domain_name)
                 return true
             end
