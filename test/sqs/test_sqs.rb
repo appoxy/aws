@@ -202,5 +202,24 @@ class TestSqs < Test::Unit::TestCase
         newsqs = Aws::SqsInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, {:multi_thread => true})
         assert(newsqs.multi_thread)
     end
+    
+    # Note that just like the other tests, this one does not clean up
+    # after itself (queue does not get deleted)
+    def test_29_change_message_visibility
+      queue = Aws::Sqs::Queue.create(@s, "#{@queue_name}_29", true, 10)
+      # Be sure the queue is empty. Useful when rerunning the tests.
+      queue.clear
+      queue.send_message(RIGHT_MESSAGE_TEXT)
+      m = nil
+      # Wait for the message to be delivered
+      while m.nil?
+        m = queue.receive
+      end
+      m.visibility = 60
+      sleep(20)
+      # Had the visibility timeout been not updated, the message would be available
+      # at this point.
+      assert queue.receive.nil?
+    end
 
 end
