@@ -232,7 +232,7 @@ module Aws
             #  p service #=> {"max-keys"=>"2", "prefix"=>"logs", "name"=>"my_awesome_bucket", "marker"=>"", "is_truncated"=>true}
             #
             def keys_and_service(options={}, head=false)
-                opt          = {}; options.each { |key, value| opt[key.to_s] = value }
+                opt = {}; options.each { |key, value| opt[key.to_s] = value }
                 service_data = {}
                 thislist     = {}
                 list         = []
@@ -362,6 +362,11 @@ module Aws
             #
             def delete(force=false)
                 force ? @s3.interface.force_delete_bucket(@name) : @s3.interface.delete_bucket(@name)
+            end
+
+            # Deletes an object from s3 in this bucket.
+            def delete_key(key)
+                @s3.interface.delete(name, key)
             end
 
             # Return a list of grantees.
@@ -615,7 +620,7 @@ module Aws
             #  key.reload_meta   #=> {"family"=>"oops", "race" => "troll"}
             #
             def save_meta(meta_headers)
-                meta          = self.class.add_meta_prefix(meta_headers)
+                meta = self.class.add_meta_prefix(meta_headers)
                 @bucket.s3.interface.copy(@bucket.name, @name, @bucket.name, @name, :replace, meta)
                 @meta_headers = self.class.split_meta(meta)[1]
             end

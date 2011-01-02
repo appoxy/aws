@@ -381,6 +381,7 @@ module Aws
 
         def create_domain_if_not_exist(ex, domain_name)
             if ex.message().index("NoSuchDomain")
+                puts "Creating domain: #{domain_name}"
                 create_domain(domain_name)
                 return true
             end
@@ -389,7 +390,7 @@ module Aws
 
         #
         # items is an array of Aws::SdbInterface::Item.new(o.id, o.attributes, true)
-        def batch_put_attributes(domain_name, items)
+        def batch_put_attributes(domain_name, items, options={})
             params = {'DomainName' => domain_name}
             i      = 0
             items.each do |item|
@@ -399,7 +400,17 @@ module Aws
                 i += 1
             end
             link = generate_request("BatchPutAttributes", params)
-            request_info(link, QSdbSimpleParser.new)
+            begin
+                request_info(link, QSdbSimpleParser.new, options)
+            rescue Aws::AwsError => ex
+                # puts "RESCUED in batch_put_attributes: " + $!
+                if options[:create_domain] && create_domain_if_not_exist(ex, domain_name)
+                    options.delete(:create_domain)
+                    batch_put_attributes(domain_name, items, options)
+                else
+                    raise ex
+                end
+            end
         rescue Exception
             on_exception
         end
