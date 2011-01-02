@@ -12,10 +12,10 @@ begin
     require 'jeweler'
     Jeweler::Tasks.new do |gem|
         gem.name = "aws"
-        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services."
+        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
         gem.email = "travis@appoxy.com"
         gem.homepage = "http://github.com/appoxy/aws/"
-        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services."
+        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
         gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
         gem.files = FileList['lib/**/*.rb']
         gem.add_dependency 'uuidtools'
