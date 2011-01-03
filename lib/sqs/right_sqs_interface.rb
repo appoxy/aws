@@ -278,6 +278,20 @@ module Aws
     rescue
       on_exception
     end
+    
+    # Sets new visibility timeout value for a message identified by "receipt_handle"
+    # Check out the Amazon SQS API documentation for further details.
+    def change_message_visibility(queue_url, receipt_handle, visibility_timeout)
+      req_hash = generate_request(
+        "ChangeMessageVisibility",
+        "ReceiptHandle" => receipt_handle,
+        "VisibilityTimeout" => visibility_timeout,
+        :queue_url => queue_url
+      )
+      request_info(req_hash, SqsStatusParser.new(:logger => @logger))
+    rescue
+      on_exception
+    end
 
       # Given the queue's short name, this call returns the queue URL or +nil+ if queue is not found
       #  sqs.queue_url_by_name('my_awesome_queue') #=> 'http://queue.amazonaws.com/ZZ7XXXYYYBINS/my_awesome_queue'

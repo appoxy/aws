@@ -279,6 +279,16 @@ module Aws
       def delete
         @queue.sqs.interface.delete_message(@queue.url, @receipt_handle) if @receipt_handle
       end
+      
+      # Updates visibility timeout.
+      def visibility=(visibility_timeout)
+        if @receipt_handle
+          @queue.sqs.interface.change_message_visibility(
+            @queue.url, @receipt_handle, visibility_timeout
+          )
+          @visibility = visibility_timeout
+        end
+      end
 
     end
 
