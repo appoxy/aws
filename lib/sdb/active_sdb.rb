@@ -32,6 +32,8 @@ rescue LoadError => e
     exit
 end
 
+puts 'WARNING: ActiveSdb is deprecated, please use SimpleRecord at https://github.com/appoxy/simple_record/ instead.'
+
 module Aws
 
     # = Aws::ActiveSdb -- RightScale SDB interface (alpha release)
