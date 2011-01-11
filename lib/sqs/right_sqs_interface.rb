@@ -50,7 +50,11 @@ module Aws
       :sqs_connection
     end
 
-    @@bench                    = AwsBenchmarkingBlock.new
+    @@bench = AwsBenchmarkingBlock.new
+
+    def self.bench
+      @@bench
+    end
 
     def self.bench_xml
       @@bench.xml

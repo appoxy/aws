@@ -82,9 +82,29 @@ module Aws
   end
 
   module AwsBaseInterface
+
     DEFAULT_SIGNATURE_VERSION = '2'
 
-    @@caching                 = false
+    module ClassMethods
+
+      def self.bench
+        @@bench
+      end
+
+      def self.bench
+        @@bench
+      end
+
+      def self.bench_xml
+        @@bench.xml
+      end
+
+      def self.bench_s3
+        @@bench.service
+      end
+    end
+
+    @@caching = false
 
     def self.caching
       @@caching
@@ -289,9 +309,9 @@ module Aws
     def request_info3(service_interface, request, parser, options, &block)
       request_info2(request, parser,
                     service_interface.params,
-                    service_interface.connection_name,
+                    service_interface.class.connection_name,
                     service_interface.logger,
-                    service_interface.bench,
+                    service_interface.class.bench,
                     options, &block)
     end
 

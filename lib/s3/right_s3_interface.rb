@@ -28,6 +28,7 @@ module Aws
     USE_100_CONTINUE_PUT_SIZE = 1_000_000
 
     include AwsBaseInterface
+    extend AwsBaseInterface::ClassMethods
 
     DEFAULT_HOST           = 's3.amazonaws.com'
     DEFAULT_PORT           = 443
@@ -44,6 +45,12 @@ module Aws
     end
 
     @@bench                = AwsBenchmarkingBlock.new
+     def self.bench
+      @@bench
+    end
+    def self.bench
+      @@bench
+    end
 
     def self.bench_xml
       @@bench.xml

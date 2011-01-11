@@ -13,7 +13,9 @@ module Aws
     DEFAULT_PORT     = 443
 
     @@bench          = AwsBenchmarkingBlock.new
-
+ def self.bench
+      @@bench
+    end
     def self.bench_xml
       @@bench.xml
     end
