@@ -73,7 +73,7 @@ module Aws
   #  acf.set_distribution_config(distibution[:aws_id], config) #=> true
   #
   class AcfInterface < AwsBase
-    
+
     include AwsBaseInterface
 
     API_VERSION      = "2010-08-01"
@@ -82,10 +82,17 @@ module Aws
     DEFAULT_PROTOCOL = 'https'
     DEFAULT_PATH     = '/'
 
-    @@bench = AwsBenchmarkingBlock.new
+
+    def self.connection_name
+      :acf_connection
+    end
+
+    @@bench          = AwsBenchmarkingBlock.new
+
     def self.bench_xml
       @@bench.xml
     end
+
     def self.bench_service
       @@bench.service
     end
@@ -104,13 +111,13 @@ module Aws
     #    {:multi_thread => true, :logger => Logger.new('/tmp/x.log')}) #=>  #<Aws::AcfInterface::0xb7b3c30c>
     #
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
-      init({ :name             => 'ACF',
-             :default_host     => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).host   : DEFAULT_HOST,
-             :default_port     => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).port   : DEFAULT_PORT,
-             :default_service  => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).path   : DEFAULT_PATH,
-             :default_protocol => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).scheme : DEFAULT_PROTOCOL },
-           aws_access_key_id     || ENV['AWS_ACCESS_KEY_ID'], 
-           aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'], 
+      init({:name             => 'ACF',
+            :default_host     => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).host : DEFAULT_HOST,
+            :default_port     => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).port : DEFAULT_PORT,
+            :default_service  => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).path : DEFAULT_PATH,
+            :default_protocol => ENV['ACF_URL'] ? URI.parse(ENV['ACF_URL']).scheme : DEFAULT_PROTOCOL},
+           aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
+           aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
            params)
     end
 
@@ -119,29 +126,30 @@ module Aws
     #-----------------------------------------------------------------
 
     # Generates request hash for REST API.
-    def generate_request(method, path, body=nil, headers={})  # :nodoc:
+    def generate_request(method, path, body=nil, headers={}) # :nodoc:
       headers['content-type'] ||= 'text/xml' if body
-      headers['date'] = Time.now.httpdate
+      headers['date']          = Time.now.httpdate
       # Auth
-      signature = AwsUtils::sign(@aws_secret_access_key, headers['date'])
+      signature                = AwsUtils::sign(@aws_secret_access_key, headers['date'])
       headers['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # Request
-      path    = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
-      request = "Net::HTTP::#{method.capitalize}".constantize.new(path)
+      path                     = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
+      request                  = "Net::HTTP::#{method.capitalize}".constantize.new(path)
       request.body = body if body
       # Set request headers
       headers.each { |key, value| request[key.to_s] = value }
       # prepare output hash
-      { :request  => request, 
-        :server   => @params[:server],
-        :port     => @params[:port],
-        :protocol => @params[:protocol] }
-      end
-      
-      # Sends request to Amazon and parses the response.
-      # Raises AwsError if any banana happened.
+      {:request  => request,
+       :server   => @params[:server],
+       :port     => @params[:port],
+       :protocol => @params[:protocol]}
+    end
+
+    # Sends request to Amazon and parses the response.
+    # Raises AwsError if any banana happened.
+    # todo: remove this and switch to using request_info2
     def request_info(request, parser, options={}, &block) # :nodoc:
-      conn = get_conn(:acf_connection, @params, @logger)
+      conn = get_conn(self.class.connection_name, @params, @logger)
       request_info_impl(conn, @@bench, request, parser, options, &block)
     end
 
@@ -163,13 +171,13 @@ module Aws
 
     def generate_call_reference # :nodoc:
       result = Time.now.strftime('%Y%m%d%H%M%S')
-      10.times{ result << rand(10).to_s }
+      10.times { result << rand(10).to_s }
       result
     end
 
     def merge_headers(hash) # :nodoc:
       hash[:location] = @last_response['Location'] if @last_response['Location']
-      hash[:e_tag]    = @last_response['ETag']     if @last_response['ETag']
+      hash[:e_tag] = @last_response['ETag'] if @last_response['ETag']
       hash
     end
 
@@ -191,12 +199,12 @@ module Aws
     #
     def list_distributions
       request_hash = generate_request('GET', 'distribution')
-      request_cache_or_info :list_distributions, request_hash,  AcfDistributionListParser, @@bench
+      request_cache_or_info :list_distributions, request_hash, AcfDistributionListParser, @@bench
     end
 
     def list_streaming_distributions
       request_hash = generate_request('GET', 'streaming-distribution')
-      request_cache_or_info :list_streaming_distributions, request_hash,  AcfStreamingDistributionListParser, @@bench
+      request_cache_or_info :list_streaming_distributions, request_hash, AcfStreamingDistributionListParser, @@bench
     end
 
     # Create a new distribution.
@@ -215,27 +223,27 @@ module Aws
     #     :caller_reference   => "200809102100536497863003"}
     #
     def create_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil, default_root_object=nil)
-      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false, default_root_object)
+      body         = distribution_config_for(origin, comment, enabled, cnames, caller_reference, false, default_root_object)
       request_hash = generate_request('POST', 'distribution', body.strip)
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
 
     def create_streaming_distribution(origin, comment='', enabled=true, cnames=[], caller_reference=nil, default_root_object=nil)
-      body = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true, default_root_object)
+      body         = distribution_config_for(origin, comment, enabled, cnames, caller_reference, true, default_root_object)
       request_hash = generate_request('POST', 'streaming-distribution', body.strip)
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
     end
-    
+
     def distribution_config_for(origin, comment='', enabled=true, cnames=[], caller_reference=nil, streaming = false, default_root_object=nil)
       rootElement = streaming ? "StreamingDistributionConfig" : "DistributionConfig"
       # join CNAMES
-      cnames_str = ''
+      cnames_str  = ''
       unless cnames.blank?
         cnames.to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
       caller_reference ||= generate_call_reference
-      root_ob = default_root_object ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
-      body = <<-EOXML
+      root_ob          = default_root_object ? "<DefaultRootObject>#{config[:default_root_object]}</DefaultRootObject>" : ""
+      body             = <<-EOXML
         <?xml version="1.0" encoding="UTF-8"?>
         <#{rootElement} xmlns=#{xmlns}>
            <Origin>#{origin}</Origin>
@@ -307,14 +315,14 @@ module Aws
     #  acf.set_distribution_config('E2REJM3VUN5RSI', config) #=> true
     #
     def set_distribution_config(aws_id, config)
-      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], false)
-      request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,      
+      body         = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], false)
+      request_hash = generate_request('PUT', "distribution/#{aws_id}/config", body.strip,
                                       'If-Match' => config[:e_tag])
       request_info(request_hash, RightHttp2xxParser.new)
     end
 
     def set_streaming_distribution_config(aws_id, config)
-      body = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], true)
+      body         = distribution_config_for(config[:origin], config[:comment], config[:enabled], config[:cnames], config[:caller_reference], true)
       request_hash = generate_request('PUT', "streaming-distribution/#{aws_id}/config", body.strip,
                                       'If-Match' => config[:e_tag])
       request_info(request_hash, RightHttp2xxParser.new)
@@ -344,20 +352,30 @@ module Aws
     # Parses attributes common to many CF distribution API calls
     class AcfBaseDistributionParser < AwsParser # :nodoc:
       def reset
-        @distribution = { :cnames => [] }
-        @result = []
+        @distribution = {:cnames => []}
+        @result       = []
       end
+
       def tagend(name)
         case name
-          when 'Id'               then @distribution[:aws_id]             = @text
-          when 'Status'           then @distribution[:status]             = @text
-          when 'LastModifiedTime' then @distribution[:last_modified_time] = Time.parse(@text)
-          when 'DomainName'       then @distribution[:domain_name]        = @text
-          when 'Origin'           then @distribution[:origin]             = @text
-          when 'CallerReference'  then @distribution[:caller_reference]   = @text
-          when 'Comment'          then @distribution[:comment]            = AcfInterface::unescape(@text)
-          when 'Enabled'          then @distribution[:enabled]            = @text == 'true' ? true : false
-          when 'CNAME'            then @distribution[:cnames]            << @text
+          when 'Id' then
+            @distribution[:aws_id] = @text
+          when 'Status' then
+            @distribution[:status] = @text
+          when 'LastModifiedTime' then
+            @distribution[:last_modified_time] = Time.parse(@text)
+          when 'DomainName' then
+            @distribution[:domain_name] = @text
+          when 'Origin' then
+            @distribution[:origin] = @text
+          when 'CallerReference' then
+            @distribution[:caller_reference] = @text
+          when 'Comment' then
+            @distribution[:comment] = AcfInterface::unescape(@text)
+          when 'Enabled' then
+            @distribution[:enabled] = @text == 'true' ? true : false
+          when 'CNAME' then
+            @distribution[:cnames] << @text
         end
       end
     end
@@ -371,39 +389,49 @@ module Aws
 
     class AcfDistributionListParser < AcfBaseDistributionParser # :nodoc:
       def tagstart(name, attributes)
-        @distribution = { :cnames => [] } if name == 'DistributionSummary'
+        @distribution = {:cnames => []} if name == 'DistributionSummary'
       end
+
       def tagend(name)
         super(name)
         case name
-          when 'DistributionSummary' then @result << @distribution
+          when 'DistributionSummary' then
+            @result << @distribution
         end
       end
     end
 
     class AcfDistributionConfigParser < AwsParser # :nodoc:
       def reset
-        @result = { :cnames => [] }
+        @result = {:cnames => []}
       end
+
       def tagend(name)
         case name
-          when 'Origin'           then @result[:origin]           = @text
-          when 'CallerReference'  then @result[:caller_reference] = @text
-          when 'Comment'          then @result[:comment]          = AcfInterface::unescape(@text)
-          when 'Enabled'          then @result[:enabled]          = @text == 'true' ? true : false
-          when 'CNAME'            then @result[:cnames]          << @text
+          when 'Origin' then
+            @result[:origin] = @text
+          when 'CallerReference' then
+            @result[:caller_reference] = @text
+          when 'Comment' then
+            @result[:comment] = AcfInterface::unescape(@text)
+          when 'Enabled' then
+            @result[:enabled] = @text == 'true' ? true : false
+          when 'CNAME' then
+            @result[:cnames] << @text
         end
       end
     end
 
     class AcfStreamingDistributionListParser < AcfBaseDistributionParser # :nodoc:
       def tagstart(name, attributes)
-        @distribution = { :cnames => [] } if name == 'StreamingDistributionSummary'
+        @distribution = {:cnames => []} if name == 'StreamingDistributionSummary'
       end
+
       def tagend(name)
         super(name)
         case name
-          when 'StreamingDistributionSummary' then @result << @distribution
+          when 'StreamingDistributionSummary' then
+            @result << @distribution
         end
       end
     end

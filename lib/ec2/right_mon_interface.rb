@@ -18,6 +18,11 @@ module Aws
     # NetworkIn NetworkOut DiskReadOps DiskWriteOps DiskReadBytes DiskWriteBytes CPUUtilization
     measures         =%w(NetworkIn NetworkOut DiskReadOps DiskWriteOps DiskReadBytes DiskWriteBytes CPUUtilization)
 
+
+    def self.connection_name
+      :mon_connection
+    end
+
     @@bench          = Aws::AwsBenchmarkingBlock.new
 
     def self.bench_xml
@@ -82,8 +87,9 @@ module Aws
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
+    # todo: remove this and switch to using request_info2
     def request_info(request, parser, options={})
-      conn = get_conn(:mon_connection, @params, @logger)
+      conn = get_conn(self.class.connection_name, @params, @logger)
       request_info_impl(conn, @@bench, request, parser, options)
     end
 

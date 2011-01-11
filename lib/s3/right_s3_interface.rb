@@ -39,6 +39,10 @@ module Aws
     AMAZON_HEADER_PREFIX   = 'x-amz-'
     AMAZON_METADATA_PREFIX = 'x-amz-meta-'
 
+    def self.connection_name
+      :s3_connection
+    end
+
     @@bench                = AwsBenchmarkingBlock.new
 
     def self.bench_xml
@@ -48,6 +52,7 @@ module Aws
     def self.bench_s3
       @@bench.service
     end
+
 
 
     # Creates new RightS3 instance.
@@ -75,11 +80,6 @@ module Aws
            aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
            aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
            params)
-    end
-
-
-    def close_connection
-      close_conn :s3_connection
     end
 
     #-----------------------------------------------------------------
@@ -175,8 +175,8 @@ module Aws
     # Sends request to Amazon and parses the response.
     # Raises AwsError if any banana happened.
     def request_info(request, parser, options={}, &block) # :nodoc:
-      request_info2(request, parser, @params, :s3_connection, @logger, @@bench, options, &block)
-
+#      request_info2(request, parser, @params, :s3_connection, @logger, @@bench, options, &block)
+      request_info3(self, request, parser, options, &block)
     end
 
 
