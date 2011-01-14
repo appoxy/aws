@@ -26,6 +26,12 @@ class TestS3 < S3TestBase
     assert @s3.put(@bucket, @key3, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo3!'), 'Put bucket fail'
   end
 
+  def test_04a_put
+    super_big_string = ""
+    1000000.times {|i| super_big_string << "abcde" }
+    assert @s3.put(@bucket, "super_big", super_big_string), 'Put bucket fail'
+  end
+
   def test_05_get_and_get_object
     assert_raise(Aws::AwsError) { @s3.get(@bucket, 'undefined/key') }
     data1 = @s3.get(@bucket, @key1)

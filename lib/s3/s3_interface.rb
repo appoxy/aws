@@ -44,10 +44,12 @@ module Aws
       :s3_connection
     end
 
-    @@bench                = AwsBenchmarkingBlock.new
-     def self.bench
+    @@bench = AwsBenchmarkingBlock.new
+
+    def self.bench
       @@bench
     end
+
     def self.bench
       @@bench
     end
@@ -59,7 +61,6 @@ module Aws
     def self.bench_s3
       @@bench.service
     end
-
 
 
     # Creates new RightS3 instance.
@@ -415,12 +416,22 @@ module Aws
       if (data.respond_to?(:binmode))
         data.binmode
       end
+      if data.is_a?(String)
+        data = StringIO.new(data)
+#        puts "encoding = #{data.external_encoding} - #{data.internal_encoding}"
+#        data.set_encoding("UTF-8")
+#        puts "encoding = #{data.external_encoding} - #{data.internal_encoding}"
+      end
+
       data_size = data.respond_to?(:lstat) ? data.lstat.size :
-          (data.respond_to?(:size) ? data.size : 0)
+#          data.respond_to?(:bytesize) ? data.bytesize :
+      (data.respond_to?(:size) ? data.size : 0)
+#      puts 'data_size=' + data_size.to_s
       if (data_size >= USE_100_CONTINUE_PUT_SIZE)
         headers['expect'] = '100-continue'
       end
-      req_hash = generate_rest_request('PUT', headers.merge(:url             =>"#{bucket}/#{CGI::escape key}", :data=>data,
+      req_hash = generate_rest_request('PUT', headers.merge(:url             =>"#{bucket}/#{CGI::escape key}",
+                                                            :data            =>data,
                                                             'Content-Length' => data_size.to_s))
       request_info(req_hash, RightHttp2xxParser.new)
     rescue
@@ -798,7 +809,8 @@ module Aws
     #
     def clear_bucket(bucket)
       incrementally_list_bucket(bucket) do |results|
-        results[:contents].each { |key| delete(bucket, key[:key]) }
+        p results
+        results[:contents].each { |key| p key; delete(bucket, key[:key]) }
       end
       true
     rescue
@@ -1242,8 +1254,11 @@ module Aws
 
     class S3HttpResponseBodyParser < S3HttpResponseParser # :nodoc:
       def parse(response)
+        x = response.body
+        x.force_encoding("UTF-8")
+#        puts 'x.encoding = ' + response.body.encoding.to_s
         @result = {
-            :object  => response.body,
+            :object  => x,
             :headers => headers_to_string(response.to_hash)
         }
       end
