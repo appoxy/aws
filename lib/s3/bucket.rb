@@ -119,9 +119,11 @@ module Aws
     def keys_and_service(options={}, head=false)
       opt = {}; options.each { |key, value| opt[key.to_s] = value }
       service_data = {}
+      service_list = {}
       thislist     = {}
       list         = []
       @s3.interface.incrementally_list_bucket(@name, opt) do |thislist|
+        service_list = thislist
         thislist[:contents].each do |entry|
           owner = S3::Owner.new(entry[:owner_id], entry[:owner_display_name])
           key   = S3::Key.new(self, entry[:key], nil, {}, {}, entry[:last_modified], entry[:e_tag], entry[:size], entry[:storage_class], owner)
@@ -129,8 +131,8 @@ module Aws
           list << key
         end
       end
-      thislist.each_key do |key|
-        service_data[key] = thislist[key] unless (key == :contents || key == :common_prefixes)
+      service_list.each_key do |key|
+        service_data[key] = service_list[key] unless (key == :contents || key == :common_prefixes)
       end
       [list, service_data]
     end
