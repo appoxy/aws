@@ -405,7 +405,7 @@ module Aws
 
     def describe_availability_zones(options={})
       link = generate_request("DescribeAvailabilityZones", options={})
-      request_info_xml_simple(:rds_connection, @params, link, @logger,
+      request_info_xml_simple(self.class.connection_name, @params, link, @logger,
                               :group_tags     =>{"DBInstances"      =>"DBInstance",
                                                  "DBParameterGroups"=>"DBParameterGroup",
                                                  "DBSecurityGroups" =>"DBSecurityGroup",

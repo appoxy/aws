@@ -14,11 +14,16 @@ module Aws
     DEFAULT_PROTOCOL = 'https'
     DEFAULT_PORT     = 443
 
+    def self.connection_name
+      :elb_connection
+    end
 
-    @@bench          = AwsBenchmarkingBlock.new
- def self.bench
+    @@bench = AwsBenchmarkingBlock.new
+
+    def self.bench
       @@bench
     end
+
     def self.bench_xml
       @@bench.xml
     end
@@ -51,13 +56,13 @@ module Aws
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     def request_info(request, parser, options={})
-      request_info2(request, parser, @params, :elb_connection, @logger, @@bench, options)
+      request_info2(request, parser, @params, self.class.connection_name, @logger, @@bench, options)
     end
 
     # todo: convert to xml-simple version and get rid of parser below
     def do_request(action, params, options={})
       link = generate_request(action, params)
-      resp = request_info_xml_simple(:rds_connection, @params, link, @logger,
+      resp = request_info_xml_simple(self.class.connection_name, @params, link, @logger,
                                      :group_tags     =>{"LoadBalancersDescriptions"=>"LoadBalancersDescription",
                                                         "DBParameterGroups"        =>"DBParameterGroup",
                                                         "DBSecurityGroups"         =>"DBSecurityGroup",
