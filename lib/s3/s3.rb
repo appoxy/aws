@@ -80,6 +80,7 @@ module Aws
     #    {:server       => 's3.amazonaws.com'   # Amazon service host: 's3.amazonaws.com'(default)
     #     :port         => 443                  # Amazon service port: 80 or 443(default)
     #     :protocol     => 'https'              # Amazon service protocol: 'http' or 'https'(default)
+    #     :virtual_hosting  => false            # Force using bucket virtual hosting: https://s3.amazonaws.com/my-bucket vs. https://my-bucket.s3.amazonaws.com
     #     :connection_mode  => :default         # options are
     #                                                  :default (will use best known safe (as in won't need explicit close) option, may change in the future)
     #                                                  :per_request (opens and closes a connection on every request)

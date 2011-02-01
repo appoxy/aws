@@ -139,7 +139,7 @@ module Aws
       headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
       bucket_name, key_path, params_list = $1, $2, $3
       # select request model
-      if is_dns_bucket?(bucket_name)
+      if is_dns_bucket?(bucket_name) and !@params[:virtual_hosting]
         # fix a path
         server   = "#{bucket_name}.#{server}"
         key_path ||= '/'
