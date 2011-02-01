@@ -22,6 +22,7 @@ begin
         gem.add_dependency 'http_connection'
         gem.add_dependency 'xml-simple'
         gem.add_dependency 'activesupport'
+        gem.add_dependency 'extensions'
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
