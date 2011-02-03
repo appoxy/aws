@@ -1132,6 +1132,21 @@ module Aws
       on_exception
     end
 
+    # Creates an Amazon EBS-backed AMI from an Amazon EBS-backed instance
+    # Instance must be either the running or stopped state
+    #
+    # ec2.create_image('i-4jhdmaw', 'New image')
+    #
+    def create_image(instance_id, name, description="")
+      link = generate_request("CreateImage",
+                              "InstanceId" => instance_id,
+                              "Name" => name,
+                              "Description" => description)
+      request_info(link, QEc2CreateImageParser.new(:logger => @logger))
+    rescue
+        on_exception
+    end
+
     # Attach the specified EBS volume to a specified instance, exposing the
     # volume using the specified device name.
     #
@@ -1674,6 +1689,12 @@ module Aws
 
       def reset
         @result = []
+      end
+    end
+
+    class QEc2CreateImageParser < AwsParser #:nodoc:
+      def tagend(name)
+        @result = @text  if name == 'imageId'
       end
     end
 
