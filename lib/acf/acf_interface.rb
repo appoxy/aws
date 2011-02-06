@@ -210,11 +210,13 @@ module Aws
     end
     
     # Invalidate list of files 
+    # Returns the just created Invalidation or Aws::AwsError exception.
     #
-    # acf.invalidate_files( 'distribution_id', 
+    # acf.invalidate_files( 'distribution-id', 
     #                       ['path/to/file1', 'path/to/file2'], 
-    #                       nil)
-    def invalidate_files(distribution_id, files=[], caller_reference='')
+    #                       'some-id-string')
+    #
+    def invalidate_files(distribution_id, files=[], caller_reference=nil)
       caller_reference ||= generate_call_reference
 
       files_str  = ''
@@ -227,8 +229,6 @@ module Aws
            <CallerReference>#{caller_reference}</CallerReference>
         </InvalidationBatch>
       EOXML
-      
-      p body
       
       request_hash = generate_request('POST', "distribution/#{distribution_id}/invalidation", body.strip)
       merge_headers(request_info(request_hash, AcfDistributionParser.new))
