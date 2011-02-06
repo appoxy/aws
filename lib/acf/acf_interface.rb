@@ -208,6 +208,31 @@ module Aws
       request_hash = generate_request('GET', 'streaming-distribution')
       request_cache_or_info :list_streaming_distributions, request_hash, AcfStreamingDistributionListParser, @@bench
     end
+    
+    # Invalidate list of files 
+    #
+    # acf.invalidate_files( 'distribution_id', 
+    #                       ['path/to/file1', 'path/to/file2'], 
+    #                       nil)
+    def invalidate_files(distribution_id, files=[], caller_reference='')
+      caller_reference ||= generate_call_reference
+
+      files_str  = ''
+      files.to_a.each { |file_path| files_str += "\n           <Path>#{file_path}</Path>" }
+
+      body = <<-EOXML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <InvalidationBatch>
+            #{files_str.lstrip}
+           <CallerReference>#{caller_reference}</CallerReference>
+        </InvalidationBatch>
+      EOXML
+      
+      p body
+      
+      request_hash = generate_request('POST', "distribution/#{distribution_id}/invalidation", body.strip)
+      merge_headers(request_info(request_hash, AcfDistributionParser.new))
+    end
 
     # Create a new distribution.
     # Returns the just created distribution or Aws::AwsError exception.

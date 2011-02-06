@@ -221,8 +221,8 @@ module Aws
         request = Net::HTTP::Get.new("#{service}?#{service_params}")
       end
 
-      #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
-      #puts "#{@params[:service]}?#{service_params}\n\n"
+      puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
+      puts "#{@params[:service]}?#{service_params}\n\n"
 
       # prepare output hash
       {:request  => request,
