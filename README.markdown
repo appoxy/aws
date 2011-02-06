@@ -1,3 +1,6 @@
+# Forked from appoxy
+Added invalidation method for Cloudfront
+
 # Appoxy AWS Library
 
 A Ruby gem for all Amazon Web Services.
