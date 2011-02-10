@@ -1588,6 +1588,10 @@ module Aws
                        :ami_launch_index  => '',
                        :ssh_key_name      => '',
                        :aws_state         => '',
+                       :root_device_type  => '',
+                       :root_device_name  => '',
+                       :architecture      => '',
+                       :block_device_mappings => [],
                        :aws_product_codes => [],
                        :tags              => {}}
         end
@@ -1595,6 +1599,12 @@ module Aws
 
       def tagend(name)
         case name
+          when  'rootDeviceType' then
+            @instance[:root_device_type] = @text
+          when 'architecture' then
+            @instance[:architecture] = @text
+          when 'rootDeviceName' then
+            @instance[:root_device_name] = @text
           # reservation
           when 'reservationId' then
             @reservation[:aws_reservation_id] = @text
@@ -1641,6 +1651,10 @@ module Aws
             @tag_key = @text
           when 'value' then
             @tag_value = @text
+          when 'deviceName' then
+            @device_name = @text
+          when 'volumeId' then
+            @volume_id = @text
           when 'state'
             if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/monitoring' || # DescribeInstances property
             @xmlpath == 'RunInstancesResponse/instancesSet/item/monitoring' # RunInstances property
@@ -1649,6 +1663,8 @@ module Aws
           when 'item'
             if @xmlpath=='DescribeInstancesResponse/reservationSet/item/instancesSet/item/tagSet' # Tags
               @instance[:tags][@tag_key] = @tag_value
+            elsif @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/blockDeviceMapping' # Block device mappings
+              @instance[:block_device_mappings] << { @device_name => @volume_id }
             elsif @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet' || # DescribeInstances property
             @xmlpath == 'RunInstancesResponse/instancesSet' # RunInstances property
               @reservation[:instances_set] << @instance
