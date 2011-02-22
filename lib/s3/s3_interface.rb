@@ -1255,7 +1255,7 @@ module Aws
     class S3HttpResponseBodyParser < S3HttpResponseParser # :nodoc:
       def parse(response)
         x = response.body
-        x.force_encoding("UTF-8")
+        x= x.respond_to?(:force_encoding) ? x.force_encoding("UTF-8") : x
 #        puts 'x.encoding = ' + response.body.encoding.to_s
         @result = {
             :object  => x,
