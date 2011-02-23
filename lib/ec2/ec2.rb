@@ -1110,10 +1110,10 @@ module Aws
     #       :aws_size       => 94}
     #
     def create_volume(snapshot_id, size, zone)
+      params = {'Size' => size.to_s, 'AvailabilityZone' => zone.to_s}
+      params['SnapshotId'] = snapshot_id if snapshot_id && snapshot_id.length > 0 # snapshotId is conditional
       link = generate_request("CreateVolume",
-                              "SnapshotId"       => snapshot_id.to_s,
-                              "Size"             => size.to_s,
-                              "AvailabilityZone" => zone.to_s)
+                              params)
       request_info(link, QEc2CreateVolumeParser.new(:logger => @logger))
     rescue Exception
       on_exception

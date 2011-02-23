@@ -139,16 +139,10 @@ module Aws
       headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
       bucket_name, key_path, params_list = $1, $2, $3
       # select request model
-      if is_dns_bucket?(bucket_name)
-        # fix a path
-        server   = "#{bucket_name}.#{server}"
-        key_path ||= '/'
-        path     = "#{service}#{key_path}#{params_list}"
-      else
-        path = "#{service}/#{bucket_name}#{key_path}#{params_list}"
-      end
+      #if is_dns_bucket?(bucket_name) 
+      # is_dns_bucket isn't called since naming a bucket using URL's path always works (naming using dns cname may have an issue with Eucalyptus)
+      path = "#{service}/#{bucket_name}#{key_path}#{params_list}"
       path_to_sign = "#{service}/#{bucket_name}#{key_path}#{params_list}"
-#      path_to_sign = "/#{bucket_name}#{key_path}#{params_list}"
       [server, path, path_to_sign]
     end
 
