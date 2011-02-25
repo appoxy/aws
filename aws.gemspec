@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{aws}
-  s.version = "2.4.2"
+  s.version = "2.4.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-  s.date = %q{2011-01-21}
+  s.date = %q{2011-02-24}
   s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -44,7 +44,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = %q{http://github.com/appoxy/aws/}
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.5.2}
   s.summary = %q{AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com}
   s.test_files = [
     "test/acf/test_acf.rb",
@@ -72,7 +72,6 @@ Gem::Specification.new do |s|
   ]
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
