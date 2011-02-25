@@ -1132,6 +1132,21 @@ module Aws
       on_exception
     end
 
+    # Creates an Amazon EBS-backed AMI from an Amazon EBS-backed instance
+    # Instance must be either the running or stopped state
+    #
+    # ec2.create_image('i-4jhdmaw', 'New image')
+    #
+    def create_image(instance_id, name, description="")
+      link = generate_request("CreateImage",
+                              "InstanceId" => instance_id,
+                              "Name" => name,
+                              "Description" => description)
+      request_info(link, QEc2CreateImageParser.new(:logger => @logger))
+    rescue
+        on_exception
+    end
+
     # Attach the specified EBS volume to a specified instance, exposing the
     # volume using the specified device name.
     #
@@ -1573,6 +1588,10 @@ module Aws
                        :ami_launch_index  => '',
                        :ssh_key_name      => '',
                        :aws_state         => '',
+                       :root_device_type  => '',
+                       :root_device_name  => '',
+                       :architecture      => '',
+                       :block_device_mappings => [],
                        :aws_product_codes => [],
                        :tags              => {}}
         end
@@ -1580,6 +1599,12 @@ module Aws
 
       def tagend(name)
         case name
+          when  'rootDeviceType' then
+            @instance[:root_device_type] = @text
+          when 'architecture' then
+            @instance[:architecture] = @text
+          when 'rootDeviceName' then
+            @instance[:root_device_name] = @text
           # reservation
           when 'reservationId' then
             @reservation[:aws_reservation_id] = @text
@@ -1626,6 +1651,10 @@ module Aws
             @tag_key = @text
           when 'value' then
             @tag_value = @text
+          when 'deviceName' then
+            @device_name = @text
+          when 'volumeId' then
+            @volume_id = @text
           when 'state'
             if @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/monitoring' || # DescribeInstances property
             @xmlpath == 'RunInstancesResponse/instancesSet/item/monitoring' # RunInstances property
@@ -1634,6 +1663,8 @@ module Aws
           when 'item'
             if @xmlpath=='DescribeInstancesResponse/reservationSet/item/instancesSet/item/tagSet' # Tags
               @instance[:tags][@tag_key] = @tag_value
+            elsif @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet/item/blockDeviceMapping' # Block device mappings
+              @instance[:block_device_mappings] << { @device_name => @volume_id }
             elsif @xmlpath == 'DescribeInstancesResponse/reservationSet/item/instancesSet' || # DescribeInstances property
             @xmlpath == 'RunInstancesResponse/instancesSet' # RunInstances property
               @reservation[:instances_set] << @instance
@@ -1674,6 +1705,12 @@ module Aws
 
       def reset
         @result = []
+      end
+    end
+
+    class QEc2CreateImageParser < AwsParser #:nodoc:
+      def tagend(name)
+        @result = @text  if name == 'imageId'
       end
     end
 
