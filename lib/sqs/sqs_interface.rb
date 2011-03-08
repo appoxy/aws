@@ -325,8 +325,8 @@ module Aws
     #
     def self.queue_name_by_url(queue_url)
       queue_url[/[^\/]*$/]
-    rescue
-      on_exception
+#    rescue
+#      on_exception
     end
 
     # Returns short queue name by url.

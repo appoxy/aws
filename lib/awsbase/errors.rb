@@ -1,5 +1,9 @@
 module Aws
 
+  class ResourceNotFoundError < StandardError
+
+  end
+
 # Exception class to signal any Amazon errors. All errors occuring during calls to Amazon's
 # web services raise this type of error.
 # Attribute inherited by RuntimeError:

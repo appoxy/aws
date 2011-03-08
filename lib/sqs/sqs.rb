@@ -114,6 +114,7 @@ module Aws
       def initialize(sqs, url_or_name)
         @sqs  = sqs
         @url  = @sqs.interface.queue_url_by_name(url_or_name)
+        raise ResourceNotFoundError, "Queue '#{url_or_name}' not found."
         @name = @sqs.interface.queue_name_by_url(@url)
       end
 
@@ -279,7 +280,7 @@ module Aws
       def delete
         @queue.sqs.interface.delete_message(@queue.url, @receipt_handle) if @receipt_handle
       end
-      
+
       # Updates visibility timeout.
       def visibility=(visibility_timeout)
         if @receipt_handle

@@ -33,6 +33,13 @@ class TestSqs < Test::Unit::TestCase
         queue_url
     end
 
+    def test_on_exception_no_method_error
+      assert_raise Aws::ResourceNotFoundError do
+        Aws::Sqs::Queue.new(@s, "some_nonexistant_queue")
+      end
+    end
+    
+
 
     #---------------------------
     # Rightscale::SqsInterface
