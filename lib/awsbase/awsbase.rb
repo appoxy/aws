@@ -323,14 +323,14 @@ module Aws
     #  - :pull_out_array => an array of levels to dig into when generating return value (see rds.rb for example)
     def request_info_xml_simple(connection_name, lib_params, request, logger, params = {})
 
-      @connection = get_conn(connection_name, lib_params, logger)
+      connection = get_conn(connection_name, lib_params, logger)
       begin
         @last_request  = request[:request]
         @last_response = nil
 
-        response       = @connection.request(request)
+        response       = connection.request(request)
         #       puts "response=" + response.body
-#            benchblock.service.add!{ response = @connection.request(request) }
+#            benchblock.service.add!{ response = connection.request(request) }
         # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
@@ -395,7 +395,7 @@ module Aws
           raise AwsError2.new(@last_response.code, @last_request_id, request_text_data, @last_response.body)
         end
       ensure
-        @connection.finish if @connection && lib_params[:connection_mode] == :per_request
+        connection.finish if connection && lib_params[:connection_mode] == :per_request
       end
 
     end
@@ -472,7 +472,7 @@ module Aws
 
 
     def request_info_impl(connection, benchblock, request, parser, options={}, &block) #:nodoc:
-      @connection    = connection
+      connection    = connection
       @last_request  = request[:request]
       @last_response = nil
       response       =nil
@@ -489,7 +489,7 @@ module Aws
         # Exceptions can originate from code directly in the block, or from user
         # code called in the other block which is passed to response.read_body.
         benchblock.service.add! do
-          responsehdr = @connection.request(request) do |response|
+          responsehdr = connection.request(request) do |response|
             #########
             begin
               @last_response = response
@@ -522,7 +522,7 @@ module Aws
           return parser.result
         end
       else
-        benchblock.service.add! { response = @connection.request(request) }
+        benchblock.service.add! { response = connection.request(request) }
         # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
