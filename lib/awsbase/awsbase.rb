@@ -28,7 +28,7 @@ module Aws
   require 'cgi'
   require 'uri'
   require 'xmlsimple'
-  require 'active_support/core_ext'
+#  require 'active_support/core_ext'
 
   require_relative 'utils'
   require_relative 'errors'
