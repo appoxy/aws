@@ -1,4 +1,4 @@
-puts "active_sdb IS DEPRECATED, PLEASE USE SimpleRecord instead: http://github.com/appoxy/simple_record"
+puts 'WARNING: ActiveSdb is deprecated, please use SimpleRecord at https://github.com/appoxy/simple_record/ instead.'
 
 # Copyright (c) 2008 RightScale Inc
 #
@@ -28,8 +28,6 @@ rescue LoadError => e
     STDERR.puts("RightSDB requires the uuidtools gem.  Run \'gem install uuidtools\' and try again.")
     exit
 end
-
-puts 'WARNING: ActiveSdb is deprecated, please use SimpleRecord at https://github.com/appoxy/simple_record/ instead.'
 
 module Aws
 

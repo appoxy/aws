@@ -143,7 +143,8 @@ module Aws
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API.html
     #
     def escape(value)
-      %Q{'#{value.to_s.gsub(/(['\\])/) { "\\#{$1}" }}'} if value
+#       %Q{'#{value.to_s.gsub(/(['\\])/) { "\\#{$1}" }}'} if value
+     %{'#{value.to_s.gsub(/(['\\])/){"#{$1}#{$1}"}}'} if value
     end
 
     # Convert a Ruby language value to a SDB value by replacing Ruby nil with the user's chosen string representation of nil.

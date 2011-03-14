@@ -39,11 +39,15 @@ module Aws
 
     # Does any of the error messages include the regexp +pattern+?
     # Used to determine whether to retry request.
-    def include?(pattern)
+    def include?(pattern_or_string)
+      if pattern_or_string.is_a?(String)
+        puts 'convert to pattern'
+        pattern_or_string = /#{pattern_or_string}/
+      end
       if @errors.is_a?(Array)
-        @errors.each { |code, msg| return true if code =~ pattern }
+        @errors.each { |code, msg| return true if code =~ pattern_or_string }
       else
-        return true if @errors_str =~ pattern
+        return true if @errors_str =~ pattern_or_string
       end
       false
     end
