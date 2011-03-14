@@ -28,6 +28,7 @@ module Aws
   require 'cgi'
   require 'uri'
   require 'xmlsimple'
+  require 'net/http'
 #  require 'active_support/core_ext'
 
   require_relative 'utils'
@@ -42,7 +43,7 @@ module Aws
       # Benchmark::Tms instance for service (Ec2, S3, or SQS) access benchmarking.
       @service = Benchmark::Tms.new()
       # Benchmark::Tms instance for XML parsing benchmarking.
-      @xml     = Benchmark::Tms.new()
+      @xml = Benchmark::Tms.new()
     end
   end
 
@@ -55,15 +56,15 @@ module Aws
 
     # Text, if found in an error message returned by AWS, indicates that this may be a transient
     # error. Transient errors are automatically retried with exponential back-off.
-    AMAZON_PROBLEMS   = ['internal service error',
-                         'is currently unavailable',
-                         'no response from',
-                         'Please try again',
-                         'InternalError',
-                         'ServiceUnavailable', #from SQS docs
-                         'Unavailable',
-                         'This application is not currently available',
-                         'InsufficientInstanceCapacity'
+    AMAZON_PROBLEMS = ['internal service error',
+                       'is currently unavailable',
+                       'no response from',
+                       'Please try again',
+                       'InternalError',
+                       'ServiceUnavailable', #from SQS docs
+                       'Unavailable',
+                       'This application is not currently available',
+                       'InsufficientInstanceCapacity'
     ]
     @@amazon_problems = AMAZON_PROBLEMS
     # Returns a list of Amazon service responses which are known to be transient problems.
@@ -140,21 +141,21 @@ module Aws
       @params = params
       raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
  if aws_access_key_id.blank? || aws_secret_access_key.blank?
-      @aws_access_key_id     = aws_access_key_id
+      @aws_access_key_id = aws_access_key_id
       @aws_secret_access_key = aws_secret_access_key
       # if the endpoint was explicitly defined - then use it
       if @params[:endpoint_url]
-        @params[:server]   = URI.parse(@params[:endpoint_url]).host
-        @params[:port]     = URI.parse(@params[:endpoint_url]).port
-        @params[:service]  = URI.parse(@params[:endpoint_url]).path
+        @params[:server] = URI.parse(@params[:endpoint_url]).host
+        @params[:port] = URI.parse(@params[:endpoint_url]).port
+        @params[:service] = URI.parse(@params[:endpoint_url]).path
         @params[:protocol] = URI.parse(@params[:endpoint_url]).scheme
-        @params[:region]   = nil
+        @params[:region] = nil
       else
         @params[:server] ||= service_info[:default_host]
         @params[:server] = "#{@params[:region]}.#{@params[:server]}" if @params[:region]
-        @params[:port]        ||= service_info[:default_port]
-        @params[:service]     ||= service_info[:default_service]
-        @params[:protocol]    ||= service_info[:default_protocol]
+        @params[:port] ||= service_info[:default_port]
+        @params[:service] ||= service_info[:default_service]
+        @params[:protocol] ||= service_info[:default_protocol]
         @params[:api_version] ||= service_info[:api_version]
       end
       if !@params[:multi_thread].nil? && @params[:connection_mode].nil? # user defined this
@@ -168,9 +169,9 @@ module Aws
       @logger = ::Rails.logger if !@logger && defined?(::Rails.logger)
       @logger = Logger.new(STDOUT) if !@logger
       @logger.info "New #{self.class.name} using #{@params[:connection_mode].to_s}-connection mode"
-      @error_handler     = nil
-      @cache             = {}
-      @signature_version = (params[:signature_version] || DEFAULT_SIGNATURE_VERSION).to_s
+      @error_handler = nil
+      @cache = {}
+      @signature_version = (params[:signature_version] || service_info[:signature_version] || DEFAULT_SIGNATURE_VERSION).to_s
     end
 
     def signed_service_params(aws_secret_access_key, service_hash, http_verb=nil, host=nil, service=nil)
@@ -199,13 +200,25 @@ module Aws
 #            end
       #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
       # prepare service data
-      service      = lib_params[:service]
-#      puts 'service=' + service.to_s
-      service_hash = {"Action"         => action,
+      service = lib_params[:service]
+
+      now = Time.now.getutc
+      service_hash = {"Action" => action,
                       "AWSAccessKeyId" => aws_access_key}
       service_hash.update("Version" => api_version) if api_version
       service_hash.update(user_params)
-      service_params = signed_service_params(aws_secret_key, service_hash, :get, lib_params[:server], lib_params[:service])
+      headers = {}
+      if signature_version == '3'
+        service_hash["Timestamp"] = now.iso8601
+        service_params = escape_params(service_hash)
+        signature, algorithm = Aws::AwsUtils.signature_version3(aws_secret_key, now)
+        headers['X-Amzn-Authorization'] = "AWS3-HTTPS AWSAccessKeyId=#{aws_access_key}, Algorithm=#{algorithm.upcase}, Signature=#{signature}"
+        headers['Date'] = now.httpdate
+      else
+#      puts 'service=' + service.to_s
+        service_params = signed_service_params(aws_secret_key, service_hash, :get, lib_params[:server], lib_params[:service])
+      end
+
       #
       # use POST method if the length of the query string is too large
       # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
@@ -214,21 +227,32 @@ module Aws
           # resign the request because HTTP verb is included into signature
           service_params = signed_service_params(aws_secret_key, service_hash, :post, lib_params[:server], service)
         end
-        request                 = Net::HTTP::Post.new(service)
-        request.body            = service_params
+        request = Net::HTTP::Post.new(service)
+        request.body = service_params
         request['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
       else
         request = Net::HTTP::Get.new("#{service}?#{service_params}")
       end
+      headers.each_pair do |k, v|
+        request[k] = v
+      end
+      puts "header=" + request['X-Amzn-Authorization']
 
       #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
       #puts "#{@params[:service]}?#{service_params}\n\n"
 
       # prepare output hash
-      {:request  => request,
-       :server   => lib_params[:server],
-       :port     => lib_params[:port],
+      {:request => request,
+       :server => lib_params[:server],
+       :port => lib_params[:port],
        :protocol => lib_params[:protocol]}
+    end
+
+    def escape_params(service_hash)
+      canonical_string = service_hash.keys.sort.map do |key|
+        "#{Aws::AwsUtils.amz_escape(key)}=#{Aws::AwsUtils.amz_escape(service_hash[key])}"
+      end.join('&')
+      canonical_string
     end
 
     def get_conn(connection_name, lib_params, logger)
@@ -240,7 +264,7 @@ module Aws
       conn_mode = lib_params[:connection_mode]
 
       # Slice all parameters accepted by Rightscale::HttpConnection#new
-      params    = lib_params.slice(
+      params = lib_params.slice(
           :user_agent, :ca_file, :http_connection_retry_count, :http_connection_open_timeout,
           :http_connection_read_timeout, :http_connection_retry_delay
       )
@@ -250,9 +274,9 @@ module Aws
         http_conn = Rightscale::HttpConnection.new(params)
 
       elsif conn_mode == :per_thread || conn_mode == :single
-        thread                  = conn_mode == :per_thread ? Thread.current : Thread.main
+        thread = conn_mode == :per_thread ? Thread.current : Thread.main
         thread[connection_name] ||= Rightscale::HttpConnection.new(params)
-        http_conn               = thread[connection_name]
+        http_conn = thread[connection_name]
 #                ret = request_info_impl(http_conn, bench, request, parser, &block)
       end
       return http_conn
@@ -280,13 +304,13 @@ module Aws
 
 
     def request_info2(request, parser, lib_params, connection_name, logger, bench, options={}, &block) #:nodoc:
-      ret       = nil
+      ret = nil
 #            puts 'OPTIONS=' + options.inspect
       http_conn = get_conn(connection_name, lib_params, logger)
       begin
         # todo: this QueryTimeout retry should go into a SimpleDbErrorHandler, not here
         retry_count = 1
-        count       = 0
+        count = 0
         while count <= retry_count
           puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
           begin
@@ -325,19 +349,19 @@ module Aws
 
       connection = get_conn(connection_name, lib_params, logger)
       begin
-        @last_request  = request[:request]
+        @last_request = request[:request]
         @last_response = nil
 
-        response       = connection.request(request)
+        response = connection.request(request)
         #       puts "response=" + response.body
 #            benchblock.service.add!{ response = connection.request(request) }
         # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
-          @error_handler     = nil
+          @error_handler = nil
 #                benchblock.xml.add! { parser.parse(response) }
 #                return parser.result
-          force_array        = params[:force_array] || false
+          force_array = params[:force_array] || false
           # Force_array and group_tags don't work nice together so going to force array manually
           xml_simple_options = {"KeyToSymbol"=>false, 'ForceArray' => false}
           xml_simple_options["GroupTags"] = params[:group_tags] if params[:group_tags]
@@ -358,7 +382,7 @@ module Aws
           parsed = symbolize(parsed, force_array)
 #                puts 'parsed=' + parsed.inspect
           if params[:pull_out_array]
-            ret        = Aws::AwsResponseArray.new(parsed[:response_metadata])
+            ret = Aws::AwsResponseArray.new(parsed[:response_metadata])
             level_hash = parsed
             params[:pull_out_array].each do |x|
               level_hash = level_hash[x]
@@ -373,7 +397,7 @@ module Aws
             end
           elsif params[:pull_out_single]
             # returns a single object
-            ret        = AwsResponseObjectHash.new(parsed[:response_metadata])
+            ret = AwsResponseObjectHash.new(parsed[:response_metadata])
             level_hash = parsed
             params[:pull_out_single].each do |x|
               level_hash = level_hash[x]
@@ -398,6 +422,15 @@ module Aws
         connection.finish if connection && lib_params[:connection_mode] == :per_request
       end
 
+    end
+
+    # This is the latest and greatest now. Service must have connection_name defined.
+    def request_info_xml_simple3(service_interface, request, options)
+      request_info_xml_simple(service_interface.class.connection_name,
+                              service_interface.params,
+                              request,
+                              service_interface.logger,
+                              options)
     end
 
     def symbolize(hash, force_array)
@@ -430,17 +463,17 @@ module Aws
     def cache_hits?(function, response, do_raise=:raise)
       result = false
       if caching?
-        function     = function.to_sym
+        function = function.to_sym
         # get rid of requestId (this bad boy was added for API 2008-08-08+ and it is uniq for every response)
-        response     = response.sub(%r{<requestId>.+?</requestId>}, '')
+        response = response.sub(%r{<requestId>.+?</requestId>}, '')
         response_md5 =Digest::MD5.hexdigest(response).to_s
         # check for changes
         unless @cache[function] && @cache[function][:response_md5] == response_md5
           # well, the response is new, reset cache data
           update_cache(function, {:response_md5 => response_md5,
-                                  :timestamp    => Time.now,
-                                  :hits         => 0,
-                                  :parsed       => nil})
+                                  :timestamp => Time.now,
+                                  :hits => 0,
+                                  :parsed => nil})
         else
           # aha, cache hits, update the data and throw an exception if needed
           @cache[function][:hits] += 1
@@ -472,10 +505,10 @@ module Aws
 
 
     def request_info_impl(connection, benchblock, request, parser, options={}, &block) #:nodoc:
-      connection    = connection
-      @last_request  = request[:request]
+      connection = connection
+      @last_request = request[:request]
       @last_response = nil
-      response       =nil
+      response =nil
       blockexception = nil
 
 #             puts 'OPTIONS2=' + options.inspect

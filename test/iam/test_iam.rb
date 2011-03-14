@@ -3,10 +3,7 @@ require File.dirname(__FILE__) + '/../../lib/aws'
 require 'pp'
 require File.dirname(__FILE__) + '/../test_credentials.rb'
 
-class TestElb < Test::Unit::TestCase
-
-    # Some of RightEc2 instance methods concerning instance launching and image registration
-    # are not tested here due to their potentially risk.
+class TestIam < Test::Unit::TestCase
 
     def setup
         TestCredentials.get_credentials

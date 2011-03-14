@@ -61,6 +61,15 @@ module Aws
       ret
     end
 
+    # New signature for ses
+    def self.signature_version3(aws_secret_key, now)
+      algorithm =  @@digest256 ? 'HmacSHA256' : 'HmacSHA1'
+      # select a digest
+      digest = (algorithm == 'HmacSHA256' ? @@digest256 : @@digest1)
+      signature = (Base64.encode64(OpenSSL::HMAC.digest(digest, aws_secret_key, now.httpdate)).strip)
+      return signature, algorithm
+    end
+
     HEX = [
         "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
         "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
