@@ -10,7 +10,7 @@ Brought to you by: [![Appoxy](https://lh5.googleusercontent.com/_-J9DSaseOX8/TX2
 
 ## Documentation
 
-[http://rubydoc.info/gems/aws/](http://rubydoc.info/gems/aws/)
+[Ruby Docs](http://rubydoc.info/gems/aws/2.4.5/frames)
 
 ## Appoxy Amazon Web Services Ruby Gems
 
@@ -94,9 +94,6 @@ By default, EC2/S3/SQS/SDB/ACF interface instances are created in per_request mo
 params[:connection_mode] to :per_thread in the initialization arguments to use
 multithreaded mode.
 
-## GETTING STARTED:
-
-See the docs for each piece here: <http://rubydoc.info/gems/aws/2.4.5/frames>
 
 == LICENSE:
 
