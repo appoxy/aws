@@ -68,7 +68,6 @@ Gem::Specification.new do |s|
     "test/sqs/test_helper.rb",
     "test/sqs/test_sqs.rb",
     "test/test_credentials.rb",
-    "test/ts_right_aws.rb"
   ]
 
   if s.respond_to? :specification_version then
