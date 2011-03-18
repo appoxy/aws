@@ -89,9 +89,10 @@ module Aws
     end
 
     @@bench                 = AwsBenchmarkingBlock.new
- def self.bench
+    def self.bench
       @@bench
     end
+
     def self.bench_xml
       @@bench.xml
     end

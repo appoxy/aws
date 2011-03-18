@@ -120,7 +120,6 @@ module Aws
       opt = {}; options.each { |key, value| opt[key.to_s] = value }
       service_data = {}
       service_list = {}
-      thislist     = {}
       list         = []
       @s3.interface.incrementally_list_bucket(@name, opt) do |thislist|
         service_list = thislist
