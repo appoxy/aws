@@ -138,7 +138,7 @@ module Aws
       headers['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # Request
       path                     = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
-      request                  = "Net::HTTP::#{method.capitalize}".constantize.new(path)
+      request                  = Net::HTTP.const_get(method.capitalize).new(path)
       request.body = body if body
       # Set request headers
       headers.each { |key, value| request[key.to_s] = value }

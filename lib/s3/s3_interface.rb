@@ -154,7 +154,7 @@ module Aws
       headers['content-type'] ||= ''
       headers['date']         = Time.now.httpdate
       # create request
-      request                 = "Net::HTTP::#{method.capitalize}".constantize.new(path)
+      request                 = Net::HTTP.const_get(method.capitalize).new(path)
       request.body = data if data
       # set request headers and meta headers
       headers.each { |key, value| request[key.to_s] = value }

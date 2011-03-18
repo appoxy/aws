@@ -30,37 +30,6 @@ unless defined? ActiveSupport
   #++
   #
   #
-  class String #:nodoc:
-
-    # Constantize tries to find a declared constant with the name specified
-    # in the string. It raises a NameError when the name is not in CamelCase
-    # or is not initialized.
-    #
-    # Examples
-    #   "Module".constantize #=> Module
-    #   "Class".constantize #=> Class
-    def constantize()
-      camel_cased_word = self
-      names            = camel_cased_word.split('::')
-      names.shift if names.empty? || names.first.empty?
-
-      constant = Object
-      names.each do |name|
-#                constant = constant.const_get(name, false) || constant.const_missing(name)
-        if Module.method(:const_get).arity == 1
-          # ruby 1.8
-          constant = constant.const_defined?(name) ? constant.const_get(name) : constant.const_missing(name)
-        else
-          # ruby 1.9
-          constant = constant.const_get(name, false) || constant.const_missing(name)
-        end
-      end
-      constant
-    end
-
-  end
-
-
   class Object #:nodoc:
     # "", "   ", nil, [], and {} are blank
     def blank?
