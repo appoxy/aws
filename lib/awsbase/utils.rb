@@ -1,6 +1,6 @@
 module Aws
 
-  class AwsUtils #:nodoc:
+  class Utils #:nodoc:
     @@digest1 = OpenSSL::Digest::Digest.new("sha1")
     @@digest256 = nil
     if OpenSSL::OPENSSL_VERSION_NUMBER > 0x00908000
@@ -24,7 +24,7 @@ module Aws
     def self.sign_request_v0(aws_secret_access_key, service_hash)
       fix_service_params(service_hash, '0')
       string_to_sign = "#{service_hash['Action']}#{service_hash['Timestamp'] || service_hash['Expires']}"
-      service_hash['Signature'] = AwsUtils::sign(aws_secret_access_key, string_to_sign)
+      service_hash['Signature'] = Utils::sign(aws_secret_access_key, string_to_sign)
       service_hash.to_a.collect { |key, val| "#{amz_escape(key)}=#{amz_escape(val.to_s)}" }.join("&")
     end
 
@@ -33,7 +33,7 @@ module Aws
     def self.sign_request_v1(aws_secret_access_key, service_hash)
       fix_service_params(service_hash, '1')
       string_to_sign = service_hash.sort { |a, b| (a[0].to_s.downcase)<=>(b[0].to_s.downcase) }.to_s
-      service_hash['Signature'] = AwsUtils::sign(aws_secret_access_key, string_to_sign)
+      service_hash['Signature'] = Utils::sign(aws_secret_access_key, string_to_sign)
       service_hash.to_a.collect { |key, val| "#{amz_escape(key)}=#{amz_escape(val.to_s)}" }.join("&")
     end
 
@@ -220,5 +220,26 @@ module Aws
       $1
     end
 
+    def self.blank?(obj)
+      case obj
+      when NilClass, FalseClass
+        true      
+      when TrueClass, Numeric
+        false
+      when Array, Hash
+        obj.empty?
+      when String
+        obj.empty? || obj.strip.empty?
+      else
+        # "", "   ", nil, [], and {} are blank
+        if obj.respond_to?(:empty?) && obj.respond_to?(:strip)
+          obj.empty? or obj.strip.empty?
+        elsif obj.respond_to?(:empty?)
+          obj.empty?
+        else
+          !obj
+        end
+      end
+    end
   end
 end

@@ -134,7 +134,7 @@ module Aws
       headers['content-type'] ||= 'text/xml' if body
       headers['date']          = Time.now.httpdate
       # Auth
-      signature                = AwsUtils::sign(@aws_secret_access_key, headers['date'])
+      signature                = Utils::sign(@aws_secret_access_key, headers['date'])
       headers['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # Request
       path                     = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
@@ -242,7 +242,7 @@ module Aws
       rootElement = streaming ? "StreamingDistributionConfig" : "DistributionConfig"
       # join CNAMES
       cnames_str  = ''
-      unless cnames.blank?
+      unless cnames.nil? || cnames.empty?
         cnames.to_a.each { |cname| cnames_str += "\n           <CNAME>#{cname}</CNAME>" }
       end
       caller_reference ||= generate_call_reference

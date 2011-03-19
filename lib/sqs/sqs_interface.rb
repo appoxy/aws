@@ -118,7 +118,7 @@ module Aws
                       "Version"        => API_VERSION}
       service_hash.update(param)
       service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], service)
-      request        = Net::HTTP::Get.new("#{AwsUtils.URLencode(service)}?#{service_params}")
+      request        = Net::HTTP::Get.new("#{Utils.URLencode(service)}?#{service_params}")
       # prepare output hash
       {:request  => request,
        :server   => @params[:server],
@@ -138,7 +138,7 @@ module Aws
       service_hash.update(param)
       #
       service_params          = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
-      request                 = Net::HTTP::Post.new(AwsUtils::URLencode(service))
+      request                 = Net::HTTP::Post.new(Utils::URLencode(service))
       request['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
       request.body            = service_params
       # prepare output hash
@@ -384,7 +384,7 @@ module Aws
     #
     def pop_message(queue_url)
       messages = pop_messages(queue_url)
-      messages.blank? ? nil : messages[0]
+      messages.nil? ? nil : messages[0]
     rescue
       on_exception
     end

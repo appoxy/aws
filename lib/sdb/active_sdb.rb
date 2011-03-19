@@ -370,7 +370,7 @@ module Aws
                     # user defined :conditions to string (if it was defined)
                     options[:conditions] = build_conditions(options[:conditions])
                     # join ids condition and user defined conditions
-                    options[:conditions] = options[:conditions].blank? ? ids_cond : "(#{options[:conditions]}) AND #{ids_cond}"
+                    options[:conditions] = Aws::Utils.blank?(options[:conditions]) ? ids_cond : "(#{options[:conditions]}) AND #{ids_cond}"
                     #puts 'options=' + options.inspect
                     result = sql_select(options)
                     #puts 'select_from_ids result=' + result.inspect
@@ -477,7 +477,7 @@ module Aws
                         query_expression = query_expression.to_s
                         # quote from Amazon:
                         # The sort attribute must be present in at least one of the predicates of the query expression.
-                        if query_expression.blank?
+                        if Aws::Utils.blank?(query_expression)
                             query_expression = sort_query_expression
                         elsif !query_attributes(query_expression).include?(sort_by)
                             query_expression += " intersection #{sort_query_expression}"
@@ -531,7 +531,7 @@ module Aws
                     # user defined :conditions to string (if it was defined)
                     options[:conditions] = build_conditions(options[:conditions])
                     # join ids condition and user defined conditions
-                    options[:conditions] = options[:conditions].blank? ? ids_cond : "#{options[:conditions]} intersection #{ids_cond}"
+                    options[:conditions] = Aws::Utils.blank?(options[:conditions]) ? ids_cond : "#{options[:conditions]} intersection #{ids_cond}"
                     result = find_every(options)
                     # if one record was requested then return it
                     unless bunch_of_records_requested
@@ -593,9 +593,9 @@ module Aws
                     order      = options[:order]      ? " ORDER BY #{options[:order]}"                     : ''
                     limit      = options[:limit]      ? " LIMIT #{options[:limit]}"                        : ''
                     # mix sort by argument (it must present in response)
-                    unless order.blank?
+                    unless Aws::Utils.blank?(order)
                         sort_by, sort_order = sort_options(options[:order])
-                        conditions << (conditions.blank? ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
+                        conditions << (Aws::Utils.blank?(conditions) ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
                     end
                     "SELECT #{select} FROM `#{from}`#{conditions}#{order}#{limit}"
                 end
@@ -683,7 +683,9 @@ module Aws
             def attributes=(attrs)
                 old_id = @attributes['id']
                 @attributes = uniq_values(attrs)
-                @attributes['id'] = old_id if @attributes['id'].blank? && !old_id.blank?
+                if Aws::Utils.blank?(@attributes['id']) && !Aws::Utils.blank?(old_id)
+                  @attributes['id'] = old_id
+                end
                 self.attributes
             end
 
@@ -726,7 +728,7 @@ module Aws
                 old_id = id
                 attrs = connection.get_attributes(domain, id)[:attributes]
                 @attributes = {}
-                unless attrs.blank?
+                unless attrs.nil? || attrs.empty?
                     attrs.each { |attribute, values| @attributes[attribute] = values }
                     @attributes['id'] = old_id
                 end
@@ -752,7 +754,7 @@ module Aws
                 attrs_list.flatten.uniq.each do |attribute|
                     attribute = attribute.to_s
                     values = connection.get_attributes(domain, id, attribute)[:attributes][attribute]
-                    unless values.blank?
+                    unless Aws::Utils.blank?(values)
                         @attributes[attribute] = result[attribute] = values
                     else
                         @attributes.delete(attribute)
@@ -782,7 +784,7 @@ module Aws
                 prepare_for_update
                 attrs = @attributes.dup
                 attrs.delete('id')
-                connection.put_attributes(domain, id, attrs) unless attrs.blank?
+                connection.put_attributes(domain, id, attrs) unless Aws::Utils.blank?(attrs)
                 connection.put_attributes(domain, id, { 'id' => id }, :replace)
                 mark_as_old
                 @attributes
@@ -798,10 +800,10 @@ module Aws
                 prepare_for_update
                 # if 'id' is present in attrs hash:
                 # replace internal 'id' attribute and remove it from the attributes to be sent
-                @attributes['id'] = attrs['id'] unless attrs['id'].blank?
+                @attributes['id'] = attrs['id'] unless Aws::Utils.blank?(attrs['id'])
                 attrs.delete('id')
                 # add new values to all attributes from list
-                connection.put_attributes(domain, id, attrs) unless attrs.blank?
+                connection.put_attributes(domain, id, attrs) unless Aws::Utils.blank?(attrs)
                 connection.put_attributes(domain, id, { 'id' => id }, :replace)
                 attrs.each do |attribute, values|
                     @attributes[attribute] ||= []
@@ -870,7 +872,7 @@ module Aws
                 prepare_for_update
                 attrs = uniq_values(attrs)
                 # if 'id' is present in attrs hash then replace internal 'id' attribute
-                unless attrs['id'].blank?
+                unless Aws::Utils.blank?(attrs['id'])
                     @attributes['id'] = attrs['id']
                 else
                     attrs['id'] = id
@@ -894,7 +896,7 @@ module Aws
                 raise_on_id_absence
                 attrs = uniq_values(attrs)
                 attrs.delete('id')
-                unless attrs.blank?
+                unless attrs.nil? || attrs.empty?
                     connection.delete_attributes(domain, id, attrs)
                     attrs.each do |attribute, values|
                         # remove the values from the attribute
@@ -923,7 +925,7 @@ module Aws
                 raise_on_id_absence
                 attrs_list = attrs_list.flatten.map{ |attribute| attribute.to_s }
                 attrs_list.delete('id')
-                unless attrs_list.blank?
+                unless attrs_list.empty?
                     connection.delete_attributes(domain, id, attrs_list)
                     attrs_list.each { |attribute| @attributes.delete(attribute) }
                 end
@@ -965,7 +967,7 @@ module Aws
             end
 
             def prepare_for_update
-                @attributes['id'] = self.class.generate_id if @attributes['id'].blank?
+                @attributes['id'] = self.class.generate_id if Aws::Utils.blank?(@attributes['id'])
             end
 
             def uniq_values(attributes=nil) # :nodoc:
@@ -974,7 +976,7 @@ module Aws
                     attribute = attribute.to_s
                     newval = attribute == 'id' ? values.to_s : values.is_a?(Array) ? values.uniq : [values]
                     attrs[attribute] = newval
-                    if newval.blank?
+                    if Aws::Utils.blank?(newval)
 #                        puts "VALUE IS BLANK " + attribute.to_s + " val=" + values.inspect
                         attrs.delete(attribute)
                     end

@@ -176,7 +176,7 @@ module Aws
     # (similar to ActiveRecord::Base#find using :conditions => ['query', param1, .., paramN])
     #
     def query_expression_from_array(params) #:nodoc:
-      return '' if params.blank?
+      return '' if Aws::Utils.blank?(params)
       query = params[0].to_s
       i     = 1
       query.gsub(/(\\)?(\?)/) do
@@ -191,7 +191,7 @@ module Aws
     end
 
     def query_expression_from_hash(hash)
-      return '' if hash.blank?
+      return '' if Aws::Utils.blank?(hash)
       expression = []
       hash.each do |key, value|
         expression << "#{key}=#{escape(value)}"

@@ -267,7 +267,7 @@ module Aws
     #  key.delete #=> true
     #
     def delete
-      raise 'Key name must be specified.' if @name.blank?
+      raise 'Key name must be specified.' if Aws::Utils.blank?(@name)
       @bucket.s3.interface.delete(@bucket, @name)
     end
 

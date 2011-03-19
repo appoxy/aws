@@ -135,8 +135,9 @@ module Aws
 
     def init(service_info, aws_access_key_id, aws_secret_access_key, params={}) #:nodoc:
       @params = params
-      raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
- if aws_access_key_id.blank? || aws_secret_access_key.blank?
+      if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
+        raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}")
+      end
       @aws_access_key_id = aws_access_key_id
       @aws_secret_access_key = aws_secret_access_key
       # if the endpoint was explicitly defined - then use it
@@ -173,11 +174,11 @@ module Aws
     def signed_service_params(aws_secret_access_key, service_hash, http_verb=nil, host=nil, service=nil)
       case signature_version.to_s
         when '0' then
-          AwsUtils::sign_request_v0(aws_secret_access_key, service_hash)
+          Utils::sign_request_v0(aws_secret_access_key, service_hash)
         when '1' then
-          AwsUtils::sign_request_v1(aws_secret_access_key, service_hash)
+          Utils::sign_request_v1(aws_secret_access_key, service_hash)
         when '2' then
-          AwsUtils::sign_request_v2(aws_secret_access_key, service_hash, http_verb, host, service)
+          Utils::sign_request_v2(aws_secret_access_key, service_hash, http_verb, host, service)
         else
           raise AwsError.new("Unknown signature version (#{signature_version.to_s}) requested")
       end
@@ -207,7 +208,7 @@ module Aws
       if signature_version == '3'
         service_hash["Timestamp"] = now.iso8601
         service_params = escape_params(service_hash)
-        signature, algorithm = Aws::AwsUtils.signature_version3(aws_secret_key, now)
+        signature, algorithm = Aws::Utils.signature_version3(aws_secret_key, now)
         headers['X-Amzn-Authorization'] = "AWS3-HTTPS AWSAccessKeyId=#{aws_access_key}, Algorithm=#{algorithm.upcase}, Signature=#{signature}"
         headers['Date'] = now.httpdate
       else
@@ -246,7 +247,7 @@ module Aws
 
     def escape_params(service_hash)
       canonical_string = service_hash.keys.sort.map do |key|
-        "#{Aws::AwsUtils.amz_escape(key)}=#{Aws::AwsUtils.amz_escape(service_hash[key])}"
+        "#{Aws::Utils.amz_escape(key)}=#{Aws::Utils.amz_escape(service_hash[key])}"
       end.join('&')
       canonical_string
     end
