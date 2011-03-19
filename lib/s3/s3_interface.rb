@@ -326,7 +326,7 @@ module Aws
     #     ]
     #   }
     def incrementally_list_bucket(bucket, options={}, headers={}, &block)
-      internal_options = options.symbolize_keys
+      internal_options = Hash[ options.map {|k,v| [k.to_sym, v] } ]
       begin
         internal_bucket = bucket.dup
         internal_bucket += '?'+internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless internal_options.blank?
