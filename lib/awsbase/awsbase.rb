@@ -21,6 +21,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+require 'faraday'
+
 # Test
 module Aws
   require 'digest/md5'
@@ -193,6 +195,7 @@ module Aws
 
     # FROM SDB
     def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}, options={}) #:nodoc:
+      puts 'generate_request2'
       # remove empty params from request
       user_params.delete_if { |key, value| value.nil? }
 #            user_params.each_pair do |k,v|
@@ -201,6 +204,7 @@ module Aws
       #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
       # prepare service data
       service = lib_params[:service]
+      puts 'service=' + service
 
       now = Time.now.getutc
       service_hash = {"Action" => action,
@@ -222,27 +226,35 @@ module Aws
       #
       # use POST method if the length of the query string is too large
       # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
+      req_method = :get
       if service_params.size > 2000
+        req_method = :post
         if signature_version == '2'
           # resign the request because HTTP verb is included into signature
           service_params = signed_service_params(aws_secret_key, service_hash, :post, lib_params[:server], service)
         end
-        request = Net::HTTP::Post.new(service)
+        request = Faraday::Request.create
+        request.path = service
+#        request = Net::HTTP::Post.new(service)
         request.body = service_params
         request['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
       else
-        request = Net::HTTP::Get.new("#{service}?#{service_params}")
+        request = Faraday::Request.create
+        request.path = "#{service}?#{service_params}"
+
+#        request = Net::HTTP::Get.new("#{service}?#{service_params}")
       end
       headers.each_pair do |k, v|
         request[k] = v
       end
-      puts "header=" + request['X-Amzn-Authorization']
+#      puts "header=" + request['X-Amzn-Authorization']
 
       #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
       #puts "#{@params[:service]}?#{service_params}\n\n"
 
       # prepare output hash
       {:request => request,
+       :req_method => req_method,
        :server => lib_params[:server],
        :port => lib_params[:port],
        :protocol => lib_params[:protocol]}
@@ -255,7 +267,7 @@ module Aws
       canonical_string
     end
 
-    def get_conn(connection_name, lib_params, logger)
+    def get_conn(connection_name, lib_params, logger, base_url=nil)
 #            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
 #            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
 #            conn = thread[connection_name]
@@ -271,16 +283,35 @@ module Aws
       params.merge!(:exception => AwsError, :logger => logger)
 
       if conn_mode == :per_request
-        http_conn = Rightscale::HttpConnection.new(params)
+#        http_conn = Rightscale::HttpConnection.new(params)
+        http_conn = new_faraday_connection(base_url)
 
       elsif conn_mode == :per_thread || conn_mode == :single
         thread = conn_mode == :per_thread ? Thread.current : Thread.main
-        thread[connection_name] ||= Rightscale::HttpConnection.new(params)
+        thread[connection_name] ||= new_faraday_connection(base_url)
         http_conn = thread[connection_name]
 #                ret = request_info_impl(http_conn, bench, request, parser, &block)
+
+      elsif conn_mode == :eventmachine
+        thread = Thread.current
+        return thread[connection_name] if thread[connection_name]
+        puts 'EVENTING!'
+        http_conn = new_faraday_connection(base_url, :adapter=>Faraday::Adapter::EMSynchrony)
+        thread[connection_name] = http_conn
       end
       return http_conn
 
+    end
+
+    def new_faraday_connection(base_url, options={})
+      http_conn = Faraday.new(:url=>"https://#{base_url}") do |builder| # :url => 'http://sushi.com'
+        if options[:adapter]
+          builder.use options[:adapter]
+        else
+          builder.use Faraday::Adapter::NetHttp # make http requests with Net::HTTP
+        end
+      end
+      http_conn
     end
 
     def close_conn(conn_name)
@@ -303,10 +334,10 @@ module Aws
     end
 
 
-    def request_info2(request, parser, lib_params, connection_name, logger, bench, options={}, &block) #:nodoc:
+    def request_info2(request, parser, lib_params, connection_name, logger, bench, base_url, options={}, &block) #:nodoc:
       ret = nil
 #            puts 'OPTIONS=' + options.inspect
-      http_conn = get_conn(connection_name, lib_params, logger)
+      http_conn = get_conn(connection_name, lib_params, logger, base_url)
       begin
         # todo: this QueryTimeout retry should go into a SimpleDbErrorHandler, not here
         retry_count = 1
@@ -324,7 +355,7 @@ module Aws
           count += 1
         end
       ensure
-        http_conn.finish if http_conn && lib_params[:connection_mode] == :per_request
+#        http_conn.finish if http_conn && lib_params[:connection_mode] == :per_request
       end
       ret
     end
@@ -336,6 +367,7 @@ module Aws
                     service_interface.class.connection_name,
                     service_interface.logger,
                     service_interface.class.bench,
+                    service_interface.class.base_url,
                     options, &block)
     end
 
@@ -495,6 +527,7 @@ module Aws
 
     def on_exception(options={:raise=>true, :log=>true}) # :nodoc:
       raise if $!.is_a?(AwsNoChange)
+
       AwsError::on_aws_exception(self, options)
     end
 
@@ -505,7 +538,6 @@ module Aws
 
 
     def request_info_impl(connection, benchblock, request, parser, options={}, &block) #:nodoc:
-      connection = connection
       @last_request = request[:request]
       @last_response = nil
       response =nil
@@ -522,7 +554,7 @@ module Aws
         # Exceptions can originate from code directly in the block, or from user
         # code called in the other block which is passed to response.read_body.
         benchblock.service.add! do
-          responsehdr = connection.request(request) do |response|
+          responsehdr = connection.get(request) do |response|
             #########
             begin
               @last_response = response
@@ -555,12 +587,22 @@ module Aws
           return parser.result
         end
       else
-        benchblock.service.add! { response = connection.request(request) }
+        if false && Aws.eventmachine?
+          http1 = EventMachine::HttpRequest.new('http://example.com/1').get
+          http1.callback do
+            p http1.response
+          end
+        else
+          puts 'connection=' + connection.inspect
+          puts 'request=' + request.inspect
+          response = request[:request].run(connection, request[:req_method])
+        end
+        puts 'response=' + response.inspect
         # check response for errors...
         @last_response = response
-        if response.is_a?(Net::HTTPSuccess)
+        if response_2xx(response.status) #  response.is_a?(Net::HTTPSuccess)
           @error_handler = nil
-          benchblock.xml.add! { parser.parse(response) }
+          parser.parse(response)
           return parser.result
         else
           @error_handler = AWSErrorHandler.new(self, parser, :errors_list => self.class.amazon_problems) unless @error_handler
@@ -570,12 +612,16 @@ module Aws
             return check_result
           end
           request_text_data = "#{request[:server]}:#{request[:port]}#{request[:request].path}"
-          raise AwsError.new(@last_errors, @last_response.code, @last_request_id, request_text_data)
+          raise AwsError.new(@last_errors, @last_response.status, @last_request_id, request_text_data)
         end
       end
     rescue
       @error_handler = nil
       raise
+    end
+
+    def response_2xx(status)
+      status >= 200 && status < 300
     end
 
     def request_cache_or_info(method, link, parser_class, benchblock, use_cache=true) #:nodoc:

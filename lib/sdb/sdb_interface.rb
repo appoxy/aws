@@ -54,6 +54,10 @@ module Aws
       @@bench.service;
     end
 
+    def self.base_url
+      DEFAULT_HOST
+    end
+
     attr_reader :last_query_expression
 
     # Creates new RightSdb instance.
@@ -105,7 +109,7 @@ module Aws
     # Raises AwsError if any banana happened
     def request_info(request, parser, options={}) #:nodoc:
 #       request_info2(request, parser, :sdb_connection)
-      request_info2(request, parser, @params, :sdb_connection, @logger, @@bench, options)
+      request_info3(self, request, parser, options)
 
     end
 

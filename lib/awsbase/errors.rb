@@ -59,6 +59,7 @@ module Aws
     # * <tt>:puts</tt> do a "puts" of the error
     # * <tt>:raise</tt> re-raise the error after logging
     def self.on_aws_exception(aws, options={:raise=>true, :log=>true})
+      puts 'exception=' + $!.inspect
       # Only log & notify if not user error
       if !options[:raise] || system_error?($!)
         error_text = "#{$!.inspect}\n#{$@}.join('\n')}"
@@ -66,7 +67,7 @@ module Aws
         # Log the error
         if options[:log]
           request   = aws.last_request ? aws.last_request.path : '-none-'
-          response  = aws.last_response ? "#{aws.last_response.code} -- #{aws.last_response.message} -- #{aws.last_response.body}" : '-none-'
+          response  = aws.last_response ? "#{aws.last_response.status} -- #{aws.last_response.body}" : '-none-'
           @response = response
           aws.logger.error error_text
           aws.logger.error "Request was:  #{request}"
@@ -201,7 +202,7 @@ module Aws
         redirect_detected = true
       else
         # no, it's an error ...
-        @aws.logger.warn("##### #{@aws.class.name} returned an error: #{response.code} #{response.message}\n#{response.body} #####")
+        @aws.logger.warn("##### #{@aws.class.name} returned an error: #{response.status}\n#{response.body} #####")
         @aws.logger.warn("##### #{@aws.class.name} request: #{request_text_data} ####")
       end
       # Check response body: if it is an Amazon XML document or not:
@@ -280,10 +281,10 @@ module Aws
         # aha, this is unhandled error:
       elsif @close_on_error
         # Is this a 5xx error ?
-        if @aws.last_response.code.to_s[/^5\d\d$/]
+        if @aws.last_response.status.to_s[/^5\d\d$/]
           @aws.connection.finish "#{self.class.name}: code: #{@aws.last_response.code}: '#{@aws.last_response.message}'"
           # Is this a 4xx error ?
-        elsif @aws.last_response.code.to_s[/^4\d\d$/] && @close_on_4xx_probability > rand(100)
+        elsif @aws.last_response.status.to_s[/^4\d\d$/] && @close_on_4xx_probability > rand(100)
           @aws.connection.finish "#{self.class.name}: code: #{@aws.last_response.code}: '#{@aws.last_response.message}', " +
                                      "probability: #{@close_on_4xx_probability}%"
         end

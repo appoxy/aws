@@ -19,8 +19,9 @@ begin
         gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
         gem.files = FileList['lib/**/*.rb']
         gem.add_dependency 'uuidtools'
-        gem.add_dependency 'http_connection'
+#        gem.add_dependency 'http_connection'
         gem.add_dependency 'xml-simple'
+      gem.add_dependency 'faraday'
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
