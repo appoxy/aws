@@ -21,17 +21,17 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-require 'faraday'
 
 # Test
 module Aws
+
+  require 'logger'
   require 'digest/md5'
   require 'pp'
   require 'cgi'
   require 'uri'
+  require 'faraday'
   require 'xmlsimple'
-  require 'net/http'
-#  require 'active_support/core_ext'
 
   require_relative 'utils'
   require_relative 'errors'
@@ -304,7 +304,9 @@ module Aws
     end
 
     def new_faraday_connection(base_url, options={})
-      http_conn = Faraday.new(:url=>"https://#{base_url}") do |builder| # :url => 'http://sushi.com'
+      faraday_url = "https://#{base_url}"
+      puts 'faraday_url=' + faraday_url
+      http_conn = Faraday.new(:url=>faraday_url) do |builder| # :url => 'http://sushi.com'
         if options[:adapter]
           builder.use options[:adapter]
         else
@@ -596,6 +598,7 @@ module Aws
           puts 'connection=' + connection.inspect
           puts 'request=' + request.inspect
           response = request[:request].run(connection, request[:req_method])
+#          response = connection.response
         end
         puts 'response=' + response.inspect
         # check response for errors...

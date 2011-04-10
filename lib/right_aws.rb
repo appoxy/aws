@@ -32,7 +32,6 @@ require "openssl"
 require "digest/sha1"
 
 require 'rubygems'
-require 'right_http_connection'
 
 $:.unshift(File.dirname(__FILE__))
 require 'awsbase/benchmark_fix'

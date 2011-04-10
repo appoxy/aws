@@ -10,7 +10,6 @@ require "openssl"
 require "digest/sha1"
 
 require 'rubygems'
-require 'right_http_connection'
 
 module Aws
 

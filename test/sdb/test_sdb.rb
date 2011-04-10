@@ -64,7 +64,7 @@ class TestSdb < Test::Unit::TestCase
     require "em-synchrony"
     require "em-synchrony/iterator"
     require "em-synchrony/em-http"
-    @sdb2 = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :connection_mode=>:eventmachine)
+    @sdb2 = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key) #, :connection_mode=>:eventmachine)
 
     values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
     assert_equal values, @attr['Jon'].sort
@@ -218,6 +218,8 @@ class TestSdb < Test::Unit::TestCase
     content = {:a=>"one & two & three",
                :b=>"one ? two / three"}
     @sdb.put_attributes(@domain, item, content)
+
+    sleep 1
 
     res = @sdb.get_attributes(@domain, item)
     assert_equal(content[:a], res[:attributes]['a'][0])

@@ -42,6 +42,10 @@ module Aws
       @@api
     end
 
+     def self.base_url
+      DEFAULT_HOST
+    end
+
 
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       init({:name             => 'MON',

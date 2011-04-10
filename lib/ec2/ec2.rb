@@ -107,6 +107,10 @@ module Aws
       @@api
     end
 
+     def self.base_url
+      DEFAULT_HOST
+    end
+
     # Create a new handle to an EC2 account. All handles share the same per process or per thread
     # HTTP connection to Amazon EC2. Each handle is for a specific account. The params have the
     # following options:

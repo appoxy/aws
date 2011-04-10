@@ -38,11 +38,11 @@ module Aws
   class SqsInterface < AwsBase
     include AwsBaseInterface
 
-    API_VERSION                = "2009-02-01"
-    DEFAULT_HOST               = "queue.amazonaws.com"
-    DEFAULT_PORT               = 443
-    DEFAULT_PROTOCOL           = 'https'
-    REQUEST_TTL                = 30
+    API_VERSION = "2009-02-01"
+    DEFAULT_HOST = "queue.amazonaws.com"
+    DEFAULT_PORT = 443
+    DEFAULT_PROTOCOL = 'https'
+    REQUEST_TTL = 30
     DEFAULT_VISIBILITY_TIMEOUT = 30
 
 
@@ -70,6 +70,10 @@ module Aws
       @@api
     end
 
+    def self.base_url
+      DEFAULT_HOST
+    end
+
     # Creates a new SqsInterface instance. This instance is limited to
     # operations on SQS objects created with Amazon's 2008-01-01 API version.  This
     # interface will not work on objects created with prior API versions.  See
@@ -87,11 +91,11 @@ module Aws
     #     :logger       => Logger Object}        # Logger instance: logs to STDOUT if omitted }
     #
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
-      init({:name             => 'SQS',
-            :default_host     => ENV['SQS_URL'] ? URI.parse(ENV['SQS_URL']).host : DEFAULT_HOST,
-            :default_port     => ENV['SQS_URL'] ? URI.parse(ENV['SQS_URL']).port : DEFAULT_PORT,
+      init({:name => 'SQS',
+            :default_host => ENV['SQS_URL'] ? URI.parse(ENV['SQS_URL']).host : DEFAULT_HOST,
+            :default_port => ENV['SQS_URL'] ? URI.parse(ENV['SQS_URL']).port : DEFAULT_PORT,
             :default_protocol => ENV['SQS_URL'] ? URI.parse(ENV['SQS_URL']).scheme : DEFAULT_PROTOCOL,
-            :api_version      => API_VERSION},
+            :api_version => API_VERSION},
            aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
            aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
            params)
@@ -112,17 +116,17 @@ module Aws
       # signature before URL escaping the resulting query and sending it.
       service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
       param.each { |key, value| param.delete(key) if (value.nil? || key.is_a?(Symbol)) }
-      service_hash = {"Action"         => action,
-                      "Expires"        => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+      service_hash = {"Action" => action,
+                      "Expires" => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
                       "AWSAccessKeyId" => @aws_access_key_id,
-                      "Version"        => API_VERSION}
+                      "Version" => API_VERSION}
       service_hash.update(param)
       service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], service)
-      request        = Net::HTTP::Get.new("#{AwsUtils.URLencode(service)}?#{service_params}")
+      request = Net::HTTP::Get.new("#{AwsUtils.URLencode(service)}?#{service_params}")
       # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
+      {:request => request,
+       :server => @params[:server],
+       :port => @params[:port],
        :protocol => @params[:protocol]}
     end
 
@@ -130,21 +134,21 @@ module Aws
       service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
       message = param[:message] # extract message body if nesessary
       param.each { |key, value| param.delete(key) if (value.nil? || key.is_a?(Symbol)) }
-      service_hash = {"Action"         => action,
-                      "Expires"        => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+      service_hash = {"Action" => action,
+                      "Expires" => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
                       "AWSAccessKeyId" => @aws_access_key_id,
-                      "MessageBody"    => message,
-                      "Version"        => API_VERSION}
+                      "MessageBody" => message,
+                      "Version" => API_VERSION}
       service_hash.update(param)
       #
-      service_params          = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
-      request                 = Net::HTTP::Post.new(AwsUtils::URLencode(service))
+      service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
+      request = Net::HTTP::Post.new(AwsUtils::URLencode(service))
       request['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
-      request.body            = service_params
+      request.body = service_params
       # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
+      {:request => request,
+       :server => @params[:server],
+       :port => @params[:port],
        :protocol => @params[:protocol]}
     end
 
@@ -244,7 +248,7 @@ module Aws
     def receive_message(queue_url, max_number_of_messages=1, visibility_timeout=nil)
       return [] if max_number_of_messages == 0
       req_hash = generate_post_request('ReceiveMessage', 'MaxNumberOfMessages' => max_number_of_messages, 'VisibilityTimeout' => visibility_timeout,
-                                       :queue_url                              => queue_url)
+                                       :queue_url => queue_url)
       request_info(req_hash, SqsReceiveMessageParser.new(:logger => @logger))
     rescue
       on_exception
@@ -296,9 +300,9 @@ module Aws
     def change_message_visibility(queue_url, receipt_handle, visibility_timeout)
       req_hash = generate_request(
           "ChangeMessageVisibility",
-          "ReceiptHandle"     => receipt_handle,
+          "ReceiptHandle" => receipt_handle,
           "VisibilityTimeout" => visibility_timeout,
-          :queue_url          => queue_url
+          :queue_url => queue_url
       )
       request_info(req_hash, SqsStatusParser.new(:logger => @logger))
     rescue

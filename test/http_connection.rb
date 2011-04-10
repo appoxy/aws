@@ -24,7 +24,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # Stub extension/redefinition of RightHttpConnection for testing purposes.
 require 'net/http'
 require 'rubygems'
-require 'right_http_connection'
 
 module Net
   class HTTPResponse

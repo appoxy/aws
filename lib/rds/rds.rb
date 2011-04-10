@@ -40,6 +40,10 @@ module Aws
       @@bench.service
     end
 
+     def self.base_url
+      DEFAULT_HOST
+    end
+
 
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       uri = ENV['RDS_URL'] ? URI.parse(ENV['RDS_URL']) : nil

@@ -99,6 +99,10 @@ module Aws
       @@bench.service
     end
 
+     def self.base_url
+      DEFAULT_HOST
+    end
+
     # Create a new handle to a CloudFront account. All handles share the same per process or per thread
     # HTTP connection to CloudFront. Each handle is for a specific account. The params have the
     # following options:

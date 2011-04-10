@@ -226,7 +226,7 @@ module Aws
           end
         end
       else # ... it is not a xml document(probably just a html page?)
-        @aws.last_errors     = [[response.code, "#{response.message} (#{request_text_data})"]]
+        @aws.last_errors     = [[response.status, "#{response.message} (#{request_text_data})"]]
         @aws.last_request_id = '-undefined-'
         last_errors_text     = response.message
       end
