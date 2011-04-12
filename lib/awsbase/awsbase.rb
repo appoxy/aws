@@ -309,6 +309,7 @@ module Aws
       http_conn = Faraday.new(:url=>faraday_url) do |builder| # :url => 'http://sushi.com'
         if options[:adapter]
           builder.use options[:adapter]
+          #builder.use Faraday::Response::Yajl
         else
           builder.use Faraday::Adapter::NetHttp # make http requests with Net::HTTP
         end
@@ -321,7 +322,7 @@ module Aws
       if conn_mode == :per_thread || conn_mode == :single
         thread = conn_mode == :per_thread ? Thread.current : Thread.main
         if !thread[conn_name].nil?
-          thread[conn_name].finish
+          #thread[conn_name].finish
           thread[conn_name] = nil
         end
       end
@@ -453,7 +454,7 @@ module Aws
           raise AwsError2.new(@last_response.code, @last_request_id, request_text_data, @last_response.body)
         end
       ensure
-        connection.finish if connection && lib_params[:connection_mode] == :per_request
+        #connection.finish if connection && lib_params[:connection_mode] == :per_request
       end
 
     end

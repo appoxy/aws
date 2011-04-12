@@ -226,9 +226,9 @@ module Aws
           end
         end
       else # ... it is not a xml document(probably just a html page?)
-        @aws.last_errors     = [[response.status, "#{response.message} (#{request_text_data})"]]
+        @aws.last_errors     = [[response.status, "#{response.body} (#{request_text_data})"]]
         @aws.last_request_id = '-undefined-'
-        last_errors_text     = response.message
+        last_errors_text     = response.body
       end
       # now - check the error
       unless redirect_detected
@@ -247,7 +247,7 @@ module Aws
         # It may have a chance that one server is a semi-down and reconnection
         # will help us to connect to the other server
         if !redirect_detected && @close_on_error
-          @aws.connection.finish "#{self.class.name}: error match to pattern '#{error_match}'"
+          puts "#{self.class.name}: error match to pattern '#{error_match}'"
         end
 # puts 'OPTIONS3=' + options.inspect
         if options[:retries].nil? || @retries < options[:retries]
@@ -282,10 +282,10 @@ module Aws
       elsif @close_on_error
         # Is this a 5xx error ?
         if @aws.last_response.status.to_s[/^5\d\d$/]
-          @aws.connection.finish "#{self.class.name}: code: #{@aws.last_response.code}: '#{@aws.last_response.message}'"
+          puts "#{self.class.name}: code: #{@aws.last_response.status}: '#{@aws.last_response.body}'"
           # Is this a 4xx error ?
         elsif @aws.last_response.status.to_s[/^4\d\d$/] && @close_on_4xx_probability > rand(100)
-          @aws.connection.finish "#{self.class.name}: code: #{@aws.last_response.code}: '#{@aws.last_response.message}', " +
+          puts "#{self.class.name}: code: #{@aws.last_response.status}: '#{@aws.last_response.body}', " +
                                      "probability: #{@close_on_4xx_probability}%"
         end
       end

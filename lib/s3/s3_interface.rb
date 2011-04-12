@@ -436,7 +436,7 @@ module Aws
         headers['expect'] = '100-continue'
       end
       req_hash = generate_rest_request('PUT', headers.merge(:url =>"#{bucket}/#{CGI::escape key}",
-                                                            :data =>data,
+                                                            :data =>data.read,
                                                             'Content-Length' => data_size.to_s))
       request_info(req_hash, RightHttp2xxParser.new)
     rescue
@@ -1261,17 +1261,17 @@ module Aws
       def parse(response)
         x = response.body
         x= x.respond_to?(:force_encoding) ? x.force_encoding("UTF-8") : x
-#        puts 'x.encoding = ' + response.body.encoding.to_s
+        puts 'INFO = ' + response.to_s
         @result = {
             :object => x,
-            :headers => headers_to_string(response.to_hash)
+            :headers => headers_to_string(response.headers.to_hash)
         }
       end
     end
 
     class S3HttpResponseHeadParser < S3HttpResponseParser # :nodoc:
       def parse(response)
-        @result = headers_to_string(response.to_hash)
+        @result = headers_to_string(response.headers.to_hash)
       end
     end
 
