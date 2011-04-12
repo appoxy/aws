@@ -268,6 +268,7 @@ module Aws
     end
 
     def get_conn(connection_name, lib_params, logger, base_url=nil)
+      #raise "stop" if (connection_name == :s3_connection) && (base_url=="sdb.amazonaws.com")
 #            thread = lib_params[:multi_thread] ? Thread.current : Thread.main
 #            thread[connection_name] ||= Rightscale::HttpConnection.new(:exception => Aws::AwsError, :logger => logger)
 #            conn = thread[connection_name]
@@ -281,30 +282,29 @@ module Aws
           :http_connection_read_timeout, :http_connection_retry_delay
       )
       params.merge!(:exception => AwsError, :logger => logger)
-
       if conn_mode == :per_request
 #        http_conn = Rightscale::HttpConnection.new(params)
         http_conn = new_faraday_connection(base_url)
 
       elsif conn_mode == :per_thread || conn_mode == :single
         thread = conn_mode == :per_thread ? Thread.current : Thread.main
-        thread[connection_name] ||= new_faraday_connection(base_url)
-        http_conn = thread[connection_name]
+        thread[base_url] ||= new_faraday_connection(base_url)
+        http_conn = thread[base_url]
 #                ret = request_info_impl(http_conn, bench, request, parser, &block)
 
       elsif conn_mode == :eventmachine
         thread = Thread.current
-        return thread[connection_name] if thread[connection_name]
+        return thread[base_url] if thread[base_url]
         puts 'EVENTING!'
         http_conn = new_faraday_connection(base_url, :adapter=>Faraday::Adapter::EMSynchrony)
-        thread[connection_name] = http_conn
+        thread[base_url] = http_conn
       end
       return http_conn
 
     end
 
     def new_faraday_connection(base_url, options={})
-      faraday_url = "https://#{base_url}"
+      faraday_url = "http://#{base_url}"
       puts 'faraday_url=' + faraday_url
       http_conn = Faraday.new(:url=>faraday_url) do |builder| # :url => 'http://sushi.com'
         if options[:adapter]
