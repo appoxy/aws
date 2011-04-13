@@ -21,7 +21,6 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-
 # Test
 module Aws
 
@@ -179,11 +178,11 @@ module Aws
     def signed_service_params(aws_secret_access_key, service_hash, http_verb=nil, host=nil, service=nil)
       case signature_version.to_s
         when '0' then
-          AwsUtils::sign_request_v0(aws_secret_access_key, service_hash)
+          Utils::sign_request_v0(aws_secret_access_key, service_hash)
         when '1' then
-          AwsUtils::sign_request_v1(aws_secret_access_key, service_hash)
+          Utils::sign_request_v1(aws_secret_access_key, service_hash)
         when '2' then
-          AwsUtils::sign_request_v2(aws_secret_access_key, service_hash, http_verb, host, service)
+          Utils::sign_request_v2(aws_secret_access_key, service_hash, http_verb, host, service)
         else
           raise AwsError.new("Unknown signature version (#{signature_version.to_s}) requested")
       end
@@ -215,7 +214,7 @@ module Aws
       if signature_version == '3'
         service_hash["Timestamp"] = now.iso8601
         service_params = escape_params(service_hash)
-        signature, algorithm = Aws::AwsUtils.signature_version3(aws_secret_key, now)
+        signature, algorithm = Aws::Utils.signature_version3(aws_secret_key, now)
         headers['X-Amzn-Authorization'] = "AWS3-HTTPS AWSAccessKeyId=#{aws_access_key}, Algorithm=#{algorithm.upcase}, Signature=#{signature}"
         headers['Date'] = now.httpdate
       else
@@ -262,7 +261,7 @@ module Aws
 
     def escape_params(service_hash)
       canonical_string = service_hash.keys.sort.map do |key|
-        "#{Aws::AwsUtils.amz_escape(key)}=#{Aws::AwsUtils.amz_escape(service_hash[key])}"
+        "#{Aws::Utils.amz_escape(key)}=#{Aws::Utils.amz_escape(service_hash[key])}"
       end.join('&')
       canonical_string
     end
@@ -276,12 +275,16 @@ module Aws
       http_conn = nil
       conn_mode = lib_params[:connection_mode]
 
-      # Slice all parameters accepted by Rightscale::HttpConnection#new
-      params = lib_params.slice(
-          :user_agent, :ca_file, :http_connection_retry_count, :http_connection_open_timeout,
-          :http_connection_read_timeout, :http_connection_retry_delay
-      )
-      params.merge!(:exception => AwsError, :logger => logger)
+      params = { :exception => AwsError, :logger => logger }
+      
+      # Adds all parameters accepted by Rightscale::HttpConnection#new
+      [ :user_agent, :ca_file, :http_connection_retry_count, 
+        :http_connection_open_timeout, :http_connection_read_timeout, 
+        :http_connection_retry_delay 
+      ].each do |key|
+        params[key] = lib_params[key] if lib_params.has_key?(key)
+      end
+
       if conn_mode == :per_request
 #        http_conn = Rightscale::HttpConnection.new(params)
         http_conn = new_faraday_connection(base_url)
@@ -530,7 +533,6 @@ module Aws
 
     def on_exception(options={:raise=>true, :log=>true}) # :nodoc:
       raise if $!.is_a?(AwsNoChange)
-
       AwsError::on_aws_exception(self, options)
     end
 

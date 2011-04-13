@@ -31,7 +31,7 @@ module Aws
       @http_code    = http_code
       @request_data = request_data
       @response     = response
-      msg           = @errors.is_a?(Array) ? @errors.map { |code, msg| "#{code}: #{msg}" }.join("; ") : @errors.to_s
+      msg           = @errors.is_a?(Array) ? @errors.map { |code, m| "#{code}: #{m}" }.join("; ") : @errors.to_s
       msg += "\nREQUEST=#{@request_data} " unless @request_data.nil?
       msg += "\nREQUEST ID=#{@request_id} " unless @request_id.nil?
       super(msg)

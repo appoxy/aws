@@ -29,7 +29,6 @@ end
 $:.unshift(File.dirname(__FILE__))
 require 'awsbase/require_relative'
 require 'awsbase/benchmark_fix'
-require 'awsbase/support'
 require 'awsbase/awsbase'
 require 'awsbase/aws_response_array'
 require 'ec2/ec2'

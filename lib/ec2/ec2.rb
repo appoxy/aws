@@ -89,9 +89,10 @@ module Aws
     end
 
     @@bench                 = AwsBenchmarkingBlock.new
- def self.bench
+    def self.bench
       @@bench
     end
+
     def self.bench_xml
       @@bench.xml
     end
@@ -452,7 +453,7 @@ module Aws
     #
     def describe_instances(list=[])
       link = generate_request("DescribeInstances", hash_params('InstanceId', list.to_a))
-      request_cache_or_info(:describe_instances, link, QEc2DescribeInstancesParser, @@bench, list.blank?) do |parser|
+      request_cache_or_info(:describe_instances, link, QEc2DescribeInstancesParser, @@bench, list.nil? || list.empty?) do |parser|
         get_desc_instances(parser.result)
       end
     rescue Exception
@@ -564,23 +565,23 @@ module Aws
                      'AddressingType' => options[:addressing_type] || DEFAULT_ADDRESSING_TYPE,
                      'InstanceType'   => options[:instance_type] || DEFAULT_INSTANCE_TYPE})
       # optional params
-      params['KeyName'] = options[:key_name] unless options[:key_name].blank?
-      params['KernelId'] = options[:kernel_id] unless options[:kernel_id].blank?
-      params['RamdiskId'] = options[:ramdisk_id] unless options[:ramdisk_id].blank?
-      params['Placement.AvailabilityZone'] = options[:availability_zone] unless options[:availability_zone].blank?
-      params['BlockDeviceMappings'] = options[:block_device_mappings] unless options[:block_device_mappings].blank?
-      params['Monitoring.Enabled'] = options[:monitoring_enabled] unless options[:monitoring_enabled].blank?
-      params['SubnetId'] = options[:subnet_id] unless options[:subnet_id].blank?
-      params['AdditionalInfo'] = options[:additional_info] unless options[:additional_info].blank?
+      params['KeyName'] = options[:key_name] unless Aws::Utils.blank?(options[:key_name])
+      params['KernelId'] = options[:kernel_id] unless Aws::Utils.blank?(options[:kernel_id])
+      params['RamdiskId'] = options[:ramdisk_id] unless Aws::Utils.blank?(options[:ramdisk_id])
+      params['Placement.AvailabilityZone'] = options[:availability_zone] unless Aws::Utils.blank?(options[:availability_zone])
+      params['BlockDeviceMappings'] = options[:block_device_mappings] unless Aws::Utils.blank?(options[:block_device_mappings])
+      params['Monitoring.Enabled'] = options[:monitoring_enabled] unless Aws::Utils.blank?(options[:monitoring_enabled])
+      params['SubnetId'] = options[:subnet_id] unless Aws::Utils.blank?(options[:subnet_id])
+      params['AdditionalInfo'] = options[:additional_info] unless Aws::Utils.blank?(options[:additional_info])
       params['DisableApiTermination'] = options[:disable_api_termination].to_s unless options[:disable_api_termination].nil?
-      params['InstanceInitiatedShutdownBehavior'] = options[:instance_initiated_shutdown_behavior] unless options[:instance_initiated_shutdown_behavior].blank?
-      unless options[:user_data].blank?
+      params['InstanceInitiatedShutdownBehavior'] = options[:instance_initiated_shutdown_behavior] unless Aws::Utils.blank?(options[:instance_initiated_shutdown_behavior])
+      unless Aws::Utils.blank?(options[:user_data])
         options[:user_data].strip!
         # Do not use CGI::escape(encode64(...)) as it is done in Amazons EC2 library.
         # Amazon 169.254.169.254 does not like escaped symbols!
         # And it doesn't like "\n" inside of encoded string! Grrr....
         # Otherwise, some of UserData symbols will be lost...
-        params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless options[:user_data].blank?
+        params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless Aws::Utils.blank?(options[:user_data])
       end
       link      = generate_request("RunInstances", params)
       #debugger
@@ -706,7 +707,7 @@ module Aws
                                           {'acl' => s3_upload_policy},
                                           ['starts-with', '$key', s3_prefix]]}.to_json
       policy64        = Base64.encode64(policy).gsub("\n", "")
-      signed_policy64 = AwsUtils.sign(s3_owner_aws_secret_access_key, policy64)
+      signed_policy64 = Utils.sign(s3_owner_aws_secret_access_key, policy64)
       # fill request params
       params          = {'InstanceId'                       => instance_id,
                          'Storage.S3.AWSAccessKeyId'        => s3_owner_aws_access_key_id,
@@ -784,7 +785,7 @@ module Aws
     #
     def describe_security_groups(list=[])
       link = generate_request("DescribeSecurityGroups", hash_params('GroupName', list.to_a))
-      request_cache_or_info(:describe_security_groups, link, QEc2DescribeSecurityGroupsParser, @@bench, list.blank?) do |parser|
+      request_cache_or_info(:describe_security_groups, link, QEc2DescribeSecurityGroupsParser, @@bench, list.nil? || list.empty?) do |parser|
         result = []
         parser.result.each do |item|
           perms = []
@@ -829,7 +830,7 @@ module Aws
     #
     def create_security_group(name, description)
       # EC2 doesn't like an empty description...
-      description = " " if description.blank?
+      description = " " if Aws::Utils.blank?(description)
       link = generate_request("CreateSecurityGroup",
                               'GroupName'        => name.to_s,
                               'GroupDescription' => description.to_s)
@@ -926,7 +927,7 @@ module Aws
     #
     def describe_key_pairs(list=[])
       link = generate_request("DescribeKeyPairs", hash_params('KeyName', list.to_a))
-      request_cache_or_info :describe_key_pairs, link, QEc2DescribeKeyPairParser, @@bench, list.blank?
+      request_cache_or_info :describe_key_pairs, link, QEc2DescribeKeyPairParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -999,7 +1000,7 @@ module Aws
     def describe_addresses(list=[])
       link = generate_request("DescribeAddresses",
                               hash_params('PublicIp', list.to_a))
-      request_cache_or_info :describe_addresses, link, QEc2DescribeAddressesParser, @@bench, list.blank?
+      request_cache_or_info :describe_addresses, link, QEc2DescribeAddressesParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -1048,7 +1049,7 @@ module Aws
     def describe_availability_zones(list=[])
       link = generate_request("DescribeAvailabilityZones",
                               hash_params('ZoneName', list.to_a))
-      request_cache_or_info :describe_availability_zones, link, QEc2DescribeAvailabilityZonesParser, @@bench, list.blank?
+      request_cache_or_info :describe_availability_zones, link, QEc2DescribeAvailabilityZonesParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -1064,7 +1065,7 @@ module Aws
     def describe_regions(list=[])
       link = generate_request("DescribeRegions",
                               hash_params('RegionName', list.to_a))
-      request_cache_or_info :describe_regions, link, QEc2DescribeRegionsParser, @@bench, list.blank?
+      request_cache_or_info :describe_regions, link, QEc2DescribeRegionsParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -1097,7 +1098,7 @@ module Aws
     def describe_volumes(list=[])
       link = generate_request("DescribeVolumes",
                               hash_params('VolumeId', list.to_a))
-      request_cache_or_info :describe_volumes, link, QEc2DescribeVolumesParser, @@bench, list.blank?
+      request_cache_or_info :describe_volumes, link, QEc2DescribeVolumesParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -1182,8 +1183,8 @@ module Aws
     #
     def detach_volume(volume_id, instance_id=nil, device=nil, force=nil)
       hash = {"VolumeId" => volume_id.to_s}
-      hash["InstanceId"] = instance_id.to_s unless instance_id.blank?
-      hash["Device"] = device.to_s unless device.blank?
+      hash["InstanceId"] = instance_id.to_s unless Aws::Utils.blank?(instance_id)
+      hash["Device"] = device.to_s unless Aws::Utils.blank?(device)
       hash["Force"] = 'true' if     force
       #
       link = generate_request("DetachVolume", hash)
@@ -1214,7 +1215,7 @@ module Aws
     def describe_snapshots(list=[])
       link = generate_request("DescribeSnapshots",
                               hash_params('SnapshotId', list.to_a))
-      request_cache_or_info :describe_snapshots, link, QEc2DescribeSnapshotsParser, @@bench, list.blank?
+      request_cache_or_info :describe_snapshots, link, QEc2DescribeSnapshotsParser, @@bench, list.nil? || list.empty?
     rescue Exception
       on_exception
     end
@@ -1863,7 +1864,7 @@ module Aws
       def tagend(name)
         case name
           when 'instanceId' then
-            @address[:instance_id] = @text.blank? ? nil : @text
+            @address[:instance_id] = Aws::Utils.blank?(@text) ? nil : @text
           when 'publicIp' then
             @address[:public_ip] = @text
           when 'item' then
@@ -1933,7 +1934,7 @@ module Aws
           when 'size' then
             @result[:aws_size] = @text.to_i ###
           when 'snapshotId' then
-            @result[:snapshot_id] = @text.blank? ? nil : @text ###
+            @result[:snapshot_id] = Aws::Utils.blank?(@text) ? nil : @text ###
           when 'availabilityZone' then
             @result[:zone] = @text ###
         end
@@ -2001,7 +2002,7 @@ module Aws
           when 'attachTime' then
             @volume[:aws_attached_at] = Time.parse(@text)
           when 'snapshotId' then
-            @volume[:snapshot_id] = @text.blank? ? nil : @text
+            @volume[:snapshot_id] = Aws::Utils.blank?(@text) ? nil : @text
           when 'availabilityZone' then
             @volume[:zone] = @text
           when 'item'

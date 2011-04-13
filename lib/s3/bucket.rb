@@ -85,8 +85,8 @@ module Aws
     #  bucket.enable_logging(:targetbucket=>"mylogbucket", :targetprefix=>"loggylogs/")
     #    => true
     def enable_logging(params)
-      AwsUtils.mandatory_arguments([:targetbucket, :targetprefix], params)
-      AwsUtils.allow_only([:targetbucket, :targetprefix], params)
+      Utils.mandatory_arguments([:targetbucket, :targetprefix], params)
+      Utils.allow_only([:targetbucket, :targetprefix], params)
       xmldoc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><BucketLoggingStatus xmlns=\"http://doc.s3.amazonaws.com/2006-03-01\"><LoggingEnabled><TargetBucket>#{params[:targetbucket]}</TargetBucket><TargetPrefix>#{params[:targetprefix]}</TargetPrefix></LoggingEnabled></BucketLoggingStatus>"
       @s3.interface.put_logging(:bucket => @name, :xmldoc => xmldoc)
     end
@@ -120,7 +120,6 @@ module Aws
       opt = {}; options.each { |key, value| opt[key.to_s] = value }
       service_data = {}
       service_list = {}
-      thislist     = {}
       list         = []
       @s3.interface.incrementally_list_bucket(@name, opt) do |thislist|
         service_list = thislist
@@ -148,7 +147,7 @@ module Aws
     #  key.head
     #
     def key(key_name, head=false)
-      raise 'Key name can not be empty.' if key_name.blank?
+      raise 'Key name can not be empty.' if Aws::Utils.blank?(key_name)
       key_instance = nil
       # if this key exists - find it ....
       keys({'prefix'=>key_name}, head).each do |key|

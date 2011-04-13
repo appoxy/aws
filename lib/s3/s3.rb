@@ -306,7 +306,7 @@ module Aws
         @bucket       = bucket
         @name         = name.to_s
         @meta_headers = meta_headers
-        raise 'Key name can not be empty.' if @name.blank?
+        raise 'Key name can not be empty.' if Aws::Utils.blank?(@name)
       end
 
       # Generate link to PUT key data.

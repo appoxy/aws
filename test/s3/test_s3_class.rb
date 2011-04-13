@@ -157,7 +157,7 @@ class TestS3Class < S3TestBase
     # create a key
     key    = bucket.key('test/copy/30')
     key.put(RIGHT_OBJECT_TEXT)
-    assert key.meta_headers.blank?
+    assert key.meta_headers.empty?
     # store some meta keys
     meta = {'family' => 'oops', 'race' => 'troll'}
     assert_equal meta, key.save_meta(meta)

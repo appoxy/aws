@@ -122,11 +122,11 @@ module Aws
                       "Version" => API_VERSION}
       service_hash.update(param)
       service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], service)
-      request = Net::HTTP::Get.new("#{AwsUtils.URLencode(service)}?#{service_params}")
+      request        = Net::HTTP::Get.new("#{Utils.URLencode(service)}?#{service_params}")
       # prepare output hash
-      {:request => request,
-       :server => @params[:server],
-       :port => @params[:port],
+      {:request  => request,
+       :server   => @params[:server],
+       :port     => @params[:port],
        :protocol => @params[:protocol]}
     end
 
@@ -134,15 +134,15 @@ module Aws
       service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
       message = param[:message] # extract message body if nesessary
       param.each { |key, value| param.delete(key) if (value.nil? || key.is_a?(Symbol)) }
-      service_hash = {"Action" => action,
-                      "Expires" => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+      service_hash = {"Action"         => action,
+                      "Expires"        => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
                       "AWSAccessKeyId" => @aws_access_key_id,
-                      "MessageBody" => message,
-                      "Version" => API_VERSION}
+                      "MessageBody"    => message,
+                      "Version"        => API_VERSION}
       service_hash.update(param)
       #
-      service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
-      request = Net::HTTP::Post.new(AwsUtils::URLencode(service))
+      service_params          = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], service)
+      request                 = Net::HTTP::Post.new(Utils::URLencode(service))
       request['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
       request.body = service_params
       # prepare output hash
@@ -300,9 +300,9 @@ module Aws
     def change_message_visibility(queue_url, receipt_handle, visibility_timeout)
       req_hash = generate_request(
           "ChangeMessageVisibility",
-          "ReceiptHandle" => receipt_handle,
+          "ReceiptHandle"     => receipt_handle,
           "VisibilityTimeout" => visibility_timeout,
-          :queue_url => queue_url
+          :queue_url          => queue_url
       )
       request_info(req_hash, SqsStatusParser.new(:logger => @logger))
     rescue
@@ -388,7 +388,7 @@ module Aws
     #
     def pop_message(queue_url)
       messages = pop_messages(queue_url)
-      messages.blank? ? nil : messages[0]
+      messages.nil? ? nil : messages[0]
     rescue
       on_exception
     end

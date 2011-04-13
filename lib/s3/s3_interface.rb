@@ -174,7 +174,7 @@ module Aws
 #      auth_string = canonical_string(req_method, path_to_sign, request.to_hash)
       auth_string = canonical_string(req_method, path_to_sign, request.headers)
       puts "auth_string START\n" + auth_string.to_s + "\nEND"
-      signature = AwsUtils::sign(@aws_secret_access_key, auth_string)
+      signature = Aws::Utils::sign(@aws_secret_access_key, auth_string)
       # set other headers
       request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # prepare output hash
@@ -341,12 +341,15 @@ module Aws
     #     ]
     #   }
     def incrementally_list_bucket(bucket, options={}, headers={}, &block)
-      internal_options = options.symbolize_keys
+      internal_options = Hash[ options.map {|k,v| [k.to_sym, v] } ]
       begin
         internal_bucket = bucket.dup
-        internal_bucket += '?'+internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless internal_options.blank?
-        req_hash = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
-        response = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
+        unless internal_options.nil? || internal_options.empty?
+          internal_bucket << '?' 
+          internal_bucket << internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
+        end
+        req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
+        response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
         there_are_more_keys = response[:is_truncated]
         if (there_are_more_keys)
           internal_options[:marker] = decide_marker(response)
@@ -473,8 +476,8 @@ module Aws
     #       "content-length"=>"0"}
 
     def store_object(params)
-      AwsUtils.allow_only([:bucket, :key, :data, :headers, :md5], params)
-      AwsUtils.mandatory_arguments([:bucket, :key, :data], params)
+      Utils.allow_only([:bucket, :key, :data, :headers, :md5], params)
+      Utils.mandatory_arguments([:bucket, :key, :data], params)
       params[:headers] = {} unless params[:headers]
 
       params[:data].binmode if (params[:data].respond_to?(:binmode)) # On Windows, if someone opens a file in text mode, we must reset it to binary mode for streaming to work properly
@@ -598,8 +601,8 @@ module Aws
     # the response can be 'streamed'.  The hash containing header fields is
     # still returned.
     def retrieve_object(params, &block)
-      AwsUtils.mandatory_arguments([:bucket, :key], params)
-      AwsUtils.allow_only([:bucket, :key, :headers, :md5], params)
+      Utils.mandatory_arguments([:bucket, :key], params)
+      Utils.allow_only([:bucket, :key, :headers, :md5], params)
       params[:headers] = {} unless params[:headers]
       req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"))
       resp = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
@@ -616,7 +619,7 @@ module Aws
     # If the check passes, returns the response metadata with the "verified_md5" field set true.  Raises an exception if the checksums conflict.
     # This call is implemented as a wrapper around retrieve_object and the user may gain different semantics by creating a custom wrapper.
     def retrieve_object_and_verify(params, &block)
-      AwsUtils.mandatory_arguments([:md5], params)
+      Utils.mandatory_arguments([:md5], params)
       resp = retrieve_object(params, &block)
       return resp if resp[:verified_md5]
       raise AwsError.new("Retrieved object failed MD5 checksum verification: #{resp.inspect}")
@@ -667,10 +670,10 @@ module Aws
     #      http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTObjectCOPY.html
     #
     def copy(src_bucket, src_key, dest_bucket, dest_key=nil, directive=:copy, headers={})
-      dest_key ||= src_key
+      dest_key                            ||= src_key
       headers['x-amz-metadata-directive'] = directive.to_s.upcase
-      headers['x-amz-copy-source'] = "#{src_bucket}/#{CGI::escape src_key}"
-      req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"))
+      headers['x-amz-copy-source']        = "#{src_bucket}/#{CGI::escape src_key}"
+      req_hash                            = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"))
       request_info(req_hash, S3CopyParser.new)
     rescue
       on_exception
@@ -718,7 +721,7 @@ module Aws
     #                  <Permission>FULL_CONTROL</Permission></Grant></AccessControlList></AccessControlPolicy>" }
     #
     def get_acl(bucket, key='', headers={})
-      key = key.blank? ? '' : "/#{CGI::escape key}"
+      key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
       req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
       request_info(req_hash, S3HttpResponseBodyParser.new)
     rescue
@@ -748,11 +751,11 @@ module Aws
     #       :display_name=>"root"}}
     #
     def get_acl_parse(bucket, key='', headers={})
-      key = key.blank? ? '' : "/#{CGI::escape key}"
-      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
-      acl = request_info(req_hash, S3AclParser.new(:logger => @logger))
-      result = {}
-      result[:owner] = acl[:owner]
+      key               = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
+      req_hash          = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
+      acl               = request_info(req_hash, S3AclParser.new(:logger => @logger))
+      result            = {}
+      result[:owner]    = acl[:owner]
       result[:grantees] = {}
       acl[:grantees].each do |grantee|
         key = grantee[:id] || grantee[:uri]
@@ -761,8 +764,8 @@ module Aws
         else
           result[:grantees][key] =
               {:display_name => grantee[:display_name] || grantee[:uri].to_s[/[^\/]*$/],
-               :permissions => grantee[:permissions].lines.to_a,
-               :attributes => grantee[:attributes]}
+               :permissions  => grantee[:permissions].lines.to_a,
+               :attributes   => grantee[:attributes]}
         end
       end
       result
@@ -772,7 +775,7 @@ module Aws
 
     # Sets the ACL on a bucket or object.
     def put_acl(bucket, key, acl_xml_doc, headers={})
-      key = key.blank? ? '' : "/#{CGI::escape key}"
+      key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
       req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}#{key}?acl", :data=>acl_xml_doc))
       request_info(req_hash, S3HttpResponseBodyParser.new)
     rescue
@@ -801,7 +804,7 @@ module Aws
     end
 
     def put_bucket_policy(bucket, policy)
-      key = key.blank? ? '' : "/#{CGI::escape key}"
+      key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
       req_hash = generate_rest_request('PUT', {:url=>"#{bucket}?policy", :data=>policy})
       request_info(req_hash, S3HttpResponseBodyParser.new)
     rescue
@@ -877,10 +880,10 @@ module Aws
       headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
       #generate auth strings
       auth_string = canonical_string(method, path_to_sign, headers, expires)
-      signature = CGI::escape(Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new("sha1"), @aws_secret_access_key, auth_string)).strip)
+      signature   = CGI::escape(Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new("sha1"), @aws_secret_access_key, auth_string)).strip)
       # path building
-      addon = "Signature=#{signature}&Expires=#{expires}&AWSAccessKeyId=#{@aws_access_key_id}"
-      path += path[/\?/] ? "&#{addon}" : "?#{addon}"
+      addon       = "Signature=#{signature}&Expires=#{expires}&AWSAccessKeyId=#{@aws_access_key_id}"
+      path        += path[/\?/] ? "&#{addon}" : "?#{addon}"
       "#{@params[:protocol]}://#{server}:#{@params[:port]}#{path}"
     rescue
       on_exception
@@ -921,7 +924,10 @@ module Aws
     #  s3.list_bucket_link('my_awesome_bucket') #=> url string
     #
     def list_bucket_link(bucket, options=nil, expires=nil, headers={})
-      bucket += '?' + options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.blank?
+      unless options.nil? || options.empty?
+        bucket << '?'
+        bucket << options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
+      end
       generate_link('GET', headers.merge(:url=>bucket), expires)
     rescue
       on_exception
@@ -932,7 +938,7 @@ module Aws
     #  s3.put_link('my_awesome_bucket',key, object) #=> url string
     #
     def put_link(bucket, key, data=nil, expires=nil, headers={})
-      generate_link('PUT', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}", :data=>data), expires)
+      generate_link('PUT', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}", :data=>data), expires)
     rescue
       on_exception
     end
@@ -950,7 +956,7 @@ module Aws
     #
     # see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/VirtualHosting.html
     def get_link(bucket, key, expires=nil, headers={})
-      generate_link('GET', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}"), expires)
+      generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}"), expires)
     rescue
       on_exception
     end
@@ -960,7 +966,7 @@ module Aws
     #  s3.head_link('my_awesome_bucket',key) #=> url string
     #
     def head_link(bucket, key, expires=nil, headers={})
-      generate_link('HEAD', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}"), expires)
+      generate_link('HEAD', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}"), expires)
     rescue
       on_exception
     end
@@ -970,7 +976,7 @@ module Aws
     #  s3.delete_link('my_awesome_bucket',key) #=> url string
     #
     def delete_link(bucket, key, expires=nil, headers={})
-      generate_link('DELETE', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}"), expires)
+      generate_link('DELETE', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}"), expires)
     rescue
       on_exception
     end
@@ -981,7 +987,7 @@ module Aws
     #  s3.get_acl_link('my_awesome_bucket',key) #=> url string
     #
     def get_acl_link(bucket, key='', headers={})
-      return generate_link('GET', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}?acl"))
+      return generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}?acl"))
     rescue
       on_exception
     end
@@ -991,7 +997,7 @@ module Aws
     #  s3.put_acl_link('my_awesome_bucket',key) #=> url string
     #
     def put_acl_link(bucket, key='', headers={})
-      return generate_link('PUT', headers.merge(:url=>"#{bucket}/#{AwsUtils::URLencode key}?acl"))
+      return generate_link('PUT', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}?acl"))
     rescue
       on_exception
     end
@@ -1023,7 +1029,7 @@ module Aws
     class S3ListAllMyBucketsParser < AwsParser # :nodoc:
       def reset
         @result = []
-        @owner = {}
+        @owner  = {}
       end
 
       def tagstart(name, attributes)
@@ -1048,8 +1054,8 @@ module Aws
 
     class S3ListBucketParser < AwsParser # :nodoc:
       def reset
-        @result = []
-        @service = {}
+        @result      = []
+        @service     = {}
         @current_key = {}
       end
 
@@ -1095,13 +1101,13 @@ module Aws
 
     class S3ImprovedListBucketParser < AwsParser # :nodoc:
       def reset
-        @result = {}
-        @result[:contents] = []
+        @result                   = {}
+        @result[:contents]        = []
         @result[:common_prefixes] = []
-        @contents = []
-        @current_key = {}
-        @common_prefixes = []
-        @in_common_prefixes = false
+        @contents                 = []
+        @current_key              = {}
+        @common_prefixes          = []
+        @in_common_prefixes       = false
       end
 
       def tagstart(name, attributes)
@@ -1165,7 +1171,7 @@ module Aws
 
     class S3AclParser < AwsParser # :nodoc:
       def reset
-        @result = {:grantees=>[], :owner=>{}}
+        @result          = {:grantees=>[], :owner=>{}}
         @current_grantee = {}
       end
 
@@ -1200,7 +1206,7 @@ module Aws
 
     class S3LoggingParser < AwsParser # :nodoc:
       def reset
-        @result = {:enabled => false, :targetbucket => '', :targetprefix => ''}
+        @result          = {:enabled => false, :targetbucket => '', :targetprefix => ''}
         @current_grantee = {}
       end
 
@@ -1210,12 +1216,12 @@ module Aws
           when 'TargetBucket'
             if @xmlpath == 'BucketLoggingStatus/LoggingEnabled'
               @result[:targetbucket] = @text
-              @result[:enabled] = true
+              @result[:enabled]      = true
             end
           when 'TargetPrefix'
             if @xmlpath == 'BucketLoggingStatus/LoggingEnabled'
               @result[:targetprefix] = @text
-              @result[:enabled] = true
+              @result[:enabled]      = true
             end
         end
       end

@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-  s.date = %q{2011-03-10}
+  s.date = %q{2011-04-08}
   s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -39,12 +39,13 @@ Gem::Specification.new do |s|
     "lib/s3/s3_interface.rb",
     "lib/sdb/active_sdb.rb",
     "lib/sdb/sdb_interface.rb",
+    "lib/ses/ses.rb",
     "lib/sqs/sqs.rb",
     "lib/sqs/sqs_interface.rb"
   ]
   s.homepage = %q{http://github.com/appoxy/aws/}
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.6.2}
+  s.rubygems_version = %q{1.5.2}
   s.summary = %q{AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com}
   s.test_files = [
     "test/acf/test_acf.rb",
@@ -65,10 +66,10 @@ Gem::Specification.new do |s|
     "test/sdb/test_active_sdb.rb",
     "test/sdb/test_helper.rb",
     "test/sdb/test_sdb.rb",
+    "test/ses/test_ses.rb",
     "test/sqs/test_helper.rb",
     "test/sqs/test_sqs.rb",
     "test/test_credentials.rb",
-    "test/ts_right_aws.rb"
   ]
 
   if s.respond_to? :specification_version then
@@ -78,18 +79,15 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<uuidtools>, [">= 0"])
       s.add_runtime_dependency(%q<http_connection>, [">= 0"])
       s.add_runtime_dependency(%q<xml-simple>, [">= 0"])
-      s.add_runtime_dependency(%q<activesupport>, [">= 0"])
     else
       s.add_dependency(%q<uuidtools>, [">= 0"])
       s.add_dependency(%q<http_connection>, [">= 0"])
       s.add_dependency(%q<xml-simple>, [">= 0"])
-      s.add_dependency(%q<activesupport>, [">= 0"])
     end
   else
     s.add_dependency(%q<uuidtools>, [">= 0"])
     s.add_dependency(%q<http_connection>, [">= 0"])
     s.add_dependency(%q<xml-simple>, [">= 0"])
-    s.add_dependency(%q<activesupport>, [">= 0"])
   end
 end
 
