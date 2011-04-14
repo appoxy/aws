@@ -141,7 +141,7 @@ module Aws
     def init(service_info, aws_access_key_id, aws_secret_access_key, params={}) #:nodoc:
       @params = params
       raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
- if aws_access_key_id.blank? || aws_secret_access_key.blank?
+   if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
       @aws_access_key_id = aws_access_key_id
       @aws_secret_access_key = aws_secret_access_key
       # if the endpoint was explicitly defined - then use it
@@ -194,7 +194,7 @@ module Aws
 
     # FROM SDB
     def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}, options={}) #:nodoc:
-      puts 'generate_request2'
+#      puts 'generate_request2'
       # remove empty params from request
       user_params.delete_if { |key, value| value.nil? }
 #            user_params.each_pair do |k,v|
@@ -203,7 +203,7 @@ module Aws
       #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
       # prepare service data
       service = lib_params[:service]
-      puts 'service=' + service
+#      puts 'service=' + service
 
       now = Time.now.getutc
       service_hash = {"Action" => action,
@@ -275,12 +275,12 @@ module Aws
       http_conn = nil
       conn_mode = lib_params[:connection_mode]
 
-      params = { :exception => AwsError, :logger => logger }
-      
+      params = {:exception => AwsError, :logger => logger}
+
       # Adds all parameters accepted by Rightscale::HttpConnection#new
-      [ :user_agent, :ca_file, :http_connection_retry_count, 
-        :http_connection_open_timeout, :http_connection_read_timeout, 
-        :http_connection_retry_delay 
+      [:user_agent, :ca_file, :http_connection_retry_count,
+       :http_connection_open_timeout, :http_connection_read_timeout,
+       :http_connection_retry_delay
       ].each do |key|
         params[key] = lib_params[key] if lib_params.has_key?(key)
       end
@@ -299,7 +299,7 @@ module Aws
         thread = Thread.current
         return thread[base_url] if thread[base_url]
         puts 'EVENTING!'
-        http_conn = new_faraday_connection(base_url, :adapter=>Faraday::Adapter::EMSynchrony)
+        http_conn = new_faraday_connection(base_url, :adapter=>Faraday::Adapter::EventMachine)
         thread[base_url] = http_conn
       end
       return http_conn
@@ -308,7 +308,7 @@ module Aws
 
     def new_faraday_connection(base_url, options={})
       faraday_url = "http://#{base_url}"
-      puts 'faraday_url=' + faraday_url
+#      puts 'faraday_url=' + faraday_url
       http_conn = Faraday.new(:url=>faraday_url) do |builder| # :url => 'http://sushi.com'
         if options[:adapter]
           builder.use options[:adapter]
@@ -592,18 +592,21 @@ module Aws
           return parser.result
         end
       else
-        if false && Aws.eventmachine?
-          http1 = EventMachine::HttpRequest.new('http://example.com/1').get
-          http1.callback do
-            p http1.response
-          end
-        else
-          puts 'connection=' + connection.inspect
-          puts 'request=' + request.inspect
-          response = request[:request].run(connection, request[:req_method])
-#          response = connection.response
-        end
+
+        puts 'connection=' + connection.inspect
+        puts 'request=' + request.inspect
+        response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
+        if response.async?
+          ret = ::Aws::AsyncAws.new(response)
+          response.callback do |response|
+            puts 'parsing=' + response.body
+            parser.parse(response.body)
+            ret.call_on_success(parser.result)
+          end
+          return ret
+        end
+
         # check response for errors...
         @last_response = response
         if response_2xx(response.status) #  response.is_a?(Net::HTTPSuccess)
@@ -657,6 +660,46 @@ module Aws
       return groups
     end
 
+  end
+
+  class AsyncAws
+    attr_accessor :response, :on_success_blk, :on_error_blk
+
+    def initialize(response)
+      @response = response
+    end
+
+    def async?
+      true
+    end
+
+    def on_error &blk
+      @on_error_blk = blk
+    end
+
+    def on_success &blk
+      @on_success_blk = blk
+    end
+
+    def call_on_success(response)
+      puts 'call_on_success=' + response.inspect
+      return unless on_success_blk
+      on_success_blk.call(response)
+      #      { |response|
+      #          p(response.status)
+      #          p(response.headers)
+      #          p(response.content)
+      #          env.update :status => response.status, :body=>response.content
+      #          @app.call env
+      #          ret.finish(env)
+      #        }
+
+    end
+
+    def call_on_error(response)
+      return unless on_error_blk
+      on_error_blk.call(response)
+    end
   end
 
 

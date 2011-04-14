@@ -11,20 +11,6 @@ require "digest/sha1"
 
 require 'rubygems'
 
-module Aws
-
-  def self.eventmachine?
-    @@eventmachine
-  end
-
-  def self.use_eventmachine(true_or_false)
-    @@eventmachine = true_or_false
-    if @@eventmachine
-      require 'eventmachine'
-    end
-  end
-end
-
 
 $:.unshift(File.dirname(__FILE__))
 require 'awsbase/require_relative'

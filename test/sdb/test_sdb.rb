@@ -6,7 +6,7 @@ class TestSdb < Test::Unit::TestCase
   def setup
     TestCredentials.get_credentials
     STDOUT.sync = true
-    @domain = 'right_sdb_awesome_test_domain'
+    @domain = 'sdb_awesome_test_domain'
     @item = 'toys'
     @attr = {'Jon' => %w{beer car}}
     # Interface instance
@@ -58,36 +58,37 @@ class TestSdb < Test::Unit::TestCase
     assert_equal values, @attr['Jon'].sort
   end
 
-  def test_03a_get_attributes_evented
-    require 'eventmachine'
-    require 'em/iterator'
-    require "em-synchrony"
-    require "em-synchrony/iterator"
-    require "em-synchrony/em-http"
-    @sdb2 = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key) #, :connection_mode=>:eventmachine)
-
-    values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
-    assert_equal values, @attr['Jon'].sort
-
-    EM.synchrony do
-
-      started_at = Time.now
-      (0..10).each do |num|
-        puts 'num=' + num.to_s
-        values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
-      end
-      puts 'sync duration=' + (Time.now.to_f - started_at.to_f).to_s
-
-      started_at = Time.now
-      results = EM::Synchrony::Iterator.new(0..10).map do |iter|
-        puts 'iter=' + iter.to_s
-        values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
-      end
-      puts 'async duration=' + (Time.now.to_f - started_at.to_f).to_s
-
-    end
-
-  end
+#  def test_03a_get_attributes_evented
+#    puts 'test_03a_get_attributes_evented'
+#    require 'eventmachine'
+#    require 'em/iterator'
+#    require "em-synchrony"
+#    require "em-synchrony/iterator"
+#    require "em-synchrony/em-http"
+#    @sdb2 = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key) #, :connection_mode=>:eventmachine)
+#
+#    values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
+#    assert_equal values, @attr['Jon'].sort
+#
+#    EM.synchrony do
+#
+#      started_at = Time.now
+#      (0..10).each do |num|
+#        puts 'num=' + num.to_s
+#        values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
+#      end
+#      puts 'sync duration=' + (Time.now.to_f - started_at.to_f).to_s
+#
+#      started_at = Time.now
+#      results = EM::Synchrony::Iterator.new(0..10).map do |iter|
+#        puts 'iter=' + iter.to_s
+#        values = @sdb2.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
+#      end
+#      puts 'async duration=' + (Time.now.to_f - started_at.to_f).to_s
+#
+#    end
+#
+#  end
 
   def test_04_add_attributes
     # add new attribute

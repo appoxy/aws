@@ -60,6 +60,7 @@ module Aws
     # * <tt>:raise</tt> re-raise the error after logging
     def self.on_aws_exception(aws, options={:raise=>true, :log=>true})
       puts 'exception=' + $!.inspect
+      puts $!.backtrace
       # Only log & notify if not user error
       if !options[:raise] || system_error?($!)
         error_text = "#{$!.inspect}\n#{$@}.join('\n')}"
@@ -67,6 +68,7 @@ module Aws
         # Log the error
         if options[:log]
           request   = aws.last_request ? aws.last_request.path : '-none-'
+          puts 'LAST RESPONSE=' + aws.last_response.inspect
           response  = aws.last_response ? "#{aws.last_response.status} -- #{aws.last_response.body}" : '-none-'
           @response = response
           aws.logger.error error_text
