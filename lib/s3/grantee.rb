@@ -45,7 +45,7 @@ module Aws
     #  Aws::S3::Grantee.owner_and_grantees(bucket) #=> [owner, grantees]
     #
     def self.owner_and_grantees(thing)
-      if thing.is_a?(Bucket)
+      if thing.is_a?(S3::Bucket)
         bucket, key = thing, ''
       else
         bucket, key = thing.bucket, thing
@@ -71,7 +71,7 @@ module Aws
     end
 
     def self.put_acl(thing, owner, grantees) #:nodoc:
-      if thing.is_a?(Bucket)
+      if thing.is_a?(S3::Bucket)
         bucket, key = thing, ''
       else
         bucket, key = thing.bucket, thing

@@ -36,7 +36,7 @@ require 'right_http_connection'
 
 $:.unshift(File.dirname(__FILE__))
 require 'awsbase/benchmark_fix'
-require 'awsbase/support'
+#require 'awsbase/support'
 require 'awsbase/awsbase'
 require 'ec2/ec2'
 require 'ec2/mon_interface'
