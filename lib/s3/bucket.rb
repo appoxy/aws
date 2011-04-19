@@ -258,7 +258,7 @@ module Aws
     # Return a list of grantees.
     #
     def grantees
-      Grantee::grantees(self)
+      S3::Grantee::grantees(self)
     end
 
   end
