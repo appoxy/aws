@@ -408,26 +408,6 @@ module Aws
       on_exception
     end
 
-    def describe_availability_zones(options={})
-      link = generate_request("DescribeAvailabilityZones", options={})
-      request_info_xml_simple(self.class.connection_name, @params, link, @logger,
-                              :group_tags     =>{"DBInstances"      =>"DBInstance",
-                                                 "DBParameterGroups"=>"DBParameterGroup",
-                                                 "DBSecurityGroups" =>"DBSecurityGroup",
-                                                 "EC2SecurityGroups"=>"EC2SecurityGroup",
-                                                 "IPRanges"         =>"IPRange"},
-                              :force_array    =>["DBInstances",
-                                                 "DBParameterGroups",
-                                                 "DBSecurityGroups",
-                                                 "EC2SecurityGroups",
-                                                 "IPRanges"],
-                              :pull_out_array =>options[:pull_out_array],
-                              :pull_out_single=>options[:pull_out_single],
-                              :wrapper        =>options[:wrapper])
-    rescue Exception
-      on_exception
-    end
-
     # Retrieve information about EC2 instances. If +list+ is omitted then returns the
     # list of all instances.
     #
@@ -1053,6 +1033,28 @@ module Aws
     rescue Exception
       on_exception
     end
+
+# This is using the new way, but not sure it's backwrads compatible
+    def describe_availability_zones2(options={})
+      link = generate_request("DescribeAvailabilityZones", options={})
+      request_info_xml_simple(self.class.connection_name, @params, link, @logger,
+                              :group_tags     =>{"DBInstances"      =>"DBInstance",
+                                                 "DBParameterGroups"=>"DBParameterGroup",
+                                                 "DBSecurityGroups" =>"DBSecurityGroup",
+                                                 "EC2SecurityGroups"=>"EC2SecurityGroup",
+                                                 "IPRanges"         =>"IPRange"},
+                              :force_array    =>["DBInstances",
+                                                 "DBParameterGroups",
+                                                 "DBSecurityGroups",
+                                                 "EC2SecurityGroups",
+                                                 "IPRanges"],
+                              :pull_out_array =>options[:pull_out_array],
+                              :pull_out_single=>options[:pull_out_single],
+                              :wrapper        =>options[:wrapper])
+    rescue Exception
+      on_exception
+    end
+
 
     #-----------------------------------------------------------------
     #      Regions

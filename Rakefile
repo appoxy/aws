@@ -1,6 +1,7 @@
 # -*- ruby -*-
 
 require 'rubygems'
+#require 'psych'
 #require "rake/testtask"
 #require 'rcov/rcovtask'
 $: << File.dirname(__FILE__)

@@ -70,6 +70,11 @@ module Aws
       @interface = SqsInterface.new(aws_access_key_id, aws_secret_access_key, params)
     end
 
+    def close_connection
+      @interface.close_connection
+    end
+
+
     # Retrieves a list of queues.
     # Returns an +array+ of +Queue+ instances.
     #
