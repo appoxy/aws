@@ -131,15 +131,10 @@ module Aws
       server  = @params[:server]
       service = @params[:service].to_s
       service.chop! if service[%r{/$}] # remove trailing '/' from service
-      # extract bucket name and check it's dns compartibility
+      # extract bucket name and check it's dns compatibility
       headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
       bucket_name, key_path, params_list = $1, $2, $3
       # select request model
-<<<<<<< HEAD
-      #if is_dns_bucket?(bucket_name) 
-      # is_dns_bucket isn't called since naming a bucket using URL's path always works (naming using dns cname may have an issue with Eucalyptus)
-      path = "#{service}/#{bucket_name}#{key_path}#{params_list}"
-=======
       if is_dns_bucket?(bucket_name) and !@params[:virtual_hosting]
         # fix a path
         server   = "#{bucket_name}.#{server}"
@@ -148,7 +143,6 @@ module Aws
       else
         path = "#{service}/#{bucket_name}#{key_path}#{params_list}"
       end
->>>>>>> ad14d13e29f56bd371f8bb79e5275f9b098733a8
       path_to_sign = "#{service}/#{bucket_name}#{key_path}#{params_list}"
       [server, path, path_to_sign]
     end
