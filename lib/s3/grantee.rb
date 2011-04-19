@@ -51,7 +51,7 @@ module Aws
         bucket, key = thing.bucket, thing
       end
       hash     = bucket.s3.interface.get_acl_parse(bucket.to_s, key.to_s)
-      owner    = Owner.new(hash[:owner][:id], hash[:owner][:display_name])
+      owner    = S3::Owner.new(hash[:owner][:id], hash[:owner][:display_name])
 
       grantees = []
       hash[:grantees].each do |id, params|
