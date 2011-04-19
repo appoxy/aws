@@ -445,7 +445,7 @@ module Aws
         elsif val.is_a? Array
           val = val.collect { |x| symbolize(x, force_array) }
         end
-        ret[key.underscore.to_sym] = val
+        ret[Aws::Utils.underscore(key).to_sym] = val
       end
       ret
     end
