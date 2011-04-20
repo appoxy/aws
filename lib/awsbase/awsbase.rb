@@ -274,6 +274,8 @@ module Aws
 #            return conn
       http_conn = nil
       conn_mode = lib_params[:connection_mode]
+      adapter = lib_params[:adapter]
+      puts 'ADAPTER=' + adapter.inspect
 
       params = {:exception => AwsError, :logger => logger}
 
@@ -285,23 +287,26 @@ module Aws
         params[key] = lib_params[key] if lib_params.has_key?(key)
       end
 
-      if conn_mode == :per_request
-#        http_conn = Rightscale::HttpConnection.new(params)
-        http_conn = new_faraday_connection(base_url)
-
-      elsif conn_mode == :per_thread || conn_mode == :single
-        thread = conn_mode == :per_thread ? Thread.current : Thread.main
-        thread[base_url] ||= new_faraday_connection(base_url)
-        http_conn = thread[base_url]
-#                ret = request_info_impl(http_conn, bench, request, parser, &block)
-
-      elsif conn_mode == :eventmachine
+      if adapter
         thread = Thread.current
         return thread[base_url] if thread[base_url]
         puts 'EVENTING!'
-        http_conn = new_faraday_connection(base_url, :adapter=>Faraday::Adapter::EventMachine)
+        http_conn = new_faraday_connection(base_url, :adapter=>adapter)
         thread[base_url] = http_conn
+      else
+        if conn_mode == :per_request
+#        http_conn = Rightscale::HttpConnection.new(params)
+          http_conn = new_faraday_connection(base_url)
+
+        elsif conn_mode == :per_thread || conn_mode == :single
+          thread = conn_mode == :per_thread ? Thread.current : Thread.main
+          thread[base_url] ||= new_faraday_connection(base_url)
+          http_conn = thread[base_url]
+#                ret = request_info_impl(http_conn, bench, request, parser, &block)
+        end
       end
+
+
       return http_conn
 
     end
@@ -597,7 +602,14 @@ module Aws
         puts 'request=' + request.inspect
         response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
-        if response.async?
+        if response.respond_to?(:future?) && response.future?
+          response.callback do |response|
+            puts 'parsing=' + response.body
+            parser.parse(response.body)
+            parser.result
+          end
+          return response
+        elsif response.async?
           ret = ::Aws::AsyncAws.new(response)
           response.callback do |response|
             puts 'parsing=' + response.body

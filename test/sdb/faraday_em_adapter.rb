@@ -9,13 +9,10 @@ module Faraday
       def call(env)
         super
 
-#        uri = URI::parse(env[:url].to_s)
-#        port = env[:ssl] || 80
-
-        http = ::EventMachine::HttpRequest.new(env[:url])
-#        conn = EM::Protocols::HttpClient2.connect(:host=>uri.host, :port=>80, :ssl=>env[:ssl])
 
         ret = Faraday::AsyncResponse.new(@app, env)
+
+        http = ::EventMachine::HttpRequest.new(env[:url])
         method = env[:method].to_s.downcase
         if method == 'post'
           http = http.post :body => env[:body]
@@ -44,6 +41,55 @@ module Faraday
         raise Error::ConnectionFailed, $!
       end
     end
+
+    class EventMachineFutureAdapter < Faraday::Adapter
+      dependency do
+        require 'eventmachine'
+        require 'em-http'
+        require 'concur'
+      end
+
+      def call(env)
+        super
+
+#        uri = URI::parse(env[:url].to_s)
+#        port = env[:ssl] || 80
+
+
+#        conn = EM::Protocols::HttpClient2.connect(:host=>uri.host, :port=>80, :ssl=>env[:ssl])
+
+
+        http = ::EventMachine::HttpRequest.new(env[:url])
+        method = env[:method].to_s.downcase
+        if method == 'post'
+          http = http.post :body => env[:body]
+        else
+          http = http.get
+        end
+        puts 'http=' + http.inspect
+
+        resp = Faraday::AsyncResponse.new(@app, env)
+        resp.em_request = http
+
+        ret = Concur::EventMachineFutureCallback.new(http) do |http|
+          puts 'futurecallback called ' + http.inspect
+          p http.response_header.status
+          p http.response_header
+          p http.response
+          resp.call_callback(http)
+          env.update :status => http.response_header.status, :body=>http.response
+          @app.call env
+        end
+        ret
+
+#        http
+
+
+      rescue Errno::ECONNREFUSED
+        raise Error::ConnectionFailed, $!
+      end
+    end
+
   end
 
   class Response
