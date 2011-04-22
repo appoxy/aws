@@ -183,7 +183,6 @@ module Aws
     #
     def get(key, headers={})
       key = S3::Key.create(self, key.to_s) unless key.is_a?(S3::Key)
-      key.get(headers)
     end
 
     # Rename object. Returns Aws::S3::Key instance.
