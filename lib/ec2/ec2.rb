@@ -559,6 +559,19 @@ module Aws
         # Otherwise, some of UserData symbols will be lost...
         params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless Aws::Utils.blank?(options[:user_data])
       end
+      unless options[:block_device_mappings].blank?
+        options[:block_device_mappings].size.times do |n|
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
+          end
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]  
+          end
+          if options[:block_device_mappings][n][:ebs_snapshot_id]
+            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]  
+          end
+        end
+      end
       link      = generate_request("RunInstances", params)
       #debugger
       instances = request_info(link, QEc2DescribeInstancesParser.new(:logger => @logger))
