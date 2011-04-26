@@ -564,7 +564,6 @@ module Aws
       params['KernelId'] = options[:kernel_id] unless options[:kernel_id].blank?
       params['RamdiskId'] = options[:ramdisk_id] unless options[:ramdisk_id].blank?
       params['Placement.AvailabilityZone'] = options[:availability_zone] unless options[:availability_zone].blank?
-      params['BlockDeviceMappings'] = options[:block_device_mappings] unless options[:block_device_mappings].blank?
       params['Monitoring.Enabled'] = options[:monitoring_enabled] unless options[:monitoring_enabled].blank?
       params['SubnetId'] = options[:subnet_id] unless options[:subnet_id].blank?
       params['AdditionalInfo'] = options[:additional_info] unless options[:additional_info].blank?
@@ -577,6 +576,19 @@ module Aws
         # And it doesn't like "\n" inside of encoded string! Grrr....
         # Otherwise, some of UserData symbols will be lost...
         params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless options[:user_data].blank?
+      end
+      unless options[:block_device_mappings].blank?
+        options[:block_device_mappings].size.times do |n|
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
+          end
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]  
+          end
+          if options[:block_device_mappings][n][:ebs_snapshot_id]
+            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]  
+          end
+        end
       end
       link      = generate_request("RunInstances", params)
       #debugger
