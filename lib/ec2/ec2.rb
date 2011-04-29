@@ -545,7 +545,6 @@ module Aws
       params['KernelId'] = options[:kernel_id] unless Aws::Utils.blank?(options[:kernel_id])
       params['RamdiskId'] = options[:ramdisk_id] unless Aws::Utils.blank?(options[:ramdisk_id])
       params['Placement.AvailabilityZone'] = options[:availability_zone] unless Aws::Utils.blank?(options[:availability_zone])
-      params['BlockDeviceMappings'] = options[:block_device_mappings] unless Aws::Utils.blank?(options[:block_device_mappings])
       params['Monitoring.Enabled'] = options[:monitoring_enabled] unless Aws::Utils.blank?(options[:monitoring_enabled])
       params['SubnetId'] = options[:subnet_id] unless Aws::Utils.blank?(options[:subnet_id])
       params['AdditionalInfo'] = options[:additional_info] unless Aws::Utils.blank?(options[:additional_info])
@@ -558,6 +557,19 @@ module Aws
         # And it doesn't like "\n" inside of encoded string! Grrr....
         # Otherwise, some of UserData symbols will be lost...
         params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless Aws::Utils.blank?(options[:user_data])
+      end
+      unless options[:block_device_mappings].blank?
+        options[:block_device_mappings].size.times do |n|
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name]
+          end
+          if options[:block_device_mappings][n][:device_name]
+            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]
+          end
+          if options[:block_device_mappings][n][:ebs_snapshot_id]
+            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]
+          end
+        end
       end
       link      = generate_request("RunInstances", params)
       #debugger
@@ -1227,9 +1239,10 @@ module Aws
     #       :aws_status     => "pending",
     #       :aws_id         => "snap-d56783bc"}
     #
-    def create_snapshot(volume_id)
+    def create_snapshot(volume_id, description=nil)
       link = generate_request("CreateSnapshot",
-                              "VolumeId" => volume_id.to_s)
+                              "VolumeId" => volume_id.to_s,
+                              "Description" => description)
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
     rescue Exception
       on_exception
