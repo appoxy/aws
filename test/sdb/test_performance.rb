@@ -23,7 +23,7 @@ class TestPerformance < Test::Unit::TestCase
   def test_puts
 
 
-    x = 50
+    x = 10
 
 #    assert @sdb_em.create_domain(@domain), 'create_domain fail'
 #
@@ -31,25 +31,6 @@ class TestPerformance < Test::Unit::TestCase
 #    SimplePerformer.puts_duration("non em puts") do
 #      ret = put_bunch(@sdb, x)
 #    end
-
-    # thread pool style
-     executor = Concur::Executor.new_thread_pool_executor(10)
-    ret = []
-    x.times do |i|
-      f = executor.execute do
-        r = @sdb.put_attributes(@domain, "#{@item}_#{i}", @attr)
-      end
-      puts 'f=' + f.inspect
-      ret << f
-    end
-    x.times do |i|
-      future = ret[i]
-      fresult =  future.get()
-      puts 'fresult=' + fresult.inspect
-      assert fresult[:request_id].length > 10
-    end
-    executor.shutdown
-
 #    x.times do |i|
 #      assert ret[i][:request_id].length > 10
 #    end
@@ -76,22 +57,22 @@ class TestPerformance < Test::Unit::TestCase
 #    end
 
     # try concur style
-#    executor = Concur::Executor.new_eventmachine_executor
-#    ret = []
-#    x.times do |i|
-#      f = executor.execute do
-#        r = @sdb_emf.put_attributes(@domain, "#{@item}_#{i}", @attr)
-#      end
-#      puts 'f=' + f.inspect
-#      ret << f
-#    end
-#    x.times do |i|
-#      future = ret[i]
-#      fresult =  future.get()
-#      puts 'fresult=' + fresult.inspect
-#      assert fresult[:request_id].length > 10
-#    end
-#    executor.shutdown
+    executor = Concur::Executor.new_eventmachine_executor
+    ret = []
+    x.times do |i|
+      f = executor.execute do
+        r = @sdb_emf.put_attributes(@domain, "#{@item}_#{i}", @attr)
+      end
+      puts 'f=' + f.inspect
+      ret << f
+    end
+    x.times do |i|
+      future = ret[i]
+      fresult =  future.get()
+      puts 'fresult=' + fresult.inspect
+      assert fresult[:request_id].length > 10
+    end
+    executor.shutdown
 
   end
 
@@ -102,18 +83,34 @@ class TestPerformance < Test::Unit::TestCase
 #      p ret
 #    end
 
-    SimplePerformer.puts_duration("non em selects") do
-      EventMachine.run do
-        sel = "select * from `#{@domain}`"
-        ret = @sdb_em.select(sel)
-        p ret
-      end
-    end
-
-    # get attributes
+#    SimplePerformer.puts_duration("non em selects") do
+#      EventMachine.run do
+#        sel = "select * from `#{@domain}`"
+#        ret = @sdb_em.select(sel)
+#        p ret
+#      end
+#    end
+#
+#    # get attributes
 #    values = @sdb_em.get_attributes(@domain, @item)[:attributes]['Jon'].to_a.sort
     # compare to original list
 #    assert_equal values, @attr['Jon'].sort
+    x = 10
+    executor = Concur::Executor.new_eventmachine_executor
+    ret = []
+    x.times do |i|
+      f = executor.execute do
+        r = @sdb_emf.get_attributes(@domain, @item)
+      end
+      ret << f
+    end
+    x.times do |i|
+      future = ret[i]
+      rresult =  future.get()
+      puts 'rresult=' + rresult.inspect
+      assert rresult[:request_id].length > 10
+    end
+    executor.shutdown
   end
 
   def wait_for_connections_and_stop

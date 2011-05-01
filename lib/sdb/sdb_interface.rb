@@ -473,8 +473,10 @@ module Aws
                               'AttributeName'               => attribute_name,
                               'ConsistentRead'              => consistent_read)
       res  = request_info(link, QSdbGetAttributesParser.new)
-      res[:attributes].each_value do |values|
-        values.collect! { |e| sdb_to_ruby(e) }
+      if res.is_a? Hash
+        res[:attributes].each_value do |values|
+          values.collect! { |e| sdb_to_ruby(e) }
+        end
       end
       res
     rescue Exception

@@ -603,9 +603,10 @@ module Aws
         response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
         if response.respond_to?(:future?) && response.future?
-          response.callback do |response|
-            puts 'parsing=' + response.body
-            parser.parse(response.body)
+          response.callback do |response|            
+            puts 'parsing=' + response.response.inspect
+            parser.parse(response.response)
+            puts parser.result.inspect
             parser.result
           end
           return response
