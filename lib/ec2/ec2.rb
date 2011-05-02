@@ -767,9 +767,12 @@ module Aws
           perms = []
           item.ipPermissions.each do |perm|
             perm.groups.each do |ngroup|
-              perms << {:group => ngroup.groupName,
-                        :owner => ngroup.userId}
-            end
+              perms << {:group_name => ngroup.groupName,
+                        :owner => ngroup.userId,
+                        :from_port => perm.fromPort,
+                        :to_port => perm.toPort,
+                        :protocol => perm.ipProtocol}
+              end
             perm.ipRanges.each do |cidr_ip|
               perms << {:from_port => perm.fromPort,
                         :to_port   => perm.toPort,
