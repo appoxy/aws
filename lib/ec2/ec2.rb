@@ -1227,9 +1227,10 @@ module Aws
     #       :aws_status     => "pending",
     #       :aws_id         => "snap-d56783bc"}
     #
-    def create_snapshot(volume_id)
+    def create_snapshot(volume_id, description="")
       link = generate_request("CreateSnapshot",
-                              "VolumeId" => volume_id.to_s)
+                              "VolumeId" => volume_id.to_s,
+                              "Description" => description.to_s)
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
     rescue Exception
       on_exception
