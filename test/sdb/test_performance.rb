@@ -20,43 +20,62 @@ class TestPerformance < Test::Unit::TestCase
     @sdb_emf = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachineFutureAdapter)
   end
 
+
+
   def test_puts
 
 
-    x = 10
+    x = 50
 
 #    assert @sdb_em.create_domain(@domain), 'create_domain fail'
 #
-#    ret = nil
-#    SimplePerformer.puts_duration("non em puts") do
-#      ret = put_bunch(@sdb, x)
-#    end
-#    x.times do |i|
-#      assert ret[i][:request_id].length > 10
-#    end
-#    SimplePerformer.puts_duration("em puts") do
-#      EventMachine.run do
-#
-#        ret = put_bunch(@sdb_em, x)
-#
-##      unless wait_for_connections_and_stop
-##        Still some connections running, schedule a check later
-#        EventMachine.add_periodic_timer(1) {
-##          wait_for_connections_and_stop
-#          puts 'ret.size = ' + ret.size.to_s
-#          if ret.size >= 50
-#            puts 'stopping loop'
-#            EventMachine.stop
-#          end
-#        }
-##      end
-#      end
-#    end
-#    x.times do |i|
-#      assert ret[i][:request_id].length > 10
-#    end
+    ret = nil
+    timer = SimplePerformer::Aggregator.new
 
-    # try concur style
+    timer.time "non em puts" do
+      SimplePerformer.puts_duration("non em puts") do
+        ret = put_bunch(@sdb, x)
+      end
+    end
+
+    #thread pool style
+    timer.time "thread pool puts" do
+      SimplePerformer.puts_duration("thread pool puts") do
+        puts_with_thread_pool(x)
+      end
+    end
+
+    timer.time "eventmachine puts" do
+      SimplePerformer.puts_duration("eventmachine puts") do
+        puts_with_eventmachine(x)
+      end
+    end
+
+    puts "\n\n" + timer.to_s
+
+  end
+
+
+  def puts_with_thread_pool(x)
+    executor = Concur::Executor.new_thread_pool_executor(10)
+    ret = []
+    x.times do |i|
+      f = executor.execute do
+        r = @sdb.put_attributes(@domain, "#{@item}_#{i}", @attr)
+      end
+      puts 'f=' + f.inspect
+      ret << f
+    end
+    x.times do |i|
+      future = ret[i]
+      fresult = future.get()
+      puts 'fresult=' + fresult.inspect
+      assert fresult[:request_id].length > 10
+    end
+    executor.shutdown
+  end
+
+  def puts_with_eventmachine(x)
     executor = Concur::Executor.new_eventmachine_executor
     ret = []
     x.times do |i|
@@ -68,12 +87,11 @@ class TestPerformance < Test::Unit::TestCase
     end
     x.times do |i|
       future = ret[i]
-      fresult =  future.get()
+      fresult = future.get()
       puts 'fresult=' + fresult.inspect
       assert fresult[:request_id].length > 10
     end
     executor.shutdown
-
   end
 
   def test_selects
@@ -106,7 +124,7 @@ class TestPerformance < Test::Unit::TestCase
     end
     x.times do |i|
       future = ret[i]
-      rresult =  future.get()
+      rresult = future.get()
       puts 'rresult=' + rresult.inspect
       assert rresult[:request_id].length > 10
     end
