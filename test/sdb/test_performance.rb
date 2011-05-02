@@ -17,7 +17,7 @@ class TestPerformance < Test::Unit::TestCase
     # Interface instance
     @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @sdb_em = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachine)
-    @sdb_emf = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachineFutureAdapter)
+    @sdb_emf = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachineConcurAdapter)
   end
 
 

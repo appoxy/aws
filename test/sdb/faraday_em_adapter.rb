@@ -1,5 +1,7 @@
 module Faraday
   class Adapter
+
+    # Basic one, not using concur
     class EventMachine < Faraday::Adapter
       dependency do
         require 'eventmachine'
@@ -42,7 +44,8 @@ module Faraday
       end
     end
 
-    class EventMachineFutureAdapter < Faraday::Adapter
+    # This one uses concur
+    class EventMachineConcurAdapter < Faraday::Adapter
       dependency do
         require 'eventmachine'
         require 'em-http'

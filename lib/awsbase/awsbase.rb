@@ -675,6 +675,7 @@ module Aws
 
   end
 
+  # This class enables callbacks for async requests
   class AsyncAws
     attr_accessor :response, :on_success_blk, :on_error_blk
 
