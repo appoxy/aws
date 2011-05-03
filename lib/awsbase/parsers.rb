@@ -67,6 +67,7 @@ module Aws
       @text    = ''
       @xml_lib = params[:xml_lib] || @@xml_lib
       @logger  = params[:logger]
+      @nil_rep  = params[:nil_rep]
       reset
     end
 
@@ -86,6 +87,25 @@ module Aws
     def text(text)
       @text += text
       tagtext(text)
+    end
+
+    # Convert a SDB value to a Ruby language value by replacing the user's chosen string representation of nil with Ruby nil.
+    # Values are unaffected by this filter unless they match the nil representation exactly.
+    def sdb_to_ruby(value)
+      value.eql?(@nil_rep) ? nil : value
+    end
+
+    # Convert select and query_with_attributes responses to a Ruby language values by replacing the user's chosen string representation of nil with Ruby nil.
+    # (This method affects on a passed response value)
+    def select_response_to_ruby(response) #:nodoc:
+      response[:items].each_with_index do |item, idx|
+        item.each do |key, attributes|
+          attributes.each do |name, values|
+            values.collect! { |value| sdb_to_ruby(value) }
+          end
+        end
+      end
+      response
     end
 
     # Parser method.

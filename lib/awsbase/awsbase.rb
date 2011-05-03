@@ -610,7 +610,7 @@ module Aws
             parser.result
           end
           return response
-        elsif response.async?
+        elsif response.respond_to?(:async?) && response.async?
           ret = ::Aws::AsyncAws.new(response)
           response.callback do |response|
             puts 'parsing=' + response.body

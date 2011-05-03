@@ -103,6 +103,14 @@ module Aws
     end
 
 
+    # Convert a Ruby language value to a SDB value by replacing Ruby nil with the user's chosen string representation of nil.
+    # Non-nil values are unaffected by this filter.
+    def ruby_to_sdb(value)
+#        puts "value #{value} is frozen? #{value.frozen?}"
+#      value.nil? ? @nil_rep : ((value.frozen? || !value.is_a?(String)) ? value : value.force_encoding("UTF-8"))
+      value.nil? ? @nil_rep : value
+    end
+
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     def request_info(request, parser, options={}) #:nodoc:
@@ -149,32 +157,7 @@ module Aws
      %{'#{value.to_s.gsub(/(['\\])/){"#{$1}#{$1}"}}'} if value
     end
 
-    # Convert a Ruby language value to a SDB value by replacing Ruby nil with the user's chosen string representation of nil.
-    # Non-nil values are unaffected by this filter.
-    def ruby_to_sdb(value)
-#        puts "value #{value} is frozen? #{value.frozen?}"
-#      value.nil? ? @nil_rep : ((value.frozen? || !value.is_a?(String)) ? value : value.force_encoding("UTF-8"))
-      value.nil? ? @nil_rep : value
-    end
 
-    # Convert a SDB value to a Ruby language value by replacing the user's chosen string representation of nil with Ruby nil.
-    # Values are unaffected by this filter unless they match the nil representation exactly.
-    def sdb_to_ruby(value)
-      value.eql?(@nil_rep) ? nil : value
-    end
-
-    # Convert select and query_with_attributes responses to a Ruby language values by replacing the user's chosen string representation of nil with Ruby nil.
-    # (This method affects on a passed response value)
-    def select_response_to_ruby(response) #:nodoc:
-      response[:items].each_with_index do |item, idx|
-        item.each do |key, attributes|
-          attributes.each do |name, values|
-            values.collect! { |value| sdb_to_ruby(value) }
-          end
-        end
-      end
-      response
-    end
 
     # Create query expression from an array.
     # (similar to ActiveRecord::Base#find using :conditions => ['query', param1, .., paramN])
@@ -628,7 +611,7 @@ module Aws
         request_params["AttributeName.#{idx+1}"] = attribute
       end
       link   = generate_request("QueryWithAttributes", request_params)
-      result = select_response_to_ruby(request_info(link, QSdbQueryWithAttributesParser.new))
+      result = (request_info(link, QSdbQueryWithAttributesParser.new))
       # return result if no block given
       return result unless block_given?
       # loop if block if given
@@ -638,7 +621,7 @@ module Aws
         # make new request
         request_params['NextToken'] = result[:next_token]
         link                        = generate_request("QueryWithAttributes", request_params)
-        result                      = select_response_to_ruby(request_info(link, QSdbQueryWithAttributesParser.new))
+        result                      = (request_info(link, QSdbQueryWithAttributesParser.new))
       end while true
     rescue Exception
       on_exception
@@ -702,7 +685,7 @@ module Aws
                         'NextToken'        => next_token,
                         'ConsistentRead'   => consistent_read}
       link           = generate_request("Select", request_params, options)
-      result         = select_response_to_ruby(request_info(link, QSdbSelectParser.new, options))
+      result         = (request_info(link, QSdbSelectParser.new, options))
       return result unless block_given?
       # loop if block if given
       begin
@@ -711,7 +694,7 @@ module Aws
         # make new request
         request_params['NextToken'] = result[:next_token]
         link                        = generate_request("Select", request_params)
-        result                      = select_response_to_ruby(request_info(link, QSdbSelectParser.new, options))
+        result                      = (request_info(link, QSdbSelectParser.new, options))
       end while true
     rescue Exception
       on_exception
@@ -753,7 +736,6 @@ module Aws
       def reset
         @result = {}
       end
-
       def tagend(name)
         case name
           when 'Timestamp' then
@@ -834,7 +816,10 @@ module Aws
       def reset
         @result = {:items => []}
       end
-
+      def parse
+        super
+        @result = select_response_to_ruby(self.result)
+      end
       def tagend(name)
         case name
           when 'Name'
@@ -862,7 +847,10 @@ module Aws
       def reset
         @result = {:items => []}
       end
-
+      def parse(response)
+        super
+        @result = select_response_to_ruby(self.result)
+      end
       def tagend(name)
         case name
           when 'Name'
