@@ -594,7 +594,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Stop EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
     #
     #  ec2.stop_instances(['i-f222222d', 'i-f222222e']) #=>
@@ -615,7 +615,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Start EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
     #
     #  ec2.start_instances(['i-f222222d', 'i-f222222e']) #=>
@@ -636,7 +636,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Retreive EC2 instance OS logs. Returns a hash of data or an exception.
     #
     #  ec2.get_console_output('i-f222222d') =>
@@ -793,23 +793,23 @@ module Aws
     #      :aws_owner       => "000000000888",
     #      :aws_description => "a default security group",
     #      :aws_perms       =>
-    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000", 
+    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000",
     #           :ip_ranges=>[{cidr_ip=>"10.1.2.3/32"}, {cidr_ip=>"192.168.1.10/24"}],
     #           :groups =>  [{:owner=>"123456789012", :group_name="default"}] },
-    #    
+    #
     #          {:protocol ="icmp", :from_port="-1", :to_port=>"-1",
-    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}], 
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
     #           :groups=>[] },
-    #      
-    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535", 
-    #           :ip_ranges=>[], 
-    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}], 
-    #          
+    #
+    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535",
+    #           :ip_ranges=>[],
+    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}],
+    #
     #          {:protocol=>"tcp", :from_port="22", :to_port=>"22",
     #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
     #           :groups=>[{:owner=>"", :group_name=>"default"}] },
-    #   
-    #         ..., {...} 
+    #
+    #         ..., {...}
     #        ]
     #
     def describe_security_groups(list=[])
@@ -1269,8 +1269,15 @@ module Aws
     #       :aws_status     => "pending",
     #       :aws_id         => "snap-d56783bc"}
     #
+<<<<<<< HEAD
+    def create_snapshot(volume_id, description=nil)
+      link = generate_request("CreateSnapshot",
+                              "VolumeId" => volume_id.to_s,
+                              "Description" => description)
+=======
     def create_snapshot(volume_id, options={})
       link = generate_request("CreateSnapshot", options.merge({"VolumeId" => volume_id.to_s}))
+>>>>>>> upstream/master
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
     rescue Exception
       on_exception
@@ -1443,7 +1450,7 @@ module Aws
 
     class QEc2IpRangeItemType #:nodoc:
       attr_accessor :cidrIp
-    end  
+    end
 
     class QEc2IpPermissionType #:nodoc:
       attr_accessor :ipProtocol
@@ -1790,12 +1797,12 @@ module Aws
         @result = []
       end
     end
-    
+
     class QEc2StopInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @instance = {} if name == 'item'
       end
-      
+
       def tagend(name)
         case name
           when 'instanceId' then
@@ -1816,7 +1823,7 @@ module Aws
             @result << @instance
         end
       end
-      
+
       def reset
         @result = []
       end
@@ -1826,7 +1833,7 @@ module Aws
       def tagstart(name, attributes)
         @instance = {} if name == 'item'
       end
-      
+
       def tagend(name)
         case name
           when 'instanceId' then
@@ -1847,12 +1854,12 @@ module Aws
             @result << @instance
         end
       end
-      
+
       def reset
         @result = []
       end
     end
-   
+
 
     #-----------------------------------------------------------------
     #      PARSERS: Console
@@ -2126,8 +2133,19 @@ module Aws
     #-----------------------------------------------------------------
 
     class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
+
+      def initialize (params={})
+        @inside_tagset = false
+        super(params)
+      end
+
       def tagstart(name, attributes)
-        @snapshot = {} if name == 'item'
+        case name
+          when 'tagSet'
+            @inside_tagset = true
+          when 'item'
+            @snapshot = {} unless @inside_tagset
+        end
       end
 
       def tagend(name)
@@ -2148,8 +2166,14 @@ module Aws
             @snapshot[:aws_owner] = @text
           when 'volumeSize' then
             @snapshot[:aws_volume_size] = @text.to_i
+          when 'tagSet' then
+            @inside_tagset = false
+          when 'key' then
+            @key = ('aws_tag_' + @text).to_sym
+          when 'value' then
+            @snapshot[@key] = @text
           when 'item' then
-            @result << @snapshot
+            @result << @snapshot unless @inside_tagset
         end
       end
 
