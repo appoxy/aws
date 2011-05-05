@@ -749,50 +749,50 @@ module Aws
     #  ec2.describe_security_groups #=>
     #    [{:aws_group_name  => "default-1",
     #      :aws_owner       => "000000000888",
-    #      :aws_description => "Default allowing SSH, HTTP, and HTTPS ingress",
+    #      :aws_description => "a default security group",
     #      :aws_perms       =>
-    #        [{:owner => "000000000888", :group => "default"},
-    #         {:owner => "000000000888", :group => "default-1"},
-    #         {:to_port => "-1",  :protocol => "icmp", :from_port => "-1",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "22",  :protocol => "tcp",  :from_port => "22",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "80",  :protocol => "tcp",  :from_port => "80",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "443", :protocol => "tcp",  :from_port => "443", :cidr_ips => "0.0.0.0/0"}]},
-    #    ..., {...}]
+    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000", 
+    #           :ip_ranges=>[{cidr_ip=>"10.1.2.3/32"}, {cidr_ip=>"192.168.1.10/24"}],
+    #           :groups =>  [{:owner=>"123456789012", :group_name="default"}] },
+    #    
+    #          {:protocol ="icmp", :from_port="-1", :to_port=>"-1",
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}], 
+    #           :groups=>[] },
+    #      
+    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535", 
+    #           :ip_ranges=>[], 
+    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}], 
+    #          
+    #          {:protocol=>"tcp", :from_port="22", :to_port=>"22",
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
+    #           :groups=>[{:owner=>"", :group_name=>"default"}] },
+    #   
+    #         ..., {...} 
+    #        ]
     #
     def describe_security_groups(list=[])
       link = generate_request("DescribeSecurityGroups", hash_params('GroupName', list.to_a))
       request_cache_or_info(:describe_security_groups, link, QEc2DescribeSecurityGroupsParser, @@bench, list.nil? || list.empty?) do |parser|
-        result = []
-        parser.result.each do |item|
-          perms = []
-          item.ipPermissions.each do |perm|
-            perm.groups.each do |ngroup|
-              perms << {:group => ngroup.groupName,
-                        :owner => ngroup.userId}
-            end
-            perm.ipRanges.each do |cidr_ip|
-              perms << {:from_port => perm.fromPort,
-                        :to_port   => perm.toPort,
-                        :protocol  => perm.ipProtocol,
-                        :cidr_ips  => cidr_ip}
-            end
+      result = []
+      parser.result.each do |item|
+        perms = []
+        item.ipPermissions.each do |perm|
+          current = {:from_port => perm.fromPort,
+                     :to_port => perm.toPort,
+                     :protocol => perm.ipProtocol,
+                     :groups => [], :ip_ranges => []}
+          perm.groups.each do |ngroup|
+             current[:groups] << {:group_name => ngroup.groupName, :owner => ngroup.userId}
           end
-
-          # delete duplication
-          perms.each_index do |i|
-            (0...i).each do |j|
-              if perms[i] == perms[j] then
-                perms[i] = nil; break;
-              end
-            end
+          perm.ipRanges.each do |cidr_ip|
+             current[:ip_ranges] << {:cidr_ip => cidr_ip.cidrIp}
           end
-          perms.compact!
-
-          result << {:aws_owner       => item.ownerId,
-                     :aws_group_name  => item.groupName,
-                     :aws_description => item.groupDescription,
-                     :aws_perms       => perms}
-
+        perms << current
+        end
+        result << {:aws_owner       => item.ownerId,
+                   :aws_group_name  => item.groupName,
+                   :aws_description => item.groupDescription,
+                   :aws_perms       => perms}
         end
         result
       end
@@ -1400,6 +1400,10 @@ module Aws
       attr_accessor :groupName
     end
 
+    class QEc2IpRangeItemType #:nodoc:
+      attr_accessor :cidrIp
+    end  
+
     class QEc2IpPermissionType #:nodoc:
       attr_accessor :ipProtocol
       attr_accessor :fromPort
@@ -1429,35 +1433,32 @@ module Aws
               @perm.groups   = []
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups'
               @sgroup = QEc2UserIdGroupPairType.new
+            elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/ipRanges'
+              @sIpRange = QEc2IpRangeItemType.new
             end
         end
       end
 
       def tagend(name)
         case name
-          when 'ownerId' then
-            @group.ownerId = @text
-          when 'groupDescription' then
-            @group.groupDescription = @text
+          when 'ownerId'          then @group.ownerId   = @text
+          when 'groupDescription' then @group.groupDescription = @text
           when 'groupName'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item'
-              @group.groupName = @text
+              @group.groupName  = @text
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups/item'
               @sgroup.groupName = @text
             end
-          when 'ipProtocol' then
-            @perm.ipProtocol = @text
-          when 'fromPort' then
-            @perm.fromPort = @text
-          when 'toPort' then
-            @perm.toPort = @text
-          when 'userId' then
-            @sgroup.userId = @text
-          when 'cidrIp' then
-            @perm.ipRanges << @text
+          when 'ipProtocol'       then @perm.ipProtocol = @text
+          when 'fromPort'         then @perm.fromPort   = @text
+          when 'toPort'           then @perm.toPort     = @text
+          when 'userId'           then @sgroup.userId   = @text
+          when 'cidrIp'           then @sIpRange.cidrIp = @text
           when 'item'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups'
               @perm.groups << @sgroup
+            elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/ipRanges'
+              @perm.ipRanges << @sIpRange
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions'
               @group.ipPermissions << @perm
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo'
