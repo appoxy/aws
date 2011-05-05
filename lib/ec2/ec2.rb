@@ -594,7 +594,49 @@ module Aws
     rescue Exception
       on_exception
     end
-
+    
+    # Stop EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
+    #
+    #  ec2.stop_instances(['i-f222222d', 'i-f222222e']) #=>
+    #    [{:aws_instance_id         => "i-f222222d",
+    #      :aws_current_state_code  => 64,
+    #      :aws_current_state       => "stopping",
+    #      :aws_prev_state_code     => 16,
+    #      :aws_prev_state          => "running"},
+    #     {:aws_instance_id         => "i-f222222e",
+    #      :aws_current_state_code  => 64,
+    #      :aws_current_state       => "stopping",
+    #      :aws_prev_state_code     => 16,
+    #      :aws_prev_state          => "running"}]
+    #
+    def stop_instances(list=[])
+      link = generate_request("StopInstances", hash_params('InstanceId', list.to_a))
+      request_info(link, QEc2StopInstancesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
+    # Start EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
+    #
+    #  ec2.start_instances(['i-f222222d', 'i-f222222e']) #=>
+    #    [{:aws_instance_id         => "i-f222222d",
+    #      :aws_current_state_code  => 0,
+    #      :aws_current_state       => "pending",
+    #      :aws_prev_state_code     => 80,
+    #      :aws_prev_state          => "stopped"},
+    #     {:aws_instance_id         => "i-f222222e",
+    #      :aws_current_state_code  => 0,
+    #      :aws_current_state       => "pending",
+    #      :aws_prev_state_code     => 80,
+    #      :aws_prev_state          => "stopped"}]
+    #
+    def start_instances(list=[])
+      link = generate_request("StartInstances", hash_params('InstanceId', list.to_a))
+      request_info(link, QEc2StartInstancesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
     # Retreive EC2 instance OS logs. Returns a hash of data or an exception.
     #
     #  ec2.get_console_output('i-f222222d') =>
@@ -1748,6 +1790,69 @@ module Aws
         @result = []
       end
     end
+    
+    class QEc2StopInstancesParser < AwsParser #:nodoc:
+      def tagstart(name, attributes)
+        @instance = {} if name == 'item'
+      end
+      
+      def tagend(name)
+        case name
+          when 'instanceId' then
+            @instance[:aws_instance_id] = @text
+          when 'code'
+            if @xmlpath == 'StopInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state_code] = @text.to_i
+            elsif @xmlpath == 'StopInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state_code] = @text.to_i
+            end
+          when 'name'
+            if @xmlpath == 'StopInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state] = @text
+            elsif @xmlpath == 'StopInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state] = @text
+            end
+          when 'item' then
+            @result << @instance
+        end
+      end
+      
+      def reset
+        @result = []
+      end
+    end
+
+    class QEc2StartInstancesParser < AwsParser #:nodoc:
+      def tagstart(name, attributes)
+        @instance = {} if name == 'item'
+      end
+      
+      def tagend(name)
+        case name
+          when 'instanceId' then
+            @instance[:aws_instance_id] = @text
+          when 'code'
+            if @xmlpath == 'StartInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state_code] = @text.to_i
+            elsif @xmlpath == 'StartInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state_code] = @text.to_i
+            end
+          when 'name'
+            if @xmlpath == 'StartInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state] = @text
+            elsif @xmlpath == 'StartInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state] = @text
+            end
+          when 'item' then
+            @result << @instance
+        end
+      end
+      
+      def reset
+        @result = []
+      end
+    end
+   
 
     #-----------------------------------------------------------------
     #      PARSERS: Console
