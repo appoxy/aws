@@ -564,7 +564,7 @@ module Aws
           if options[:block_device_mappings][n][:virtual_name]
             params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
           end
-          if options[:block_device_mappings][n][:virtual_name]
+          if options[:block_device_mappings][n][:device_name]
             params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]  
           end
           if options[:block_device_mappings][n][:ebs_snapshot_id]
