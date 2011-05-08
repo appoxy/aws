@@ -181,9 +181,9 @@ module Aws
     #  key = bucket.get('logs/today/1.log') #=>
     #  puts key.data #=> 'sasfasfasdf'
     #
-    def get(key, headers={})
-      key = S3::Key.create(self, key.to_s) unless key.is_a?(S3::Key)
-      key.get(headers)
+    def get(key,headers={})
+      key = S3::Key.create(self, key.to_s, headers) unless key.is_a?(S3::Key)
+      return key
     end
 
     # Rename object. Returns Aws::S3::Key instance.
