@@ -10,22 +10,23 @@ require 'lib/right_aws.rb'
 testglobs = ["test/ts_right_aws.rb"]
 
 begin
-    require 'jeweler'
-    Jeweler::Tasks.new do |gem|
-        gem.name = "aws"
-        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
-        gem.email = "travis@appoxy.com"
-        gem.homepage = "http://github.com/appoxy/aws/"
-        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
-        gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-        gem.files = FileList['lib/**/*.rb']
-        gem.add_dependency 'uuidtools'
-        gem.add_dependency 'xml-simple'
-      gem.add_dependency 'faraday'
-    end
-    Jeweler::GemcutterTasks.new
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "aws"
+    gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
+    gem.email = "travis@appoxy.com"
+    gem.homepage = "http://github.com/appoxy/aws/"
+    gem.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
+    gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
+    gem.files = FileList['lib/**/*.rb']
+    gem.add_dependency 'uuidtools'
+    gem.add_dependency 'xml-simple'
+    gem.add_dependency 'faraday'
+    gem.add_dependency 'concur', '>=0.0.6'
+  end
+  Jeweler::GemcutterTasks.new
 rescue LoadError
-    puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+  puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
 
 #desc "Analyze code coverage of the unit tests."
@@ -36,54 +37,54 @@ end
 
 desc "Test just the SQS interface"
 task :testsqs do
-    require 'test/test_credentials'
-    require 'test/http_connection'
-    TestCredentials.get_credentials
-    require 'test/sqs/test_sqs.rb'
+  require 'test/test_credentials'
+  require 'test/http_connection'
+  TestCredentials.get_credentials
+  require 'test/sqs/test_sqs.rb'
 end
 
 desc "Test just the S3 interface"
 task :tests3 do
-    require 'test/test_credentials'
-    require 'test/http_connection'
-    TestCredentials.get_credentials
-    require 'test/s3/test_s3.rb'
+  require 'test/test_credentials'
+  require 'test/http_connection'
+  TestCredentials.get_credentials
+  require 'test/s3/test_s3.rb'
 end
 
 desc "Test just the S3 interface using local stubs"
 task :tests3local do
-    require 'test/test_credentials'
-    require 'test/http_connection'
-    TestCredentials.get_credentials
-    require 'test/s3/test_s3_stubbed.rb'
+  require 'test/test_credentials'
+  require 'test/http_connection'
+  TestCredentials.get_credentials
+  require 'test/s3/test_s3_stubbed.rb'
 end
 
 desc "Test just the EC2 interface"
 task :testec2 do
-    require 'test/test_credentials'
-    TestCredentials.get_credentials
-    require 'test/ec2/test_ec2.rb'
+  require 'test/test_credentials'
+  TestCredentials.get_credentials
+  require 'test/ec2/test_ec2.rb'
 end
 
 desc "Test just the SDB interface"
 task :testsdb do
-    require 'test/test_credentials'
-    TestCredentials.get_credentials
-    require 'test/sdb/test_sdb.rb'
+  require 'test/test_credentials'
+  TestCredentials.get_credentials
+  require 'test/sdb/test_sdb.rb'
 end
 
 desc "Test active SDB interface"
 task :testactivesdb do
-    require 'test/test_credentials'
-    TestCredentials.get_credentials
-    require 'test/sdb/test_active_sdb.rb'
+  require 'test/test_credentials'
+  TestCredentials.get_credentials
+  require 'test/sdb/test_active_sdb.rb'
 end
 
 desc "Test CloudFront interface"
 task :testacf do
-    require 'test/test_credentials'
-    TestCredentials.get_credentials
-    require 'test/acf/test_acf.rb'
+  require 'test/test_credentials'
+  TestCredentials.get_credentials
+  require 'test/acf/test_acf.rb'
 end
 
 # vim: syntax=Ruby

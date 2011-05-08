@@ -81,6 +81,8 @@ class TestPerformance < Test::Unit::TestCase
     x.times do |i|
       f = executor.execute do
         r = @sdb_emf.put_attributes(@domain, "#{@item}_#{i}", @attr)
+        puts 'r=' + r.inspect
+        r
       end
       puts 'f=' + f.inspect
       ret << f
