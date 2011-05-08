@@ -949,7 +949,7 @@ module Aws
     #
     # see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/VirtualHosting.html
     def get_link(bucket, key, expires=nil, headers={})
-      generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}"), expires)
+      generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key.to_s}"), expires)
     rescue
       on_exception
     end
