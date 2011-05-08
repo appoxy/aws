@@ -29,7 +29,6 @@ module Aws
   require 'uri'
   require 'xmlsimple'
   require 'net/http'
-#  require 'active_support/core_ext'
 
   require_relative 'utils'
   require_relative 'errors'
