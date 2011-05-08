@@ -93,10 +93,6 @@ module Aws
         @@bench
       end
 
-      def self.bench
-        @@bench
-      end
-
       def self.bench_xml
         @@bench.xml
       end
@@ -140,8 +136,9 @@ module Aws
 
     def init(service_info, aws_access_key_id, aws_secret_access_key, params={}) #:nodoc:
       @params = params
-      raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
-   if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
+      if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
+        raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}")
+      end
       @aws_access_key_id = aws_access_key_id
       @aws_secret_access_key = aws_secret_access_key
       # if the endpoint was explicitly defined - then use it
@@ -603,7 +600,7 @@ module Aws
         response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
         if response.respond_to?(:future?) && response.future?
-          response.callback do |response|            
+          response.callback do |response|
             puts 'parsing=' + response.response.inspect
             parser.parse(response.response)
             puts parser.result.inspect
