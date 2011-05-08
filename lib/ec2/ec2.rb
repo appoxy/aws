@@ -2139,8 +2139,19 @@ module Aws
     #-----------------------------------------------------------------
 
     class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
+      
+      def initialize (params={})
+        @inside_tagset = false
+        super(params)
+      end
+     
       def tagstart(name, attributes)
-        @snapshot = {} if name == 'item'
+        case name
+          when 'tagSet'
+            @inside_tagset = true
+          when 'item'
+            @snapshot = {} unless @inside_tagset
+        end
       end
 
       def tagend(name)
@@ -2161,8 +2172,14 @@ module Aws
             @snapshot[:aws_owner] = @text
           when 'volumeSize' then
             @snapshot[:aws_volume_size] = @text.to_i
+          when 'tagSet' then
+            @inside_tagset = false
+          when 'key' then
+            @key = ('aws_tag_' + @text).to_sym
+          when 'value' then
+            @snapshot[@key] = @text
           when 'item' then
-            @result << @snapshot
+            @result << @snapshot unless @inside_tagset
         end
       end
 
