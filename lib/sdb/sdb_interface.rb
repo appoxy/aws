@@ -26,6 +26,7 @@ module Aws
   class SdbInterface < AwsBase
 
     include AwsBaseInterface
+    include Base3
 
     DEFAULT_HOST               = 'sdb.amazonaws.com'
     DEFAULT_PORT               = 443
@@ -351,12 +352,12 @@ module Aws
     def put_attributes(domain_name, item_name, attributes, replace = false, options={})
       params = {'DomainName' => domain_name,
                 'ItemName'   => item_name}.merge(pack_attributes(attributes, replace))
-      logger.debug 'PUT=' + params.inspect
+      logger.debug 'put_attributes params=' + params.inspect
+      puts "options=" + options.inspect
 
-      #request_data = generate_request("PutAttributes", params, :just_data=>true)
-      request_data = generate_request("PutAttributes", params)
-      p options.inspect
-      #return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new)) if options[:executor]
+      request_data = generate_request("PutAttributes", params, :just_data=>true)
+#      request_data = generate_request("PutAttributes", params)
+      return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new))
 
       begin
         request_info(request_data, QSdbSimpleParser.new, options)

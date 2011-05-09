@@ -37,6 +37,7 @@ module Aws
   require_relative 'utils'
   require_relative 'errors'
   require_relative 'parsers'
+  require_relative 'base_3'
 
 
   class AwsBenchmarkingBlock #:nodoc:
@@ -329,7 +330,7 @@ module Aws
     end
 
     def new_faraday_connection(base_url, options={})
-      faraday_url = "http://#{base_url}"
+      faraday_url = "https://#{base_url}"
 #      puts 'faraday_url=' + faraday_url
       http_conn = Faraday.new(:url=>faraday_url) do |builder| # :url => 'http://sushi.com'
         if options[:adapter]
@@ -359,45 +360,6 @@ module Aws
 
     def close_connection
       close_conn(self.class.connection_name)
-    end
-
-    def aws_execute(request_data, options={})
-      EventMachine.run do
-        puts 'base_url=' + request_data.base_url
-        req = EventMachine::HttpRequest.new(request_data.base_url)
-
-        opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
-
-        if request_data.http_method == :post
-          http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
-        else
-          http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
-        end
-
-        http.errback {
-          puts 'Uh oh'
-          p http.response_header.status
-          p http.response_header
-          p http.response
-          EM.stop
-        }
-        http.callback {
-          puts 'success callback'
-          p options
-          p http.response_header.status
-          p http.response_header
-          p http.response
-          if options[:parser]
-            puts 'parsing'
-            parser = options[:parser]
-            parser.parse(http.response)
-            r = parser.result
-            puts 'r=' + r.inspect
-          end
-
-          EventMachine.stop
-        }
-      end
     end
 
     def request_info2(request, parser, lib_params, connection_name, logger, bench, base_url, options={}, &block) #:nodoc:

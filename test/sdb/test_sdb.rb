@@ -47,7 +47,9 @@ class TestSdb < Test::Unit::TestCase
 
   def test_02_put_attributes
     # put attributes
-    assert @sdb.put_attributes(@domain, @item, @attr)
+    result = @sdb.put_attributes(@domain, @item, @attr)
+    assert result
+    assert result[:box_usage]
     wait SDB_DELAY, 'after putting attributes'
   end
 
