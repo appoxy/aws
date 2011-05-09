@@ -39,7 +39,7 @@ class TestCredentials
         #Dir.chdir do
         begin
 
-            Dir.chdir(File.expand_path("~/.test-configs")) do
+            Dir.chdir(File.expand_path("~/.test_configs")) do
                 credentials = YAML::load(File.open("aws.yml"))
                 @@config = credentials
                 self.aws_access_key_id = credentials["amazon"]["access_key"]

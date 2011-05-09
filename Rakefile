@@ -1,6 +1,7 @@
 # -*- ruby -*-
 
 require 'rubygems'
+#require 'psych'
 #require "rake/testtask"
 #require 'rcov/rcovtask'
 $: << File.dirname(__FILE__)
@@ -12,16 +13,15 @@ begin
     require 'jeweler'
     Jeweler::Tasks.new do |gem|
         gem.name = "aws"
-        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services."
+        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
         gem.email = "travis@appoxy.com"
         gem.homepage = "http://github.com/appoxy/aws/"
-        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services."
+        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
         gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
         gem.files = FileList['lib/**/*.rb']
         gem.add_dependency 'uuidtools'
         gem.add_dependency 'http_connection'
         gem.add_dependency 'xml-simple'
-        gem.add_dependency 'activesupport'
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
@@ -40,14 +40,6 @@ task :testsqs do
     require 'test/http_connection'
     TestCredentials.get_credentials
     require 'test/sqs/test_sqs.rb'
-end
-
-desc "Test just the second generation SQS interface"
-task :testsqs2 do
-    require 'test/test_credentials'
-    require 'test/http_connection'
-    TestCredentials.get_credentials
-    require 'test/sqs/test_right_sqs_gen2.rb'
 end
 
 desc "Test just the S3 interface"
