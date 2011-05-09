@@ -353,7 +353,11 @@ module Aws
       params = {'DomainName' => domain_name,
                 'ItemName'   => item_name}.merge(pack_attributes(attributes, replace))
       logger.debug 'PUT=' + params.inspect
-      link = generate_request("PutAttributes", params)
+
+      request_data = generate_request("PutAttributes", params, :just_data=>true)
+      p request_data
+      return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new))
+
       begin
         request_info(link, QSdbSimpleParser.new, options)
       rescue Aws::AwsError => ex
