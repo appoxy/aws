@@ -72,13 +72,6 @@ task :testsdb do
     require 'test/sdb/test_sdb.rb'
 end
 
-desc "Test active SDB interface"
-task :testactivesdb do
-    require 'test/test_credentials'
-    TestCredentials.get_credentials
-    require 'test/sdb/test_active_sdb.rb'
-end
-
 desc "Test CloudFront interface"
 task :testacf do
     require 'test/test_credentials'

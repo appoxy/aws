@@ -232,7 +232,7 @@ module Aws
       headers.each_pair do |k, v|
         request[k] = v
       end
-      puts "header=" + request['X-Amzn-Authorization']
+#      puts "header=" + request['X-Amzn-Authorization']
 
       #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
       #puts "#{@params[:service]}?#{service_params}\n\n"
