@@ -24,9 +24,9 @@ class TestAlexa < Test::Unit::TestCase
 			TestCredentials.get_credentials
 			rank = @alexa.alexa_rank("http://www.youtube.com")
 			assert ! rank.empty?
-			assert ! rank[:rank][:text].blank?
+			assert ! rank[:rank][:text].empty?
 			assert rank[:rank][:text].to_i > 0
-			assert ! rank[:data_url][:text].blank?
+			assert ! rank[:data_url][:text].empty?
 		end
 
 		def test_alexa_urlinfo
@@ -39,7 +39,7 @@ class TestAlexa < Test::Unit::TestCase
 			TestCredentials.get_credentials
 			category_browse = @alexa.alexa_category_browse("Top/Computers/Software/Operating_Systems")
 			assert ! category_browse.empty?
-			assert ! category_browse[:category_browse_response][:response][:category_browse_result][:alexa][:category_browse][:categories][:category].first[:path][:text].blank?
+			assert ! category_browse[:category_browse_response][:response][:category_browse_result][:alexa][:category_browse][:categories][:category].first[:path][:text].empty?
 			
 		end
 

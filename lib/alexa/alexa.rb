@@ -179,12 +179,8 @@ class Alexa
 		end
 
 		# This is ye olde ActiveSupport camelize, just without the dependency
- 		def camelize(strign, lower_case_and_underscored_word=self, first_letter_in_uppercase = true)
-   		if first_letter_in_uppercase
-     		lower_case_and_underscored_word.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
-   		else
-     		lower_case_and_underscored_word.first.downcase + camelize(lower_case_and_underscored_word)[1..-1]
-   		end
+ 		def camelize(string)
+      string.split('_').map {|w| w.capitalize}.join
  		end
 
 end
@@ -240,7 +236,7 @@ end
 		end
 
 		def symbol_for(name)
-			sym_name = name.sub('aws:','').underscore.to_sym
+			sym_name = Aws::Utils.underscore(name.sub('aws:','')).to_sym
 		end
 
 	end
