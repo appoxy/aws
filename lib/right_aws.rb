@@ -47,6 +47,7 @@ require 'sqs/sqs'
 require 'sdb/sdb_interface'
 require 'acf/acf_interface'
 require 'elb/elb_interface'
+require 'alexa/alexa'
 
 
 # backwards compatible.
