@@ -291,7 +291,7 @@ module Aws
       adapter = lib_params[:adapter]
       puts 'ADAPTER=' + adapter.inspect
       executor = lib_params[:executor]
-      puts 'EXECUTOR=' + executor
+      puts 'EXECUTOR=' + executor.inspect
 
       params = {:exception => AwsError, :logger => logger}
 
@@ -619,7 +619,7 @@ module Aws
         # Exceptions can originate from code directly in the block, or from user
         # code called in the other block which is passed to response.read_body.
         benchblock.service.add! do
-          responsehdr = connection.get(request) do |response|
+          responsehdr = request[:request].run(connection, request[:req_method]) do |response|
             #########
             begin
               @last_response = response
@@ -655,16 +655,29 @@ module Aws
 
         puts 'connection=' + connection.inspect
         puts 'request=' + request.inspect
+        puts 'executor=' + @params.inspect
         response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
         if response.respond_to?(:future?) && response.future?
           response.callback do |response|
             puts 'parsing=' + response.response.inspect
-            parser.parse(response.response)
-            puts parser.result.inspect
-            parser.result
+            begin
+              parser.parse(response.response)
+              puts parser.result.inspect
+              parser.result
+            rescue =>ex
+              puts "EXCEPTION"+ex.inspect
+            end
           end
-          return response
+          executor = @params[:executor]
+          if executor
+            f = executor.execute do
+              response
+            end
+            return f
+          else
+            return response
+          end
         elsif response.respond_to?(:async?) && response.async?
           ret = ::Aws::AsyncAws.new(response)
           response.callback do |response|
