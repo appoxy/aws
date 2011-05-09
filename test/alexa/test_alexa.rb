@@ -22,30 +22,30 @@ class TestAlexa < Test::Unit::TestCase
 		def test_rank
 		return
 			TestCredentials.get_credentials
-			rank = @alexa.alexa_rank("http://www.youtube.com")
+			rank = @alexa.rank("http://www.youtube.com")
 			assert ! rank.empty?
 			assert ! rank[:rank][:text].empty?
 			assert rank[:rank][:text].to_i > 0
 			assert ! rank[:data_url][:text].empty?
 		end
 
-		def test_alexa_urlinfo
+		def test_urlinfo
 			TestCredentials.get_credentials
-			result = @alexa.alexa_url_info("http://www.yahoo.com")
+			result = @alexa.url_info("http://www.yahoo.com")
 			assert result[:url_info_response][:response][:url_info_result][:alexa][:contact_info][:company_stock_ticker][:text] == "YHOO"
 		end
 
-		def test_alexa_category_browse
+		def test_category_browse
 			TestCredentials.get_credentials
-			category_browse = @alexa.alexa_category_browse("Top/Computers/Software/Operating_Systems")
+			category_browse = @alexa.category_browse("Top/Computers/Software/Operating_Systems")
 			assert ! category_browse.empty?
 			assert ! category_browse[:category_browse_response][:response][:category_browse_result][:alexa][:category_browse][:categories][:category].first[:path][:text].empty?
 			
 		end
 
-		def test_alexa_category_listings
+		def test_category_listings
 			TestCredentials.get_credentials
-			category_browse = @alexa.alexa_category_listings("Top/Computers/Software/Operating_Systems")
+			category_browse = @alexa.category_listings("Top/Computers/Software/Operating_Systems")
 			assert ! category_browse.empty?
 			assert category_browse[:category_listings_response][:response][:category_listings_result][:alexa][:category_listings][:listings][:listing].length > 0
 		end

@@ -98,9 +98,9 @@ class Alexa
 	# Quickly return the alexa URL info, (rank only)
 	#
 	# Example:
-	# 	alexa_rank("http://www.yahoo.com")[:rank][:text]  # 4
-	def alexa_rank(url, params={}, cache_for = nil)
-		result =  alexa_url_info(url, {:response_groups=>:rank})
+	# 	rank("http://www.yahoo.com")[:rank][:text]  # 4
+	def rank(url, params={}, cache_for = nil)
+		result =  url_info(url, {:response_groups=>:rank})
 		return result[:url_info_response][:response][:url_info_result][:alexa][:traffic_data]
 	end
 
@@ -109,8 +109,8 @@ class Alexa
 	# Override response_groups to set your own.
 	#
 	# Example:
-	#  alexa_url_info("http://www.google.com")[:url_info_response]..
-	def alexa_url_info(url, opts={}, cache_for=nil, parser = QAlexaUrlInfoParser)
+	#  url_info("http://www.google.com")[:url_info_response]..
+	def url_info(url, opts={}, cache_for=nil, parser = QAlexaUrlInfoParser)
 		options = {:response_groups=>VALID_URLINFO_RESPONSE_GROUPS}.merge(opts)
 		request_hash = {}
 		request_hash['Url'] = url
@@ -126,7 +126,7 @@ class Alexa
 
 	# Returns a list of subcategories inside a category
 	#
-  def alexa_category_browse(path, opts={}, cache_for=nil, parser = QAlexaUrlInfoParser)
+  def category_browse(path, opts={}, cache_for=nil, parser = QAlexaUrlInfoParser)
 		options = {:response_groups=>VALID_CATEGORY_BROWSE_RESPONSE_GROUPS}.merge(opts)
 		request_hash = {}
 		request_hash['Path'] = path
@@ -141,7 +141,7 @@ class Alexa
   end
 
 	# Returns a list of category listings
-  def alexa_category_listings(path, cache_for=nil, parser = QAlexaUrlInfoParser)
+  def category_listings(path, cache_for=nil, parser = QAlexaUrlInfoParser)
 		request_hash = {}
 		request_hash['Path'] = path
 		request_hash['ResponseGroup'] = "Listings"
@@ -154,7 +154,7 @@ class Alexa
 		on_exception
   end
 
-  def alexa_sites_linking_in(path, cache_for, parser = QAlexaUrlInfoParser)
+  def sites_linking_in(path, cache_for, parser = QAlexaUrlInfoParser)
 		request_hash = {}
 		request_hash['Path'] = path
 		request_hash['ResponseGroup'] = "SitesLinkingIn"
@@ -167,7 +167,7 @@ class Alexa
 		on_exception
   end
 
-  def alexa_traffic_history
+  def traffic_history
     throw ArgumentError.new("Not Implemented. Sorry!")
   end
 
