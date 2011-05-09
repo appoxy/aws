@@ -32,7 +32,6 @@ module Aws
     DEFAULT_PROTOCOL           = 'https'
     DEFAULT_SERVICE            = '/'
     API_VERSION                = '2009-04-15'
-    DEFAULT_NIL_REPRESENTATION = 'nil'
 
     def self.connection_name
       :s3_connection
@@ -353,9 +352,14 @@ module Aws
       params = {'DomainName' => domain_name,
                 'ItemName'   => item_name}.merge(pack_attributes(attributes, replace))
       logger.debug 'PUT=' + params.inspect
-      link = generate_request("PutAttributes", params)
+
+      #request_data = generate_request("PutAttributes", params, :just_data=>true)
+      request_data = generate_request("PutAttributes", params)
+      p options.inspect
+      #return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new)) if options[:executor]
+
       begin
-        request_info(link, QSdbSimpleParser.new, options)
+        request_info(request_data, QSdbSimpleParser.new, options)
       rescue Aws::AwsError => ex
         # puts "RESCUED in put_attributes: " + $!
         if options[:create_domain] && create_domain_if_not_exist(ex, domain_name)
@@ -456,11 +460,11 @@ module Aws
                               'AttributeName'               => attribute_name,
                               'ConsistentRead'              => consistent_read)
       res  = request_info(link, QSdbGetAttributesParser.new)
-      if res.is_a? Hash
-        res[:attributes].each_value do |values|
-          values.collect! { |e| sdb_to_ruby(e) }
-        end
-      end
+#      if res.is_a? Hash
+#        res[:attributes].each_value do |values|
+#          values.collect! { |e| sdb_to_ruby(e) }
+#        end
+#      end
       res
     rescue Exception
       on_exception
@@ -779,6 +783,11 @@ module Aws
         @result              = {:attributes => {}}
       end
 
+      def parse(xml_text, params={})
+        super
+        @result = select_response_to_ruby(@result)
+      end
+
       def tagend(name)
         case name
           when 'Name' then
@@ -816,9 +825,9 @@ module Aws
       def reset
         @result = {:items => []}
       end
-      def parse
+      def parse(xml_text, params={})
         super
-        @result = select_response_to_ruby(self.result)
+        @result = select_response_to_ruby(@result)
       end
       def tagend(name)
         case name
@@ -847,9 +856,9 @@ module Aws
       def reset
         @result = {:items => []}
       end
-      def parse(response)
+      def parse(xml_text, params={})
         super
-        @result = select_response_to_ruby(self.result)
+        @result = select_response_to_ruby(@result)
       end
       def tagend(name)
         case name

@@ -21,6 +21,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+require_relative 'request_data'
+
 # Test
 module Aws
 
@@ -93,10 +95,6 @@ module Aws
         @@bench
       end
 
-      def self.bench
-        @@bench
-      end
-
       def self.bench_xml
         @@bench.xml
       end
@@ -140,8 +138,9 @@ module Aws
 
     def init(service_info, aws_access_key_id, aws_secret_access_key, params={}) #:nodoc:
       @params = params
-      raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}") \
-   if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
+      if Aws::Utils.blank?(aws_access_key_id) || Aws::Utils.blank?(aws_secret_access_key)
+        raise AwsError.new("AWS access keys are required to operate on #{service_info[:name]}")
+      end
       @aws_access_key_id = aws_access_key_id
       @aws_secret_access_key = aws_secret_access_key
       # if the endpoint was explicitly defined - then use it
@@ -222,9 +221,7 @@ module Aws
         service_params = signed_service_params(aws_secret_key, service_hash, :get, lib_params[:server], lib_params[:service])
       end
 
-      #
-      # use POST method if the length of the query string is too large
-      # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
+      request_data = RequestData.new
       req_method = :get
       if service_params.size > 2000
         req_method = :post
@@ -232,6 +229,25 @@ module Aws
           # resign the request because HTTP verb is included into signature
           service_params = signed_service_params(aws_secret_key, service_hash, :post, lib_params[:server], service)
         end
+      end
+      request_data.host = lib_params[:server]
+      request_data.port = lib_params[:port]
+      request_data.protocol = lib_params[:protocol]
+      request_data.http_method = req_method
+      request_data.path = service
+      request_data.params = service_hash
+      request_data.headers = headers
+      request_data.body = service_params
+      if options[:just_data]
+        puts 'just_data'
+        return request_data
+      end
+
+      #
+      # use POST method if the length of the query string is too large
+      # see http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/MakingRESTRequests.html
+
+      if service_params.size > 2000
         request = Faraday::Request.create
         request.path = service
 #        request = Net::HTTP::Post.new(service)
@@ -240,8 +256,6 @@ module Aws
       else
         request = Faraday::Request.create
         request.path = "#{service}?#{service_params}"
-
-#        request = Net::HTTP::Get.new("#{service}?#{service_params}")
       end
       headers.each_pair do |k, v|
         request[k] = v
@@ -276,6 +290,8 @@ module Aws
       conn_mode = lib_params[:connection_mode]
       adapter = lib_params[:adapter]
       puts 'ADAPTER=' + adapter.inspect
+      executor = lib_params[:executor]
+      puts 'EXECUTOR=' + executor.inspect
 
       params = {:exception => AwsError, :logger => logger}
 
@@ -288,6 +304,7 @@ module Aws
       end
 
       if adapter
+        # uses faraday adapters
         thread = Thread.current
         return thread[base_url] if thread[base_url]
         puts 'EVENTING!'
@@ -344,6 +361,44 @@ module Aws
       close_conn(self.class.connection_name)
     end
 
+    def aws_execute(request_data, options={})
+      EventMachine.run do
+        puts 'base_url=' + request_data.base_url
+        req = EventMachine::HttpRequest.new(request_data.base_url)
+
+        opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
+
+        if request_data.http_method == :post
+          http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
+        else
+          http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
+        end
+
+        http.errback {
+          puts 'Uh oh'
+          p http.response_header.status
+          p http.response_header
+          p http.response
+          EM.stop
+        }
+        http.callback {
+          puts 'success callback'
+          p options
+          p http.response_header.status
+          p http.response_header
+          p http.response
+          if options[:parser]
+            puts 'parsing'
+            parser = options[:parser]
+            parser.parse(http.response)
+            r = parser.result
+            puts 'r=' + r.inspect
+          end
+
+          EventMachine.stop
+        }
+      end
+    end
 
     def request_info2(request, parser, lib_params, connection_name, logger, bench, base_url, options={}, &block) #:nodoc:
       ret = nil
@@ -564,7 +619,7 @@ module Aws
         # Exceptions can originate from code directly in the block, or from user
         # code called in the other block which is passed to response.read_body.
         benchblock.service.add! do
-          responsehdr = connection.get(request) do |response|
+          responsehdr = request[:request].run(connection, request[:req_method]) do |response|
             #########
             begin
               @last_response = response
@@ -600,16 +655,29 @@ module Aws
 
         puts 'connection=' + connection.inspect
         puts 'request=' + request.inspect
+        puts 'executor=' + @params.inspect
         response = request[:request].run(connection, request[:req_method])
         puts 'response=' + response.inspect
         if response.respond_to?(:future?) && response.future?
-          response.callback do |response|            
+          response.callback do |response|
             puts 'parsing=' + response.response.inspect
-            parser.parse(response.response)
-            puts parser.result.inspect
-            parser.result
+            begin
+              parser.parse(response.response)
+              puts parser.result.inspect
+              parser.result
+            rescue =>ex
+              puts "EXCEPTION"+ex.inspect
+            end
           end
-          return response
+          executor = @params[:executor]
+          if executor
+            f = executor.execute do
+              response
+            end
+            return f
+          else
+            return response
+          end
         elsif response.respond_to?(:async?) && response.async?
           ret = ::Aws::AsyncAws.new(response)
           response.callback do |response|

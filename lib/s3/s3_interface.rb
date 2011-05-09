@@ -222,7 +222,7 @@ module Aws
     #
     def create_bucket(bucket, headers={})
       data = nil
-      unless headers[:location].blank?
+      unless headers[:location] && headers[:location].blank?
 #                data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
         location = headers[:location].to_s
         location.upcase! if location == 'eu'
@@ -311,7 +311,7 @@ module Aws
     #                  'max-keys'     => "5"}, ..., {...}]
     #
     def list_bucket(bucket, options={}, headers={})
-      bucket += '?'+options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.blank?
+      bucket += '?'+options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.empty?
       req_hash = generate_rest_request('GET', headers.merge(:url=>bucket))
       request_info(req_hash, S3ListBucketParser.new(:logger => @logger))
     rescue
@@ -961,7 +961,7 @@ module Aws
     #
     # see http://docs.amazonwebservices.com/AmazonS3/2006-03-01/VirtualHosting.html
     def get_link(bucket, key, expires=nil, headers={})
-      generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key}"), expires)
+      generate_link('GET', headers.merge(:url=>"#{bucket}/#{Utils::URLencode key.to_s}"), expires)
     rescue
       on_exception
     end

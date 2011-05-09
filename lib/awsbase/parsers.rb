@@ -1,5 +1,5 @@
 module Aws
-
+  DEFAULT_NIL_REPRESENTATION = "nil"
 #-----------------------------------------------------------------
 
   class RightSaxParserCallback #:nodoc:
@@ -44,11 +44,11 @@ module Aws
 
   class AwsParser #:nodoc:
     # default parsing library
-    DEFAULT_XML_LIBRARY  = 'rexml'
+    DEFAULT_XML_LIBRARY = 'rexml'
     # a list of supported parsers
     @@supported_xml_libs = [DEFAULT_XML_LIBRARY, 'libxml']
 
-    @@xml_lib            = DEFAULT_XML_LIBRARY # xml library name: 'rexml' | 'libxml'
+    @@xml_lib = DEFAULT_XML_LIBRARY # xml library name: 'rexml' | 'libxml'
     def self.xml_lib
       @@xml_lib
     end
@@ -63,11 +63,11 @@ module Aws
 
     def initialize(params={})
       @xmlpath = ''
-      @result  = false
-      @text    = ''
+      @result = false
+      @text = ''
       @xml_lib = params[:xml_lib] || @@xml_lib
-      @logger  = params[:logger]
-      @nil_rep  = params[:nil_rep]
+      @logger = params[:logger]
+      @nil_rep = params[:nil_rep]||DEFAULT_NIL_REPRESENTATION
       reset
     end
 
@@ -98,11 +98,17 @@ module Aws
     # Convert select and query_with_attributes responses to a Ruby language values by replacing the user's chosen string representation of nil with Ruby nil.
     # (This method affects on a passed response value)
     def select_response_to_ruby(response) #:nodoc:
-      response[:items].each_with_index do |item, idx|
-        item.each do |key, attributes|
-          attributes.each do |name, values|
-            values.collect! { |value| sdb_to_ruby(value) }
+      if response[:items]
+        response[:items].each_with_index do |item, idx|
+          item.each do |key, attributes|
+            attributes.each do |name, values|
+              values.collect! { |value| sdb_to_ruby(value) }
+            end
           end
+        end
+      elsif response[:attributes]
+        response[:attributes].each do |name, values|
+          values.collect! { |value| sdb_to_ruby(value) }
         end
       end
       response
@@ -241,7 +247,7 @@ module Aws
 
   class RightHttp2xxParser < AwsParser # :nodoc:
     def parse(response)
-      @result = response.is_a?(Net::HTTPSuccess)
+      @result = response.is_a?(Net::HTTPSuccess)||response.success?
     end
   end
 end

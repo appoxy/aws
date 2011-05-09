@@ -69,7 +69,7 @@ module Aws
         if options[:log]
           request   = aws.last_request ? aws.last_request.path : '-none-'
           puts 'LAST RESPONSE=' + aws.last_response.inspect
-          response  = aws.last_response ? "#{aws.last_response.status} -- #{aws.last_response.body}" : '-none-'
+          response  = aws.last_response ? "#{aws.last_response.body}" : '-none-'
           @response = response
           aws.logger.error error_text
           aws.logger.error "Request was:  #{request}"

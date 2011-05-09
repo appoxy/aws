@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-  s.date = %q{2011-05-02}
+  s.date = %q{2011-05-09}
   s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com}
   s.email = %q{travis@appoxy.com}
   s.extra_rdoc_files = [
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
     "lib/awsbase/benchmark_fix.rb",
     "lib/awsbase/errors.rb",
     "lib/awsbase/parsers.rb",
+    "lib/awsbase/request_data.rb",
     "lib/awsbase/require_relative.rb",
     "lib/awsbase/utils.rb",
     "lib/ec2/ec2.rb",
@@ -46,32 +47,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.7.2}
   s.summary = %q{AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com}
-  s.test_files = [
-    "test/acf/test_acf.rb",
-    "test/acf/test_helper.rb",
-    "test/ec2/test_ec2.rb",
-    "test/ec2/test_helper.rb",
-    "test/ec2/test_mon.rb",
-    "test/elb/test_elb.rb",
-    "test/http_connection.rb",
-    "test/iam/test_iam.rb",
-    "test/rds/test_rds.rb",
-    "test/s3/s3_test_base.rb",
-    "test/s3/test_helper.rb",
-    "test/s3/test_s3.rb",
-    "test/s3/test_s3_class.rb",
-    "test/s3/test_s3_rights.rb",
-    "test/s3/test_s3_stubbed.rb",
-    "test/sdb/faraday_em_adapter.rb",
-    "test/sdb/test_active_sdb.rb",
-    "test/sdb/test_helper.rb",
-    "test/sdb/test_performance.rb",
-    "test/sdb/test_sdb.rb",
-    "test/ses/test_ses.rb",
-    "test/sqs/test_helper.rb",
-    "test/sqs/test_sqs.rb",
-    "test/test_credentials.rb"
-  ]
 
   if s.respond_to? :specification_version then
     s.specification_version = 3

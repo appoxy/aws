@@ -17,7 +17,10 @@ class TestPerformance < Test::Unit::TestCase
     # Interface instance
     @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
     @sdb_em = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachine)
+
     @sdb_emf = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachineConcurAdapter)
+    @executor = Concur::Executor.new_eventmachine_executor
+    @sdb_emf2 = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :executor=>@executor)
   end
 
 
@@ -25,29 +28,35 @@ class TestPerformance < Test::Unit::TestCase
   def test_puts
 
 
-    x = 50
+    x = 1
 
 #    assert @sdb_em.create_domain(@domain), 'create_domain fail'
 #
     ret = nil
     timer = SimplePerformer::Aggregator.new
 
-    timer.time "non em puts" do
-      SimplePerformer.puts_duration("non em puts") do
-        ret = put_bunch(@sdb, x)
-      end
-    end
+#    timer.time "non em puts" do
+#      SimplePerformer.puts_duration("non em puts") do
+#        ret = put_bunch(@sdb, x)
+#      end
+#    end
+#
+#    #thread pool style
+#    timer.time "thread pool puts" do
+#      SimplePerformer.puts_duration("thread pool puts") do
+#        puts_with_thread_pool(x)
+#      end
+#    end
+#
+#    timer.time "eventmachine puts" do
+#      SimplePerformer.puts_duration("eventmachine puts") do
+#        puts_with_eventmachine(x)
+#      end
+#    end
 
-    #thread pool style
-    timer.time "thread pool puts" do
-      SimplePerformer.puts_duration("thread pool puts") do
-        puts_with_thread_pool(x)
-      end
-    end
-
-    timer.time "eventmachine puts" do
+     timer.time "eventmachine puts sugar" do
       SimplePerformer.puts_duration("eventmachine puts") do
-        puts_with_eventmachine(x)
+        puts_with_eventmachine_sugar(x)
       end
     end
 
@@ -94,6 +103,21 @@ class TestPerformance < Test::Unit::TestCase
       assert fresult[:request_id].length > 10
     end
     executor.shutdown
+  end
+
+   def puts_with_eventmachine_sugar(x)
+    ret = []
+    x.times do |i|
+      f = @sdb_emf2.put_attributes(@domain, "#{@item}_#{i}", @attr)
+      puts 'f=' + f.inspect
+      ret << f
+    end
+    x.times do |i|
+      future = ret[i]
+      fresult = future.get()
+      puts 'fresult=' + fresult.inspect
+      assert fresult[:request_id].length > 10
+    end
   end
 
   def test_selects

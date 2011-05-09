@@ -563,6 +563,19 @@ module Aws
         # Otherwise, some of UserData symbols will be lost...
         params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless Aws::Utils.blank?(options[:user_data])
       end
+      unless options[:block_device_mappings].blank?
+        options[:block_device_mappings].size.times do |n|
+          if options[:block_device_mappings][n][:virtual_name]
+            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
+          end
+          if options[:block_device_mappings][n][:device_name]
+            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]  
+          end
+          if options[:block_device_mappings][n][:ebs_snapshot_id]
+            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]  
+          end
+        end
+      end
       link      = generate_request("RunInstances", params)
       #debugger
       instances = request_info(link, QEc2DescribeInstancesParser.new(:logger => @logger))
@@ -598,7 +611,49 @@ module Aws
     rescue Exception
       on_exception
     end
-
+    
+    # Stop EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
+    #
+    #  ec2.stop_instances(['i-f222222d', 'i-f222222e']) #=>
+    #    [{:aws_instance_id         => "i-f222222d",
+    #      :aws_current_state_code  => 64,
+    #      :aws_current_state       => "stopping",
+    #      :aws_prev_state_code     => 16,
+    #      :aws_prev_state          => "running"},
+    #     {:aws_instance_id         => "i-f222222e",
+    #      :aws_current_state_code  => 64,
+    #      :aws_current_state       => "stopping",
+    #      :aws_prev_state_code     => 16,
+    #      :aws_prev_state          => "running"}]
+    #
+    def stop_instances(list=[])
+      link = generate_request("StopInstances", hash_params('InstanceId', list.to_a))
+      request_info(link, QEc2StopInstancesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
+    # Start EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
+    #
+    #  ec2.start_instances(['i-f222222d', 'i-f222222e']) #=>
+    #    [{:aws_instance_id         => "i-f222222d",
+    #      :aws_current_state_code  => 0,
+    #      :aws_current_state       => "pending",
+    #      :aws_prev_state_code     => 80,
+    #      :aws_prev_state          => "stopped"},
+    #     {:aws_instance_id         => "i-f222222e",
+    #      :aws_current_state_code  => 0,
+    #      :aws_current_state       => "pending",
+    #      :aws_prev_state_code     => 80,
+    #      :aws_prev_state          => "stopped"}]
+    #
+    def start_instances(list=[])
+      link = generate_request("StartInstances", hash_params('InstanceId', list.to_a))
+      request_info(link, QEc2StartInstancesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+    
     # Retreive EC2 instance OS logs. Returns a hash of data or an exception.
     #
     #  ec2.get_console_output('i-f222222d') =>
@@ -753,50 +808,50 @@ module Aws
     #  ec2.describe_security_groups #=>
     #    [{:aws_group_name  => "default-1",
     #      :aws_owner       => "000000000888",
-    #      :aws_description => "Default allowing SSH, HTTP, and HTTPS ingress",
+    #      :aws_description => "a default security group",
     #      :aws_perms       =>
-    #        [{:owner => "000000000888", :group => "default"},
-    #         {:owner => "000000000888", :group => "default-1"},
-    #         {:to_port => "-1",  :protocol => "icmp", :from_port => "-1",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "22",  :protocol => "tcp",  :from_port => "22",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "80",  :protocol => "tcp",  :from_port => "80",  :cidr_ips => "0.0.0.0/0"},
-    #         {:to_port => "443", :protocol => "tcp",  :from_port => "443", :cidr_ips => "0.0.0.0/0"}]},
-    #    ..., {...}]
+    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000", 
+    #           :ip_ranges=>[{cidr_ip=>"10.1.2.3/32"}, {cidr_ip=>"192.168.1.10/24"}],
+    #           :groups =>  [{:owner=>"123456789012", :group_name="default"}] },
+    #    
+    #          {:protocol ="icmp", :from_port="-1", :to_port=>"-1",
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}], 
+    #           :groups=>[] },
+    #      
+    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535", 
+    #           :ip_ranges=>[], 
+    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}], 
+    #          
+    #          {:protocol=>"tcp", :from_port="22", :to_port=>"22",
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
+    #           :groups=>[{:owner=>"", :group_name=>"default"}] },
+    #   
+    #         ..., {...} 
+    #        ]
     #
     def describe_security_groups(list=[])
       link = generate_request("DescribeSecurityGroups", hash_params('GroupName', list.to_a))
       request_cache_or_info(:describe_security_groups, link, QEc2DescribeSecurityGroupsParser, @@bench, list.nil? || list.empty?) do |parser|
-        result = []
-        parser.result.each do |item|
-          perms = []
-          item.ipPermissions.each do |perm|
-            perm.groups.each do |ngroup|
-              perms << {:group => ngroup.groupName,
-                        :owner => ngroup.userId}
-            end
-            perm.ipRanges.each do |cidr_ip|
-              perms << {:from_port => perm.fromPort,
-                        :to_port   => perm.toPort,
-                        :protocol  => perm.ipProtocol,
-                        :cidr_ips  => cidr_ip}
-            end
+      result = []
+      parser.result.each do |item|
+        perms = []
+        item.ipPermissions.each do |perm|
+          current = {:from_port => perm.fromPort,
+                     :to_port => perm.toPort,
+                     :protocol => perm.ipProtocol,
+                     :groups => [], :ip_ranges => []}
+          perm.groups.each do |ngroup|
+             current[:groups] << {:group_name => ngroup.groupName, :owner => ngroup.userId}
           end
-
-          # delete duplication
-          perms.each_index do |i|
-            (0...i).each do |j|
-              if perms[i] == perms[j] then
-                perms[i] = nil; break;
-              end
-            end
+          perm.ipRanges.each do |cidr_ip|
+             current[:ip_ranges] << {:cidr_ip => cidr_ip.cidrIp}
           end
-          perms.compact!
-
-          result << {:aws_owner       => item.ownerId,
-                     :aws_group_name  => item.groupName,
-                     :aws_description => item.groupDescription,
-                     :aws_perms       => perms}
-
+        perms << current
+        end
+        result << {:aws_owner       => item.ownerId,
+                   :aws_group_name  => item.groupName,
+                   :aws_description => item.groupDescription,
+                   :aws_perms       => perms}
         end
         result
       end
@@ -1231,9 +1286,8 @@ module Aws
     #       :aws_status     => "pending",
     #       :aws_id         => "snap-d56783bc"}
     #
-    def create_snapshot(volume_id)
-      link = generate_request("CreateSnapshot",
-                              "VolumeId" => volume_id.to_s)
+    def create_snapshot(volume_id, options={})
+      link = generate_request("CreateSnapshot", options.merge({"VolumeId" => volume_id.to_s}))
       request_info(link, QEc2CreateSnapshotParser.new(:logger => @logger))
     rescue Exception
       on_exception
@@ -1404,6 +1458,10 @@ module Aws
       attr_accessor :groupName
     end
 
+    class QEc2IpRangeItemType #:nodoc:
+      attr_accessor :cidrIp
+    end  
+
     class QEc2IpPermissionType #:nodoc:
       attr_accessor :ipProtocol
       attr_accessor :fromPort
@@ -1433,35 +1491,32 @@ module Aws
               @perm.groups   = []
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups'
               @sgroup = QEc2UserIdGroupPairType.new
+            elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/ipRanges'
+              @sIpRange = QEc2IpRangeItemType.new
             end
         end
       end
 
       def tagend(name)
         case name
-          when 'ownerId' then
-            @group.ownerId = @text
-          when 'groupDescription' then
-            @group.groupDescription = @text
+          when 'ownerId'          then @group.ownerId   = @text
+          when 'groupDescription' then @group.groupDescription = @text
           when 'groupName'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item'
-              @group.groupName = @text
+              @group.groupName  = @text
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups/item'
               @sgroup.groupName = @text
             end
-          when 'ipProtocol' then
-            @perm.ipProtocol = @text
-          when 'fromPort' then
-            @perm.fromPort = @text
-          when 'toPort' then
-            @perm.toPort = @text
-          when 'userId' then
-            @sgroup.userId = @text
-          when 'cidrIp' then
-            @perm.ipRanges << @text
+          when 'ipProtocol'       then @perm.ipProtocol = @text
+          when 'fromPort'         then @perm.fromPort   = @text
+          when 'toPort'           then @perm.toPort     = @text
+          when 'userId'           then @sgroup.userId   = @text
+          when 'cidrIp'           then @sIpRange.cidrIp = @text
           when 'item'
             if @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/groups'
               @perm.groups << @sgroup
+            elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions/item/ipRanges'
+              @perm.ipRanges << @sIpRange
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo/item/ipPermissions'
               @group.ipPermissions << @perm
             elsif @xmlpath=='DescribeSecurityGroupsResponse/securityGroupInfo'
@@ -1752,6 +1807,69 @@ module Aws
         @result = []
       end
     end
+    
+    class QEc2StopInstancesParser < AwsParser #:nodoc:
+      def tagstart(name, attributes)
+        @instance = {} if name == 'item'
+      end
+      
+      def tagend(name)
+        case name
+          when 'instanceId' then
+            @instance[:aws_instance_id] = @text
+          when 'code'
+            if @xmlpath == 'StopInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state_code] = @text.to_i
+            elsif @xmlpath == 'StopInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state_code] = @text.to_i
+            end
+          when 'name'
+            if @xmlpath == 'StopInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state] = @text
+            elsif @xmlpath == 'StopInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state] = @text
+            end
+          when 'item' then
+            @result << @instance
+        end
+      end
+      
+      def reset
+        @result = []
+      end
+    end
+
+    class QEc2StartInstancesParser < AwsParser #:nodoc:
+      def tagstart(name, attributes)
+        @instance = {} if name == 'item'
+      end
+      
+      def tagend(name)
+        case name
+          when 'instanceId' then
+            @instance[:aws_instance_id] = @text
+          when 'code'
+            if @xmlpath == 'StartInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state_code] = @text.to_i
+            elsif @xmlpath == 'StartInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state_code] = @text.to_i
+            end
+          when 'name'
+            if @xmlpath == 'StartInstancesResponse/instancesSet/item/currentState'
+              @instance[:aws_current_state] = @text
+            elsif @xmlpath == 'StartInstancesResponse/instancesSet/item/previousState'
+              @instance[:aws_prev_state] = @text
+            end
+          when 'item' then
+            @result << @instance
+        end
+      end
+      
+      def reset
+        @result = []
+      end
+    end
+   
 
     #-----------------------------------------------------------------
     #      PARSERS: Console
@@ -2025,8 +2143,19 @@ module Aws
     #-----------------------------------------------------------------
 
     class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
+      
+      def initialize (params={})
+        @inside_tagset = false
+        super(params)
+      end
+     
       def tagstart(name, attributes)
-        @snapshot = {} if name == 'item'
+        case name
+          when 'tagSet'
+            @inside_tagset = true
+          when 'item'
+            @snapshot = {} unless @inside_tagset
+        end
       end
 
       def tagend(name)
@@ -2047,8 +2176,14 @@ module Aws
             @snapshot[:aws_owner] = @text
           when 'volumeSize' then
             @snapshot[:aws_volume_size] = @text.to_i
+          when 'tagSet' then
+            @inside_tagset = false
+          when 'key' then
+            @key = ('aws_tag_' + @text).to_sym
+          when 'value' then
+            @snapshot[@key] = @text
           when 'item' then
-            @result << @snapshot
+            @result << @snapshot unless @inside_tagset
         end
       end
 
