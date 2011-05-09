@@ -559,7 +559,7 @@ module Aws
         # Otherwise, some of UserData symbols will be lost...
         params['UserData'] = Base64.encode64(options[:user_data]).delete("\n").strip unless Aws::Utils.blank?(options[:user_data])
       end
-      unless options[:block_device_mappings].blank?
+      unless Aws::Utils.blank?(options[:block_device_mappings])
         options[:block_device_mappings].size.times do |n|
           if options[:block_device_mappings][n][:virtual_name]
             params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
