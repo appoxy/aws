@@ -24,10 +24,10 @@
 
 
 # A hack because there's a bug in add! in Benchmark::Tms
-module Benchmark  #:nodoc:
+module Benchmark #:nodoc:
   class Tms #:nodoc:
     def add!(&blk)
-      t = Benchmark::measure(&blk)
+      t       = Benchmark::measure(&blk)
       @utime  = utime + t.utime
       @stime  = stime + t.stime
       @cutime = cutime + t.cutime

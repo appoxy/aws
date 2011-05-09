@@ -175,8 +175,17 @@ class Alexa
 
 		def response_groups_to_param(groups)
 			actual_groups = groups.is_a?(Array) ? groups : [groups]
-			actual_groups.collect{|g| g.to_s.camelize }.join(",")
+			actual_groups.collect{|g| camelize(g.to_s) }.join(",")
 		end
+
+		# This is ye olde ActiveSupport camelize, just without the dependency
+ 		def camelize(strign, lower_case_and_underscored_word=self, first_letter_in_uppercase = true)
+   		if first_letter_in_uppercase
+     		lower_case_and_underscored_word.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+   		else
+     		lower_case_and_underscored_word.first.downcase + camelize(lower_case_and_underscored_word)[1..-1]
+   		end
+ 		end
 
 end
 
