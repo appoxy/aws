@@ -27,6 +27,7 @@ module Aws
 
     USE_100_CONTINUE_PUT_SIZE = 1_000_000
 
+    include Base3
     include AwsBaseInterface
     extend AwsBaseInterface::ClassMethods
 
@@ -158,7 +159,7 @@ module Aws
 
     # Generates request hash for REST API.
     # Assumes that headers[:url] is URL encoded (use CGI::escape)
-    def generate_rest_request(method, headers) # :nodoc:
+    def generate_rest_request(method, headers,params={}) # :nodoc:
       # calculate request data
       server, path, path_to_sign = fetch_request_params(headers)
       data = headers[:data]
@@ -183,11 +184,22 @@ module Aws
       # set other headers
       request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # prepare output hash
+      request_data = RequestData.new
+      request_data.host = server
+      request_data.port = @params[:port]
+      request_data.protocol = @params[:protocol]
+      request_data.http_method = req_method.downcase.to_sym
+      request_data.path = path
+      #request_data.params = service_hash
+      request_data.headers = headers.merge('Authorization'=>"AWS #{@aws_access_key_id}:#{signature}")
+      request_data.body = data if data
+      return request_data if params[:just_data]
       {:request => request,
-       :server => server,
-       :req_method => req_method,
-       :port => @params[:port],
-       :protocol => @params[:protocol]}
+      :server => server,
+      :req_method => req_method,
+      :port => @params[:port],
+      :protocol => @params[:protocol]}
+
     end
 
     # Sends request to Amazon and parses the response.
@@ -207,8 +219,9 @@ module Aws
     #      :creation_date      => "2007-04-19T18:47:43.000Z"}, ..., {...}]
     #
     def list_all_my_buckets(headers={})
-      req_hash = generate_rest_request('GET', headers.merge(:url=>''))
-      request_info(req_hash, S3ListAllMyBucketsParser.new(:logger => @logger))
+      req_hash = generate_rest_request('GET', headers.merge(:url=>''),:just_data=>true)
+      aws_execute(req_hash, :parser=>(S3ListAllMyBucketsParser.new(:logger => @logger)))
+      #request_info(req_hash, S3ListAllMyBucketsParser.new(:logger => @logger))
     rescue
       on_exception
     end
@@ -228,8 +241,9 @@ module Aws
         location.upcase! if location == 'eu'
         data = "<CreateBucketConfiguration><LocationConstraint>#{location}</LocationConstraint></CreateBucketConfiguration>"
       end
-      req_hash = generate_rest_request('PUT', headers.merge(:url=>bucket, :data => data))
-      request_info(req_hash, RightHttp2xxParser.new)
+      req_hash = generate_rest_request('PUT', headers.merge(:url=>bucket, :data => data),{:just_data=>true})
+      aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
+      #request_info(req_hash, RightHttp2xxParser.new)
     rescue Exception => e
       # if the bucket exists AWS returns an error for the location constraint interface. Drop it
       e.is_a?(Aws::AwsError) && e.message.include?('BucketAlreadyOwnedByYou') ? true : on_exception
@@ -244,8 +258,9 @@ module Aws
     #  puts s3.bucket_location('my-awesome-bucket-eu')            #=> 'EU'
     #
     def bucket_location(bucket, headers={})
-      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}?location"))
-      request_info(req_hash, S3BucketLocationParser.new)
+      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}?location"),{:just_data=>true})
+      aws_execute(req_hash, :parser=>(S3BucketLocationParser.new))
+      #request_info(req_hash, S3BucketLocationParser.new)
     rescue
       on_exception
     end
@@ -261,8 +276,9 @@ module Aws
       AwsUtils.mandatory_arguments([:bucket], params)
       AwsUtils.allow_only([:bucket, :headers], params)
       params[:headers] = {} unless params[:headers]
-      req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}?logging"))
-      request_info(req_hash, S3LoggingParser.new)
+      req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}?logging"),{:just_data=>true})
+      aws_execute(req_hash, :parser=>(S3LoggingParser.new))
+      #request_info(req_hash, S3LoggingParser.new)
     rescue
       on_exception
     end
@@ -275,8 +291,9 @@ module Aws
       AwsUtils.mandatory_arguments([:bucket, :xmldoc], params)
       AwsUtils.allow_only([:bucket, :xmldoc, :headers], params)
       params[:headers] = {} unless params[:headers]
-      req_hash = generate_rest_request('PUT', params[:headers].merge(:url=>"#{params[:bucket]}?logging", :data => params[:xmldoc]))
-      request_info(req_hash, S3TrueParser.new)
+      req_hash = generate_rest_request('PUT', params[:headers].merge(:url=>"#{params[:bucket]}?logging", :data => params[:xmldoc]),{:just_data=>true})
+      #request_info(req_hash, S3TrueParser.new)
+      aws_execute(req_hash, :parser=>(S3TrueParser.new))
     rescue
       on_exception
     end
@@ -288,8 +305,9 @@ module Aws
     # See also: force_delete_bucket method
     #
     def delete_bucket(bucket, headers={})
-      req_hash = generate_rest_request('DELETE', headers.merge(:url=>bucket))
-      request_info(req_hash, RightHttp2xxParser.new)
+      req_hash = generate_rest_request('DELETE', headers.merge(:url=>bucket),{:just_data=>true})
+      #request_info(req_hash, RightHttp2xxParser.new)
+      aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
     rescue
       on_exception
     end
@@ -312,8 +330,9 @@ module Aws
     #
     def list_bucket(bucket, options={}, headers={})
       bucket += '?'+options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&') unless options.empty?
-      req_hash = generate_rest_request('GET', headers.merge(:url=>bucket))
-      request_info(req_hash, S3ListBucketParser.new(:logger => @logger))
+      req_hash = generate_rest_request('GET', headers.merge(:url=>bucket),{:just_data=>true})
+      #request_info(req_hash, S3ListBucketParser.new(:logger => @logger))
+      aws_execute(req_hash, :parser=>(S3ListBucketParser.new(:logger => @logger)))
     rescue
       on_exception
     end
@@ -353,8 +372,9 @@ module Aws
           internal_bucket << '?' 
           internal_bucket << internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
         end
-        req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
-        response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
+        req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket),{:just_data=>true})
+        #response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
+        response            = aws_execute(req_hash, :parser=>(S3ImprovedListBucketParser.new(:logger => @logger)))
         there_are_more_keys = response[:is_truncated]
         if (there_are_more_keys)
           internal_options[:marker] = decide_marker(response)
@@ -445,8 +465,9 @@ module Aws
       end
       req_hash = generate_rest_request('PUT', headers.merge(:url =>"#{bucket}/#{CGI::escape key}",
                                                             :data =>data.read,
-                                                            'Content-Length' => data_size.to_s))
-      request_info(req_hash, RightHttp2xxParser.new)
+                                                            'Content-Length' => data_size.to_s),{:just_data=>true})
+      aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
+
     rescue
       on_exception
     end
@@ -491,8 +512,9 @@ module Aws
         params[:headers]['expect'] = '100-continue'
       end
 
-      req_hash = generate_rest_request('PUT', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}", :data=>params[:data]))
-      resp = request_info(req_hash, S3HttpResponseHeadParser.new)
+      req_hash = generate_rest_request('PUT', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}", :data=>params[:data]),{:just_data=>true})
+      #resp = request_info(req_hash, S3HttpResponseHeadParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseHeadParser.new))
       if (params[:md5])
         resp[:verified_md5] = (resp['etag'].gsub(/\"/, '') == params[:md5]) ? true : false
       else
@@ -558,8 +580,9 @@ module Aws
     #
 
     def get(bucket, key, headers={}, &block)
-      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"))
-      request_info(req_hash, S3HttpResponseBodyParser.new, &block)
+      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"),{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseBodyParser.new, &block)
+      aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
     rescue
       on_exception
     end
@@ -609,8 +632,9 @@ module Aws
       Utils.mandatory_arguments([:bucket, :key], params)
       Utils.allow_only([:bucket, :key, :headers, :md5], params)
       params[:headers] = {} unless params[:headers]
-      req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"))
-      resp = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
+      req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"),{:just_data=>true})
+      #resp = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
+      resp = aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
       resp[:verified_md5] = false
       if (params[:md5] && (resp[:headers]['etag'].gsub(/\"/, '') == params[:md5]))
         resp[:verified_md5] = true
@@ -644,8 +668,10 @@ module Aws
     #     "content-length"    => "7"}
     #
     def head(bucket, key, headers={})
-      req_hash = generate_rest_request('HEAD', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"))
-      request_info(req_hash, S3HttpResponseHeadParser.new)
+      req_hash = generate_rest_request('HEAD', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"),{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseHeadParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseHeadParser.new))
+
     rescue
       on_exception
     end
@@ -655,8 +681,9 @@ module Aws
     #  s3.delete('my_awesome_bucket', 'log/curent/1.log') #=> true
     #
     def delete(bucket, key='', headers={})
-      req_hash = generate_rest_request('DELETE', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"))
-      request_info(req_hash, RightHttp2xxParser.new)
+      req_hash = generate_rest_request('DELETE', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"),{:just_data=>true})
+      #request_info(req_hash, RightHttp2xxParser.new)
+      aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
     rescue
       on_exception
     end
@@ -678,8 +705,9 @@ module Aws
       dest_key                            ||= src_key
       headers['x-amz-metadata-directive'] = directive.to_s.upcase
       headers['x-amz-copy-source']        = "#{src_bucket}/#{CGI::escape src_key}"
-      req_hash                            = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"))
-      request_info(req_hash, S3CopyParser.new)
+      req_hash                            = generate_rest_request('PUT', headers.merge(:url=>"#{dest_bucket}/#{CGI::escape dest_key}"),{:just_data=>true})
+      aws_execute(req_hash, :parser=>(S3CopyParser.new))
+      #request_info(req_hash, S3CopyParser.new)
     rescue
       on_exception
     end
@@ -727,8 +755,9 @@ module Aws
     #
     def get_acl(bucket, key='', headers={})
       key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
-      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
-      request_info(req_hash, S3HttpResponseBodyParser.new)
+      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"),{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseBodyParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
     rescue
       on_exception
     end
@@ -757,8 +786,9 @@ module Aws
     #
     def get_acl_parse(bucket, key='', headers={})
       key               = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
-      req_hash          = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"))
-      acl               = request_info(req_hash, S3AclParser.new(:logger => @logger))
+      req_hash          = generate_rest_request('GET', headers.merge(:url=>"#{bucket}#{key}?acl"),{:just_data=>true})
+      #acl               = request_info(req_hash, S3AclParser.new(:logger => @logger))
+      acl               = aws_execute(req_hash, :parser=>(S3AclParser.new(:logger => @logger)))
       result            = {}
       result[:owner]    = acl[:owner]
       result[:grantees] = {}
@@ -781,8 +811,9 @@ module Aws
     # Sets the ACL on a bucket or object.
     def put_acl(bucket, key, acl_xml_doc, headers={})
       key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
-      req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}#{key}?acl", :data=>acl_xml_doc))
-      request_info(req_hash, S3HttpResponseBodyParser.new)
+      req_hash = generate_rest_request('PUT', headers.merge(:url=>"#{bucket}#{key}?acl", :data=>acl_xml_doc),{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseBodyParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
     rescue
       on_exception
     end
@@ -802,16 +833,18 @@ module Aws
     end
 
     def get_bucket_policy(bucket)
-      req_hash = generate_rest_request('GET', {:url=>"#{bucket}?policy"})
-      request_info(req_hash, S3HttpResponseBodyParser.new)
+      req_hash = generate_rest_request('GET', {:url=>"#{bucket}?policy"},{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseBodyParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
     rescue
       on_exception
     end
 
     def put_bucket_policy(bucket, policy)
       key      = Aws::Utils.blank?(key) ? '' : "/#{CGI::escape key}"
-      req_hash = generate_rest_request('PUT', {:url=>"#{bucket}?policy", :data=>policy})
-      request_info(req_hash, S3HttpResponseBodyParser.new)
+      req_hash = generate_rest_request('PUT', {:url=>"#{bucket}?policy", :data=>policy},{:just_data=>true})
+      #request_info(req_hash, S3HttpResponseBodyParser.new)
+      aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
     rescue
       on_exception
     end

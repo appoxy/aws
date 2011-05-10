@@ -5,8 +5,8 @@ class S3TestBase < Test::Unit::TestCase
    def setup
        TestCredentials.get_credentials
        @s3 = Aws::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
-       @bucket = TestCredentials.config['amazon']['my_prefix'] + '_awesome_test_bucket_000A1'
-       @bucket2 = TestCredentials.config['amazon']['my_prefix'] + '_awesome_test_bucket_000A2'
+       @bucket = TestCredentials.config['amazon']['my_prefix'] + '_awesome_test_bucket_1'
+       @bucket2 = TestCredentials.config['amazon']['my_prefix'] + '_awesome_test_bucket_2'
        @key1 = 'test/woohoo1/'
        @key2 = 'test1/key/woohoo2'
        @key3 = 'test2/A%B@C_D&E?F+G=H"I'
