@@ -355,8 +355,9 @@ module Aws
       logger.debug 'put_attributes params=' + params.inspect
       puts "options=" + options.inspect
 
+      # using :just_data, returns a RequestData object filled with everything we need for the request
       request_data = generate_request("PutAttributes", params, :just_data=>true)
-#      request_data = generate_request("PutAttributes", params)
+      # aws_execute is the new, simpler way to execute a request
       return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new))
 
       begin
