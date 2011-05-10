@@ -12,7 +12,7 @@ class TestSdb < Test::Unit::TestCase
     @attr = {'Jon' => %w{beer car}}
     # Interface instance
     @executor = Concur::Executor.new_eventmachine_executor
-    @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :adapter=>Faraday::Adapter::EventMachineFutureAdapter,:executor=>@executor)
+    @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :executor=>@executor)
   end
 
   SDB_DELAY = 2
@@ -49,7 +49,10 @@ class TestSdb < Test::Unit::TestCase
 
   def test_02_put_attributes
     # put attributes
-    assert @sdb.put_attributes(@domain, @item, @attr)
+    result = @sdb.put_attributes(@domain, @item, @attr)
+    puts 'result=' + result.inspect
+    assert result
+    assert result[:box_usage]
     wait SDB_DELAY, 'after putting attributes'
   end
 
