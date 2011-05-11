@@ -6,6 +6,44 @@ module Aws
 
     def aws_execute(request_data, options={})
       if @params[:executor]
+        executor = @params[:executor]
+        puts 'using executor ' + executor.inspect
+        f = executor.execute do |callback|
+          puts 'base_url=' + request_data.base_url
+          req = EventMachine::HttpRequest.new(request_data.base_url)
+
+          opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
+
+          if request_data.http_method == :post
+            http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
+          else
+            http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
+          end
+
+          http.errback {
+            puts 'Uh oh errback'
+            p http.response_header.status
+            p http.response_header
+            p http.response
+#            EM.stop
+            callback.error
+          }
+          http.callback {
+            puts 'success callback'
+            p options
+            p http.response_header.status
+            p http.response_header
+            p http.response
+            if options[:parser]
+              callback.success = parse_response(http.response, options[:parser])
+            end
+#            EventMachine.stop
+          }
+        end
+        puts 'f=' + f.inspect
+        return f
+      elsif @params[:eventmachine]
+        # This isn't actually that useful because you can't get the response, but is here for testing
         EventMachine.run do
           puts 'base_url=' + request_data.base_url
           req = EventMachine::HttpRequest.new(request_data.base_url)

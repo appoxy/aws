@@ -188,6 +188,11 @@ module Aws
 
     # Retrieve a list of SDB domains from Amazon.
     #
+    #
+    # options:
+    #     :max_number_of_domains = nil
+    #     :next_token = nil
+    #
     # Returns a hash:
     #   { :domains     => [domain1, ..., domainN],
     #     :next_token => string || nil,
@@ -204,16 +209,23 @@ module Aws
     # If a block is given, this method yields to it.  If the block returns true, list_domains will continue looping the request.  If the block returns false,
     # list_domains will end.
     #
-    #   sdb.list_domains(10) do |result|   # list by 10 domains per iteration
+    #   sdb.list_domains() do |result|
     #     puts result.inspect
     #     true
     #   end
     #
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_ListDomains.html
     #
-    def list_domains(max_number_of_domains = nil, next_token = nil)
-      request_params = {'MaxNumberOfDomains' => max_number_of_domains,
-                        'NextToken'          => next_token}
+    def list_domains(options={})
+      request_params = {'MaxNumberOfDomains' => options[:max_number_of_domains],
+                        'NextToken'          => options[:next_token]}
+
+      action = "ListDomains"
+      parser = QSdbListDomainParser.new
+      
+      request_data = generate_request(action, request_params, :just_data=>true)
+      return aws_execute(request_data, options.merge(:parser=>parser))
+
       link           = generate_request("ListDomains", request_params)
       result         = request_info(link, QSdbListDomainParser.new)
       # return result if no block given

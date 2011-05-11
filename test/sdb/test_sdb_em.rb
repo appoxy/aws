@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 require File.dirname(__FILE__) + '/../test_credentials.rb'
 require_relative 'faraday_em_adapter'
 
-class TestSdb < Test::Unit::TestCase
+class TestSdbEm < Test::Unit::TestCase
 
   def setup
     TestCredentials.get_credentials
@@ -12,6 +12,7 @@ class TestSdb < Test::Unit::TestCase
     @attr = {'Jon' => %w{beer car}}
     # Interface instance
     @executor = Concur::Executor.new_eventmachine_executor
+#    @executor = Concur::Executor.new_multi_threaded_executor
     @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :executor=>@executor)
   end
 
@@ -31,27 +32,29 @@ class TestSdb < Test::Unit::TestCase
   # Aws::SdbInterface
   #---------------------------
 
-  def test_00_delete_domain
-    # delete the domain to reset all the things
-    assert @sdb.delete_domain(@domain), 'delete_domain fail'
-    wait SDB_DELAY, 'after domain deletion'
-  end
-
-  def test_01_create_domain
-    # check that domain does not exist
-    assert !@sdb.list_domains.get[:domains].include?(@domain)
-    # create domain
-    assert @sdb.create_domain(@domain), 'create_domain fail'
-    wait SDB_DELAY, 'after domain creation'
-    # check that we have received new domain from Amazin
-    assert @sdb.list_domains.get[:domains].include?(@domain)
-  end
+#  def test_00_delete_domain
+#    # delete the domain to reset all the things
+#    assert @sdb.delete_domain(@domain), 'delete_domain fail'
+#    wait SDB_DELAY, 'after domain deletion'
+#  end
+#
+#  def test_01_create_domain
+#    # check that domain does not exist
+#    assert !@sdb.list_domains.get[:domains].include?(@domain)
+#    # create domain
+#    assert @sdb.create_domain(@domain), 'create_domain fail'
+#    wait SDB_DELAY, 'after domain creation'
+#    # check that we have received new domain from Amazin
+#    assert @sdb.list_domains.get[:domains].include?(@domain)
+#  end
 
   def test_02_put_attributes
     # put attributes
     result = @sdb.put_attributes(@domain, @item, @attr)
     puts 'result=' + result.inspect
     assert result
+    result = result.get
+    puts 'result=' + result.inspect
     assert result[:box_usage]
     wait SDB_DELAY, 'after putting attributes'
   end
