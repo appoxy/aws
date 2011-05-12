@@ -50,13 +50,21 @@ class TestSdbEm < Test::Unit::TestCase
 
   def test_02_put_attributes
     # put attributes
-    result = @sdb.put_attributes(@domain, @item, @attr)
-    puts 'result=' + result.inspect
-    assert result
-    result = result.get
-    puts 'result=' + result.inspect
-    assert result[:box_usage]
-    wait SDB_DELAY, 'after putting attributes'
+    results = []
+    50.times do |i|
+      result = @sdb.put_attributes(@domain, @item, @attr)
+      puts 'result=' + result.inspect
+      assert result
+      results << result
+    end
+#      wait SDB_DELAY, 'after putting attributes'
+    results.each_with_index do |f, i|
+      puts 'f=' + f.inspect
+      result = f.get
+      puts i.to_s + ' result=' + result.inspect
+      assert result[:box_usage]
+    end
+
   end
 
   def test_03_get_attributes

@@ -11,6 +11,15 @@ module Aws
       r = "#{protocol}://#{host}"
     end
 
+    def to_hash
+      ret = {}
+      self.instance_variables.each do |v|
+        ret[v] = self.instance_variable_get(v)
+      end
+      puts 'to_hash=' + ret.inspect
+      ret
+    end
+
   end
 
 

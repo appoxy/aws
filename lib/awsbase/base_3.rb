@@ -8,37 +8,24 @@ module Aws
       if @params[:executor]
         executor = @params[:executor]
         puts 'using executor ' + executor.inspect
-        f = executor.execute do |callback|
-          puts 'base_url=' + request_data.base_url
-          req = EventMachine::HttpRequest.new(request_data.base_url)
 
-          opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
+        params_to_send = {:timeout => options[:timeout], :headers => options[:headers]}
+        params_to_send[:base_url] = request_data.base_url
+        params_to_send[:path] = request_data.path
+        params_to_send[:http_method] = request_data.http_method
+        if request_data.http_method == :post
+          params_to_send[:body] = request_data.body
+        else
+          params_to_send[:query] = request_data.body
+        end
 
-          if request_data.http_method == :post
-            http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
+        f = executor.http_request(params_to_send) do |response|
+          if options[:parser]
+            puts 'parsing ' + response.inspect
+            res = parse_response(response, options[:parser])
           else
-            http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
+            raise "no parser yo"
           end
-
-          http.errback {
-            puts 'Uh oh errback'
-            p http.response_header.status
-            p http.response_header
-            p http.response
-#            EM.stop
-            callback.error
-          }
-          http.callback {
-            puts 'success callback'
-            p options
-            p http.response_header.status
-            p http.response_header
-            p http.response
-            if options[:parser]
-              callback.success = parse_response(http.response, options[:parser])
-            end
-#            EventMachine.stop
-          }
         end
         puts 'f=' + f.inspect
         return f
@@ -110,7 +97,7 @@ module Aws
             return parse_response(faraday_response, parser)
           else
             @error_handler = AWSErrorHandler.new(self, parser, :errors_list => self.class.amazon_problems) unless @error_handler
-            check_result = @error_handler.check({:server=>request_data.host,:port=>request_data.port,:request=>request_data,:protocol=>request_data.http_method}, options)
+            check_result = @error_handler.check({:server=>request_data.host, :port=>request_data.port, :request=>request_data, :protocol=>request_data.http_method}, options)
             if check_result
               @error_handler = nil
               return check_result
