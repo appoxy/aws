@@ -249,7 +249,7 @@ module Aws
   class RightHttp2xxParser < AwsParser # :nodoc:
     def parse(response)
       #dunno how to test EM response for a success
-      @result = response.is_a?(Net::HTTPSuccess)||(response.respond_to?(:success?) && response.success?)||(response.respond_to?(:response_header) && response.response_header.status=='200')
+      @result = response.is_a?(Net::HTTPSuccess)||(response.respond_to?(:success?) && response.success?)||(response.respond_to?(:response_header) && response.response_header.status==200)
     end
   end
 end

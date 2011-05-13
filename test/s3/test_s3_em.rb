@@ -9,7 +9,7 @@ class TestS3 < S3TestBase
   #---------------------------
 
   def test_01_create_bucket
-    assert @s3_em.create_bucket(@bucket).get, 'Create_bucket fail'
+    assert @s3_em.create_bucket(@bucket,{:location=>"US"}).get, 'Create_bucket fail'
   end
 
   def test_02_list_all_my_buckets
@@ -43,20 +43,20 @@ class TestS3 < S3TestBase
   end
 
   def test_06_head
-    assert_equal 'Woohoo1!', @s3_em.head(@bucket, @key1)['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo1!'"
+    assert_equal 'Woohoo1!', @s3_em.head(@bucket, @key1).get['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo1!'"
   end
 
 
   def test_07_streaming_get
     resp = String.new
     assert_raise(Aws::AwsError) do
-      @s3_em.get(@bucket, 'undefined/key') do |chunk|
+      @s3_em.get(@bucket, 'undefined/key').get do |chunk|
         resp += chunk
       end
     end
 
     resp = String.new
-    data1 = @s3_em.get(@bucket, @key1) do |chunk|
+    data1 = @s3_em.get(@bucket, @key1).get do |chunk|
       resp += chunk
     end
     assert_equal RIGHT_OBJECT_TEXT, resp, "Object text must be equal to '#{RIGHT_OBJECT_TEXT}'"
@@ -65,7 +65,7 @@ class TestS3 < S3TestBase
   end
 
   def test_08_keys
-    keys = @s3_em.list_bucket(@bucket).map { |b| b[:key] }
+    keys = @s3_em.list_bucket(@bucket).get.map { |b| b[:key] }
     assert_equal keys.size, 3, "There should be 3 keys#{keys.size}"
     assert(keys.include?(@key1))
     assert(keys.include?(@key2))
@@ -75,50 +75,50 @@ class TestS3 < S3TestBase
   def test_09_copy_key
     #--- test COPY
     # copy a key
-    assert @s3_em.copy(@bucket, @key1, @bucket, @key1_copy)
+    assert @s3_em.copy(@bucket, @key1, @bucket, @key1_copy).get
     # check it was copied well
     assert_equal RIGHT_OBJECT_TEXT, @s3_em.get_object(@bucket, @key1_copy), "copied object must have the same data"
     # check meta-headers were copied
-    headers = @s3_em.head(@bucket, @key1_copy)
+    headers = @s3_em.head(@bucket, @key1_copy).get
     assert_equal 'Woohoo1!', headers['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo1!'"
     #--- test REPLACE
-    assert @s3_em.copy(@bucket, @key1, @bucket, @key1_copy, :replace, 'x-amz-meta-family' => 'oooops!')
+    assert @s3_em.copy(@bucket, @key1, @bucket, @key1_copy, :replace, 'x-amz-meta-family' => 'oooops!').get
     # check it was copied well
     assert_equal RIGHT_OBJECT_TEXT, @s3_em.get_object(@bucket, @key1_copy), "copied object must have the same data"
     # check meta-headers were overwrittenn
-    headers = @s3_em.head(@bucket, @key1_copy)
+    headers = @s3_em.head(@bucket, @key1_copy).get
     assert_equal 'oooops!', headers['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'oooops!'"
   end
 
   def test_10_move_key
     # move a key
-    assert @s3_em.move(@bucket, @key1, @bucket, @key1_new_name)
+    assert @s3_em.move(@bucket, @key1, @bucket, @key1_new_name).get
     # check it's data was moved correctly
     assert_equal RIGHT_OBJECT_TEXT, @s3_em.get_object(@bucket, @key1_new_name), "moved object must have the same data"
     # check meta-headers were moved
-    headers = @s3_em.head(@bucket, @key1_new_name)
+    headers = @s3_em.head(@bucket, @key1_new_name).get
     assert_equal 'Woohoo1!', headers['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo1!'"
     # check the original key is not exists any more
-    keys = @s3_em.list_bucket(@bucket).map { |b| b[:key] }
+    keys = @s3_em.list_bucket(@bucket).get.map { |b| b[:key] }
     assert(!keys.include?(@key1))
   end
 
   def test_11_rename_key
     # rename a key
-    assert @s3_em.rename(@bucket, @key2, @key2_new_name)
+    assert @s3_em.rename(@bucket, @key2, @key2_new_name).get
     # check the new key data
     assert_equal RIGHT_OBJECT_TEXT, @s3_em.get_object(@bucket, @key2_new_name), "moved object must have the same data"
     # check meta-headers
-    headers = @s3_em.head(@bucket, @key2_new_name)
+    headers = @s3_em.head(@bucket, @key2_new_name).get
     assert_equal 'Woohoo2!', headers['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo2!'"
     # check the original key is not exists any more
-    keys = @s3_em.list_bucket(@bucket).map { |b| b[:key] }
+    keys = @s3_em.list_bucket(@bucket).get.map { |b| b[:key] }
     assert(!keys.include?(@key2))
   end
 
   def test_12_retrieve_object
     assert_raise(Aws::AwsError) { @s3_em.retrieve_object({:bucket => @bucket, :key => 'undefined/key'}) }
-    data1 = @s3_em.retrieve_object({:bucket => @bucket, :key => @key1_new_name})
+    data1 = @s3_em.retrieve_object({:bucket => @bucket, :key => @key1_new_name}).get
     assert_equal RIGHT_OBJECT_TEXT, data1[:object], "Object text must be equal to '#{RIGHT_OBJECT_TEXT}'"
     assert_equal 'Woohoo1!', data1[:headers]['x-amz-meta-family'], "x-amz-meta-family header must be equal to 'Woohoo1!'"
   end
@@ -152,12 +152,12 @@ class TestS3 < S3TestBase
 #  end
 ##
   def test_99_delete_bucket
-    assert_raise(Aws::AwsError) { @s3_em.delete_bucket(@bucket) }
-    assert @s3_em.clear_bucket(@bucket), 'Clear_bucket fail'
-    assert_equal 0, @s3_em.list_bucket(@bucket).size, 'Bucket must be empty'
-    x = @s3_em.delete_bucket(@bucket)
+    assert_raise(Aws::AwsError) { @s3_em.delete_bucket(@bucket).get }
+    assert @s3_em.clear_bucket(@bucket).get, 'Clear_bucket fail'
+    assert_equal 0, @s3_em.list_bucket(@bucket).get.size, 'Bucket must be empty'
+    x = @s3_em.delete_bucket(@bucket).get
     assert x, "X is #{x.inspect}"
-    assert !@s3_em.list_all_my_buckets.map { |bucket| bucket[:name] }.include?(@bucket), "#{@bucket} must not exist"
+    assert !@s3_em.list_all_my_buckets.get.map { |bucket| bucket[:name] }.include?(@bucket), "#{@bucket} must not exist"
   end
 
 
