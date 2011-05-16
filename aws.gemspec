@@ -24,7 +24,6 @@ Gem::Specification.new do |s|
     "lib/awsbase/errors.rb",
     "lib/awsbase/parsers.rb",
     "lib/awsbase/require_relative.rb",
-    "lib/awsbase/support.rb",
     "lib/awsbase/utils.rb",
     "lib/ec2/ec2.rb",
     "lib/ec2/mon_interface.rb",
