@@ -33,9 +33,9 @@ module Aws
     # not be called directly.
     # Use Aws::S3::Bucket.create or Aws::S3.bucket instead.
     def initialize(s3, name, creation_date=nil, owner=nil)
-      @s3            = s3
-      @name          = name
-      @owner         = owner
+      @s3 = s3
+      @name = name
+      @owner = owner
       @creation_date = creation_date
       if @creation_date && !@creation_date.is_a?(Time)
         @creation_date = Time.parse(@creation_date)
@@ -120,12 +120,12 @@ module Aws
       opt = {}; options.each { |key, value| opt[key.to_s] = value }
       service_data = {}
       service_list = {}
-      list         = []
+      list = []
       @s3.interface.incrementally_list_bucket(@name, opt) do |thislist|
         service_list = thislist
         thislist[:contents].each do |entry|
           owner = S3::Owner.new(entry[:owner_id], entry[:owner_display_name])
-          key   = S3::Key.new(self, entry[:key], nil, {}, {}, entry[:last_modified], entry[:e_tag], entry[:size], entry[:storage_class], owner)
+          key = S3::Key.new(self, entry[:key], nil, {}, {}, entry[:last_modified], entry[:e_tag], entry[:size], entry[:storage_class], owner)
           key.head if head
           list << key
         end
@@ -176,12 +176,24 @@ module Aws
 
     # Retrieve object data from Amazon.
     # The +key+ is a +String+ or Key.
+    # Returns data.
+    #
+    #  data = bucket.get('logs/today/1.log') #=>
+    #  puts data #=> 'sasfasfasdf'
+    #
+    def get(key, headers={})
+      key = S3::Key.create(self, key.to_s) unless key.is_a?(S3::Key)
+      key.get(headers)
+    end
+
+     # Retrieve object data from Amazon.
+    # The +key+ is a +String+ or Key.
     # Returns Key instance.
     #
     #  key = bucket.get('logs/today/1.log') #=>
     #  puts key.data #=> 'sasfasfasdf'
     #
-    def get(key,headers={})
+    def get_key(key, headers={})
       key = S3::Key.create(self, key.to_s, headers) unless key.is_a?(S3::Key)
       return key
     end
