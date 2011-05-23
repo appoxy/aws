@@ -4,8 +4,8 @@ module Aws
   # This is the interface for Amazon CloudWatch.
 
   class Mon < Aws::AwsBase
-    include Aws::AwsBaseInterface
-
+    include AwsBaseInterface
+    include Base3
 
     #Amazon EC2 API version being used
     API_VERSION      = "2009-05-15"
@@ -61,7 +61,7 @@ module Aws
     end
 
 
-    def generate_request(action, params={})
+    def generate_request_old(action, params={})
       service_hash = {"Action"         => action,
                       "AWSAccessKeyId" => @aws_access_key_id,
                       "Version"        => @@api}
@@ -113,8 +113,8 @@ module Aws
 
       @logger.info("list Metrics ")
 
-      link = generate_request("ListMetrics", params)
-      resp = request_info(link, QMonListMetrics.new(:logger => @logger))
+#      link = generate_request("ListMetrics", params)
+#      resp = request_info(link, QMonListMetrics.new(:logger => @logger))
 
     rescue Exception
       on_exception
@@ -134,7 +134,7 @@ module Aws
     #    customUnit:   nil. not supported currently.
     #    namespace:    AWS/EC2
 
-    def get_metric_statistics (measure_name, stats, start_time, end_time, unit, options={})
+    def get_metric_statistics(measure_name, stats, start_time, end_time, unit, options={})
 
       period                = options[:period] || 60
       dimensions            = options[:dimensions] || nil
@@ -163,8 +163,12 @@ module Aws
       #params['CustomUnit'] = customUnit always nil
       params['Namespace'] = namespace
 
-      link                = generate_request("GetMetricStatistics", params)
-      resp                = request_info(link, QMonGetMetricStatistics.new(:logger => @logger))
+#      link                = generate_request("GetMetricStatistics", params)
+#      resp                = request_info(link, QMonGetMetricStatistics.new(:logger => @logger))
+      
+      request_data = generate_request("GetMetricStatistics", params, :just_data=>true)
+      return aws_execute(request_data, options.merge(:parser=>QMonGetMetricStatistics.new))
+
 
     rescue Exception
       on_exception

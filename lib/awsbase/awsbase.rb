@@ -188,8 +188,8 @@ module Aws
       end
     end
 
-    def generate_request(action, params={})
-      generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @params[:api_version], @params, params)
+    def generate_request(action, params={}, options={})
+      generate_request2(@aws_access_key_id, @aws_secret_access_key, action, @params[:api_version], @params, params, options)
     end
 
     # FROM SDB

@@ -28,11 +28,11 @@ module Aws
     include AwsBaseInterface
     include Base3
 
-    DEFAULT_HOST               = 'sdb.amazonaws.com'
-    DEFAULT_PORT               = 443
-    DEFAULT_PROTOCOL           = 'https'
-    DEFAULT_SERVICE            = '/'
-    API_VERSION                = '2009-04-15'
+    DEFAULT_HOST = 'sdb.amazonaws.com'
+    DEFAULT_PORT = 443
+    DEFAULT_PROTOCOL = 'https'
+    DEFAULT_SERVICE = '/'
+    API_VERSION = '2009-04-15'
 
     def self.connection_name
       :s3_connection
@@ -84,11 +84,13 @@ module Aws
     def initialize(aws_access_key_id=nil, aws_secret_access_key=nil, params={})
       @nil_rep = params[:nil_representation] ? params[:nil_representation] : DEFAULT_NIL_REPRESENTATION
       params.delete(:nil_representation)
-      init({:name             => 'SDB',
-            :default_host     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).host : DEFAULT_HOST,
-            :default_port     => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).port : DEFAULT_PORT,
+      init({:name => 'SDB',
+            :default_host => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).host : DEFAULT_HOST,
+            :default_port => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).port : DEFAULT_PORT,
             :default_protocol => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).scheme : DEFAULT_PROTOCOL,
-            :default_service  => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).path : DEFAULT_SERVICE},
+            :default_service => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).path : DEFAULT_SERVICE,
+            :api_version => API_VERSION
+           },
            #             :service_endpoint => ENV['SDB_URL'] ? URI.parse(ENV['SDB_URL']).path   : DEFAULT_ENDPOINT },
            aws_access_key_id || ENV['AWS_ACCESS_KEY_ID'],
            aws_secret_access_key || ENV['AWS_SECRET_ACCESS_KEY'],
@@ -98,7 +100,7 @@ module Aws
     #-----------------------------------------------------------------
     #      Requests
     #-----------------------------------------------------------------
-    def generate_request(action, params={}, options={}) #:nodoc:
+    def generate_request_old(action, params={}, options={}) #:nodoc:
       generate_request2(@aws_access_key_id, @aws_secret_access_key, action, API_VERSION, @params, params, options)
     end
 
@@ -124,7 +126,7 @@ module Aws
     def pack_attributes(attributes, replace = false, key_prefix = "") #:nodoc:
       result = {}
       if attributes
-        idx         = 0
+        idx = 0
         skip_values = attributes.is_a?(Array)
         attributes.each do |attribute, values|
           # set replacement attribute
@@ -154,9 +156,8 @@ module Aws
     #
     def escape(value)
 #       %Q{'#{value.to_s.gsub(/(['\\])/) { "\\#{$1}" }}'} if value
-     %{'#{value.to_s.gsub(/(['\\])/){"#{$1}#{$1}"}}'} if value
+      %{'#{value.to_s.gsub(/(['\\])/) { "#{$1}#{$1}" }}'} if value
     end
-
 
 
     # Create query expression from an array.
@@ -165,13 +166,13 @@ module Aws
     def query_expression_from_array(params) #:nodoc:
       return '' if Aws::Utils.blank?(params)
       query = params[0].to_s
-      i     = 1
+      i = 1
       query.gsub(/(\\)?(\?)/) do
         if $1 # if escaped '\?' is found - replace it by '?' without backslash
           "?"
         else # well, if no backslash precedes '?' then replace it by next param from the list
           ret = escape(params[i])
-          i   +=1
+          i +=1
           ret
         end
       end
@@ -218,16 +219,16 @@ module Aws
     #
     def list_domains(options={})
       request_params = {'MaxNumberOfDomains' => options[:max_number_of_domains],
-                        'NextToken'          => options[:next_token]}
+                        'NextToken' => options[:next_token]}
 
       action = "ListDomains"
       parser = QSdbListDomainParser.new
-      
+
       request_data = generate_request(action, request_params, :just_data=>true)
       return aws_execute(request_data, options.merge(:parser=>parser))
 
-      link           = generate_request("ListDomains", request_params)
-      result         = request_info(link, QSdbListDomainParser.new)
+      link = generate_request("ListDomains", request_params)
+      result = request_info(link, QSdbListDomainParser.new)
       # return result if no block given
       return result unless block_given?
       # loop if block if given
@@ -236,8 +237,8 @@ module Aws
         break unless yield(result) && result[:next_token]
         # make new request
         request_params['NextToken'] = result[:next_token]
-        link                        = generate_request("ListDomains", request_params,:just_data=>true)
-        result                      = aws_execute(link, options.merge(:parser=>QSdbListDomainParser.new))
+        link = generate_request("ListDomains", request_params, :just_data=>true)
+        result = aws_execute(link, options.merge(:parser=>QSdbListDomainParser.new))
       end while true
     rescue Exception
       on_exception
@@ -269,7 +270,7 @@ module Aws
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_ListDomains.html
     #
     def domain_metadata(domain_name)
-      link   = generate_request("DomainMetadata", 'DomainName' => domain_name,:just_data=>true)
+      link = generate_request("DomainMetadata", 'DomainName' => domain_name, :just_data=>true)
       #result = request_info(link, QSdbDomainMetadataParser.new)
       result = aws_execute(link, options.merge(:parser=>QSdbDomainMetadataParser.new))
       return result
@@ -292,7 +293,7 @@ module Aws
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_CreateDomain.html
     def create_domain(domain_name)
       link = generate_request("CreateDomain",
-                              {'DomainName' => domain_name},{:just_data=>true})
+                              {'DomainName' => domain_name}, {:just_data=>true})
       #request_info(link, QSdbSimpleParser.new)
       aws_execute(link, :parser=>QSdbSimpleParser.new)
     rescue Exception
@@ -313,7 +314,7 @@ module Aws
     # see: http://docs.amazonwebservices.com/AmazonSimpleDB/2007-11-07/DeveloperGuide/SDB_API_DeleteDomain.html
     #
     def delete_domain(domain_name)
-      link = generate_request("DeleteDomain",{'DomainName' => domain_name},{:just_data=>true})
+      link = generate_request("DeleteDomain", {'DomainName' => domain_name}, {:just_data=>true})
       #request_info(link, QSdbSimpleParser.new)
       aws_execute(link, :parser=>QSdbSimpleParser.new)
     rescue Exception
@@ -365,7 +366,7 @@ module Aws
     #
     def put_attributes(domain_name, item_name, attributes, replace = false, options={})
       params = {'DomainName' => domain_name,
-                'ItemName'   => item_name}.merge(pack_attributes(attributes, replace))
+                'ItemName' => item_name}.merge(pack_attributes(attributes, replace))
       logger.debug 'put_attributes params=' + params.inspect
       puts "options=" + options.inspect
 
@@ -402,14 +403,14 @@ module Aws
     # items is an array of Aws::SdbInterface::Item.new(o.id, o.attributes, true)
     def batch_put_attributes(domain_name, items, options={})
       params = {'DomainName' => domain_name}
-      i      = 0
+      i = 0
       items.each do |item|
-        prefix                      = "Item." + i.to_s + "."
+        prefix = "Item." + i.to_s + "."
         params[prefix + "ItemName"] = item.item_name
         params.merge!(pack_attributes(item.attributes, item.replace, prefix))
         i += 1
       end
-      request_data = generate_request("BatchPutAttributes", params,:just_data=>true)
+      request_data = generate_request("BatchPutAttributes", params, :just_data=>true)
       begin
         #request_info(link, QSdbSimpleParser.new, options)
         return aws_execute(request_data, options.merge(:parser=>QSdbSimpleParser.new))
@@ -430,7 +431,7 @@ module Aws
     # items is an array item_name's or Aws::SdbInterface::Item.new(o.id, o.attributes, true)
     def batch_delete_attributes(domain_name, items)
       params = {'DomainName' => domain_name}
-      i      = 0
+      i = 0
       items.each do |item|
         prefix = "Item." + i.to_s + "."
         if item.is_a?(String)
@@ -441,9 +442,9 @@ module Aws
         end
         i += 1
       end
-      request_data = generate_request("BatchDeleteAttributes", params,:just_data=>true)
+      request_data = generate_request("BatchDeleteAttributes", params, :just_data=>true)
       #request_info(link, QSdbSimpleParser.new)
-      return aws_execute(request_data,:parser=>QSdbSimpleParser.new)
+      return aws_execute(request_data, :parser=>QSdbSimpleParser.new)
     rescue Exception
       on_exception
     end
@@ -474,9 +475,9 @@ module Aws
     #
     def get_attributes(domain_name, item_name, attribute_name=nil, consistent_read = nil)
       request_data = generate_request("GetAttributes", {'DomainName' => domain_name,
-                              'ItemName'                    => item_name,
-                              'AttributeName'               => attribute_name,
-                              'ConsistentRead'              => consistent_read},:just_data=>true)
+                                                        'ItemName' => item_name,
+                                                        'AttributeName' => attribute_name,
+                                                        'ConsistentRead' => consistent_read}, :just_data=>true)
       #request_data  = request_info(link, QSdbGetAttributesParser.new)
       aws_execute(request_data, :parser=>QSdbGetAttributesParser.new)
     rescue Exception
@@ -501,8 +502,8 @@ module Aws
     #
     def delete_attributes(domain_name, item_name, attributes = nil)
       params = {'DomainName' => domain_name,
-                'ItemName'   => item_name}.merge(pack_attributes(attributes))
-      link   = generate_request("DeleteAttributes", params,:just_data=>true)
+                'ItemName' => item_name}.merge(pack_attributes(attributes))
+      link = generate_request("DeleteAttributes", params, :just_data=>true)
       #request_info(link, QSdbSimpleParser.new)
       return aws_execute(link, :parser=>QSdbSimpleParser.new)
     rescue Exception
@@ -550,12 +551,12 @@ module Aws
       query_expression = query_expression_from_array(query_expression) if query_expression.is_a?(Array)
       @last_query_expression = query_expression
       #
-      request_params         = {'DomainName'       => domain_name,
-                                'QueryExpression'  => query_expression,
-                                'MaxNumberOfItems' => max_number_of_items,
-                                'NextToken'        => next_token,
-                                'ConsistentRead'   => consistent_read}
-      link                   = generate_request("Query", request_params,:just_data=>true)
+      request_params = {'DomainName' => domain_name,
+                        'QueryExpression' => query_expression,
+                        'MaxNumberOfItems' => max_number_of_items,
+                        'NextToken' => next_token,
+                        'ConsistentRead' => consistent_read}
+      link = generate_request("Query", request_params, :just_data=>true)
       #result                 = request_info(link, QSdbQueryParser.new)
       result = aws_execute(link, options.merge(:parser=>QSdbQueryParser.new))
       # return result if no block given
@@ -566,7 +567,7 @@ module Aws
         break unless yield(result) && result[:next_token]
         # make new request
         request_params['NextToken'] = result[:next_token]
-        link                        = generate_request("Query", request_params,:just_data=>true)
+        link = generate_request("Query", request_params, :just_data=>true)
         #result                      = request_info(link, QSdbQueryParser.new)
         result = aws_execute(link, options.merge(:parser=>QSdbQueryParser.new))
       end while true
@@ -622,15 +623,15 @@ module Aws
       query_expression = query_expression_from_array(query_expression) if query_expression.is_a?(Array)
       @last_query_expression = query_expression
       #
-      request_params         = {'DomainName'       => domain_name,
-                                'QueryExpression'  => query_expression,
-                                'MaxNumberOfItems' => max_number_of_items,
-                                'NextToken'        => next_token,
-                                'ConsistentRead'   => consistent_read}
+      request_params = {'DomainName' => domain_name,
+                        'QueryExpression' => query_expression,
+                        'MaxNumberOfItems' => max_number_of_items,
+                        'NextToken' => next_token,
+                        'ConsistentRead' => consistent_read}
       attributes.each_with_index do |attribute, idx|
         request_params["AttributeName.#{idx+1}"] = attribute
       end
-      link   = generate_request("QueryWithAttributes", request_params,:just_data=>true)
+      link = generate_request("QueryWithAttributes", request_params, :just_data=>true)
       #result = (request_info(link, QSdbQueryWithAttributesParser.new))
       result = aws_execute(link, options.merge(:parser=>QSdbQueryWithAttributesParser.new))
       # return result if no block given
@@ -641,8 +642,8 @@ module Aws
         break unless yield(result) && result[:next_token]
         # make new request
         request_params['NextToken'] = result[:next_token]
-        link                        = generate_request("QueryWithAttributes", request_params,:just_data=>true)
-        result                      = aws_execute(link, options.merge(:parser=>QSdbQueryWithAttributesParser.new))
+        link = generate_request("QueryWithAttributes", request_params, :just_data=>true)
+        result = aws_execute(link, options.merge(:parser=>QSdbQueryWithAttributesParser.new))
       end while true
     rescue Exception
       on_exception
@@ -694,20 +695,20 @@ module Aws
       select_expression = query_expression_from_array(select_expression) if select_expression.is_a?(Array)
       @last_query_expression = select_expression
 
-      options                = {}
+      options = {}
       if next_token.is_a?(Hash)
-        options         = next_token
-        next_token      = options[:next_token]
+        options = next_token
+        next_token = options[:next_token]
         consistent_read = options[:consistent_read]
       end
 
       #
       request_params = {'SelectExpression' => select_expression,
-                        'NextToken'        => next_token,
-                        'ConsistentRead'   => consistent_read}
-      link           = generate_request("Select", request_params, :just_data=>true)
+                        'NextToken' => next_token,
+                        'ConsistentRead' => consistent_read}
+      link = generate_request("Select", request_params, :just_data=>true)
       #result         = (request_info(link, QSdbSelectParser.new, options))
-      result  = aws_execute(link, options.merge(:parser=>QSdbSelectParser.new))
+      result = aws_execute(link, options.merge(:parser=>QSdbSelectParser.new))
       return result unless block_given?
       # loop if block if given
       begin
@@ -715,9 +716,9 @@ module Aws
         break unless yield(result) && result[:next_token]
         # make new request
         request_params['NextToken'] = result[:next_token]
-        link                        = generate_request("Select", request_params,:just_data=>true)
+        link = generate_request("Select", request_params, :just_data=>true)
         #result                      = (request_info(link, QSdbSelectParser.new, options))
-        result                      = aws_execute(link, options.merge(:parser=>QSdbSelectParser.new))
+        result = aws_execute(link, options.merge(:parser=>QSdbSelectParser.new))
       end while true
     rescue Exception
       on_exception
@@ -727,9 +728,9 @@ module Aws
       attr_accessor :item_name, :attributes, :replace
 
       def initialize(item_name, attributes, replace = false)
-        @item_name  = item_name
+        @item_name = item_name
         @attributes = attributes
-        @replace    = replace
+        @replace = replace
       end
     end
 
@@ -759,6 +760,7 @@ module Aws
       def reset
         @result = {}
       end
+
       def tagend(name)
         case name
           when 'Timestamp' then
@@ -799,7 +801,7 @@ module Aws
     class QSdbGetAttributesParser < AwsParser #:nodoc:
       def reset
         @last_attribute_name = nil
-        @result              = {:attributes => {}}
+        @result = {:attributes => {}}
       end
 
       def parse(xml_text, params={})
@@ -844,10 +846,12 @@ module Aws
       def reset
         @result = {:items => []}
       end
+
       def parse(xml_text, params={})
         super
         @result = select_response_to_ruby(@result)
       end
+
       def tagend(name)
         case name
           when 'Name'
@@ -856,7 +860,7 @@ module Aws
                 @item = @text
                 @result[:items] << {@item => {}}
               when 'QueryWithAttributesResponse/QueryWithAttributesResult/Item/Attribute'
-                @attribute                              = @text
+                @attribute = @text
                 @result[:items].last[@item][@attribute] ||= []
             end
           when 'RequestId' then
@@ -875,10 +879,12 @@ module Aws
       def reset
         @result = {:items => []}
       end
+
       def parse(xml_text, params={})
         super
         @result = select_response_to_ruby(@result)
       end
+
       def tagend(name)
         case name
           when 'Name'
@@ -887,7 +893,7 @@ module Aws
                 @item = @text
                 @result[:items] << {@item => {}}
               when 'SelectResponse/SelectResult/Item/Attribute'
-                @attribute                              = @text
+                @attribute = @text
                 @result[:items].last[@item][@attribute] ||= []
             end
           when 'RequestId' then

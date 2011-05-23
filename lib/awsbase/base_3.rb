@@ -34,7 +34,7 @@ module Aws
         require 'em-http'
         require 'fiber'
         EventMachine.run do
-          Fiber.new {
+          fiber = Fiber.new do
             puts 'base_url=' + request_data.base_url
             f = Fiber.current
             req = EventMachine::HttpRequest.new(request_data.base_url)
@@ -70,8 +70,8 @@ module Aws
             end
             @result = http
             EventMachine.stop
-          }.resume
-
+          end
+          fiber.resume
         end
         @result
       else

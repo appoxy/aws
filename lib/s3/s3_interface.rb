@@ -159,7 +159,7 @@ module Aws
 
     # Generates request hash for REST API.
     # Assumes that headers[:url] is URL encoded (use CGI::escape)
-    def generate_rest_request(method, headers,params={}) # :nodoc:
+    def generate_rest_request(method, headers, params={}) # :nodoc:
       # calculate request data
       server, path, path_to_sign = fetch_request_params(headers)
       data = headers[:data]
