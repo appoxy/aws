@@ -118,7 +118,8 @@ module Aws
     # Params:
     #   xml_text         - xml message text(String) or Net:HTTPxxx instance (response)
     #   params[:xml_lib] - library name: 'rexml' | 'libxml'
-    def parse(xml_text, params={})
+    def parse(response, params={})
+      xml_text = response.respond_to?(:response) ? response.response : response
       # Get response body
       unless xml_text.is_a?(String)
         xml_text = xml_text.body.respond_to?(:force_encoding) ? xml_text.body.force_encoding("UTF-8") : xml_text.body
@@ -247,8 +248,7 @@ module Aws
 
   class RightHttp2xxParser < AwsParser # :nodoc:
     def parse(response)
-      # @result = response.is_a?(Net::HTTPSuccess)||Aws::Utils.response_2xx(response.status)
-      return true
+      @result = response.is_a?(Net::HTTPSuccess)||(response.respond_to?(:success?) && response.success?)||(response.respond_to?(:response_header) && response.response_header.status==200)
     end
   end
 end

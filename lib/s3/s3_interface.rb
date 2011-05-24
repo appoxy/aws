@@ -177,7 +177,7 @@ module Aws
       headers['content-type'] ||= ''
       headers['date'] = Time.now.httpdate
       # create request
-#      request = Faraday::Request.create
+#      request = Faraday::Request.create(method)
 #      request.path = path
       req_method = method.upcase
 #      request = "Net::HTTP::#{method.capitalize}".constantize.new(path)
@@ -385,7 +385,7 @@ module Aws
         req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket),{:just_data=>true})
         #response            = request_info(req_hash, S3ImprovedListBucketParser.new(:logger => @logger))
         response            = aws_execute(req_hash, :parser=>(S3ImprovedListBucketParser.new(:logger => @logger)))
-        there_are_more_keys = response[:is_truncated]
+        there_are_more_keys = response.respond_to?(:get) ? response.get[:is_truncated] : response[:is_truncated]
         if (there_are_more_keys)
           internal_options[:marker] = decide_marker(response)
           total_results = response[:contents].length + response[:common_prefixes].length
@@ -646,6 +646,7 @@ module Aws
       req_hash = generate_rest_request('GET', params[:headers].merge(:url=>"#{params[:bucket]}/#{CGI::escape params[:key]}"),{:just_data=>true})
       #resp = request_info(req_hash, S3HttpResponseBodyParser.new, &block)
       resp = aws_execute(req_hash, :parser=>(S3HttpResponseBodyParser.new))
+      resp = resp.respond_to?(:get) ? resp.get : resp
       resp[:verified_md5] = false
       if (params[:md5] && (resp[:headers]['etag'].gsub(/\"/, '') == params[:md5]))
         resp[:verified_md5] = true
@@ -894,7 +895,8 @@ module Aws
       folder_key.chomp!(separator)
       allkeys = []
       incrementally_list_bucket(bucket, {'prefix' => folder_key}) do |results|
-        keys = results[:contents].map { |s3_key| s3_key[:key][/^#{folder_key}($|#{separator}.*)/] ? s3_key[:key] : nil }.compact
+        result = results.respond_to?(:get) ? results.get : results
+        keys = result[:contents].map { |s3_key| s3_key[:key][/^#{folder_key}($|#{separator}.*)/] ? s3_key[:key] : nil }.compact
         keys.each { |key| delete(bucket, key) }
         allkeys << keys
       end
@@ -908,7 +910,8 @@ module Aws
     #  s3.get('my_awesome_bucket', 'log/curent/1.log') #=> 'Ola-la!'
     #
     def get_object(bucket, key, headers={})
-      get(bucket, key, headers)[:object]
+      result = get(bucket, key, headers)
+      return result.respond_to?(:get) ? result.get[:object] : result[:object]
     rescue
       on_exception
     end
@@ -1317,11 +1320,12 @@ module Aws
       def parse(response)
         puts 'in s3bodyparser.parse'
         x = response.body
+#        x = response.respond_to?(:response) ? response.response : response.body
         x= x.respond_to?(:force_encoding) ? x.force_encoding("UTF-8") : x
         puts 'INFO = ' + response.to_s
         @result = {
             :object => x,
-            :headers => headers_to_string(response.headers.to_hash)
+            :headers => headers_to_string((response.headers||response.response_header).to_hash)
         }
       end
     end

@@ -10,7 +10,7 @@ class TestSdb < Test::Unit::TestCase
     @item = 'toys'
     @attr = {'Jon' => %w{beer car}}
     # Interface instance
-    @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key, :eventmachine=>true)
+    @sdb = Aws::SdbInterface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key)
   end
 
   SDB_DELAY = 2

@@ -9,11 +9,11 @@ module Aws
         executor = @params[:executor]
         puts 'using executor ' + executor.inspect
 
-        params_to_send = {:timeout => options[:timeout], :headers => request_data.headers || options[:headers]}
+        params_to_send = {:timeout => options[:timeout], :headers => options[:headers]||request_data.headers}
         params_to_send[:base_url] = request_data.base_url
         params_to_send[:path] = request_data.path
         params_to_send[:http_method] = request_data.http_method
-        if request_data.http_method == :post
+        if request_data.http_method == :post || request_data.http_method == :put
           params_to_send[:body] = request_data.body
         else
           params_to_send[:query] = request_data.body
@@ -34,7 +34,7 @@ module Aws
 #        require 'em-http'
 #        require 'fiber'
 #        EventMachine.run do
-#          fiber = Fiber.new do
+#          #Fiber.new {
 #            puts 'base_url=' + request_data.base_url
 #            f = Fiber.current
 #            req = EventMachine::HttpRequest.new(request_data.base_url)
@@ -70,8 +70,8 @@ module Aws
 #            end
 #            @result = http
 #            EventMachine.stop
-#          end
-#          fiber.resume
+#          #}.resume
+#
 #        end
 #        @result
       else
