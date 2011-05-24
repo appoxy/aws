@@ -58,9 +58,9 @@ module Aws
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
-    def request_info(request, parser, options={})
-      request_info2(request, parser, @params, self.class.connection_name, @logger, @@bench, options)
-    end
+#    def request_info(request, parser, options={})
+#      request_info2(request, parser, @params, self.class.connection_name, @logger, @@bench, options)
+#    end
 
     # todo: convert to xml-simple version and get rid of parser below
     def do_request(action, params, options={})
@@ -160,7 +160,6 @@ module Aws
       params.update(hash_params('LoadBalancerNames.member', lparams[:names])) if lparams[:names]
 
       link = generate_request("DescribeLoadBalancers", params)
-
       resp = request_info(link, QElbDescribeLoadBalancersParser.new(:logger => @logger))
 
     rescue Exception
@@ -245,8 +244,8 @@ module Aws
       end
 
       def tagstart(name, attributes)
-#                puts 'tagstart ' + name + ' -- ' + @xmlpath
-        if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/Listeners')
+#        puts 'tagstart ' + name + ' -- ' + @xmlpath
+        if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/ListenerDescriptions')
           @listener = {}
         end
         if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/AvailabilityZones')
@@ -263,6 +262,7 @@ module Aws
 
 
       def tagend(name)
+#        puts 'tagend ' + name + ' -- ' + @xmlpath
         case name
           when 'LoadBalancerName' then
             @member[:load_balancer_name] = @text

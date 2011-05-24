@@ -134,32 +134,32 @@ module Aws
     #-----------------------------------------------------------------
 
     # Generates request hash for REST API.
-    def generate_request(method, path, body=nil, headers={}) # :nodoc:
-      headers['content-type'] ||= 'text/xml' if body
-      headers['date']          = Time.now.httpdate
-      # Auth
-      signature                = Utils::sign(@aws_secret_access_key, headers['date'])
-      headers['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
-      # Request
-      path                     = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
-      request                  = Net::HTTP.const_get(method.capitalize).new(path)
-      request.body = body if body
-      # Set request headers
-      headers.each { |key, value| request[key.to_s] = value }
-      # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
-       :protocol => @params[:protocol]}
-    end
+#    def generate_request(method, path, body=nil, headers={}) # :nodoc:
+#      headers['content-type'] ||= 'text/xml' if body
+#      headers['date']          = Time.now.httpdate
+#      # Auth
+#      signature                = Utils::sign(@aws_secret_access_key, headers['date'])
+#      headers['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
+#      # Request
+#      path                     = "#{@params[:default_service]}/#{API_VERSION}/#{path}"
+#      request                  = Net::HTTP.const_get(method.capitalize).new(path)
+#      request.body = body if body
+#      # Set request headers
+#      headers.each { |key, value| request[key.to_s] = value }
+#      # prepare output hash
+#      {:request  => request,
+#       :server   => @params[:server],
+#       :port     => @params[:port],
+#       :protocol => @params[:protocol]}
+#    end
 
     # Sends request to Amazon and parses the response.
     # Raises AwsError if any banana happened.
     # todo: remove this and switch to using request_info2
-    def request_info(request, parser, options={}, &block) # :nodoc:
-      conn = get_conn(self.class.connection_name, @params, @logger)
-      request_info_impl(conn, @@bench, request, parser, options, &block)
-    end
+#    def request_info(request, parser, options={}, &block) # :nodoc:
+#      conn = get_conn(self.class.connection_name, @params, @logger)
+#      request_info_impl(conn, @@bench, request, parser, options, &block)
+#    end
 
     #-----------------------------------------------------------------
     #      Helpers:

@@ -26,7 +26,7 @@ module Aws
   class SdbInterface < AwsBase
 
     include AwsBaseInterface
-    include Base3
+#    include Base3
 
     DEFAULT_HOST = 'sdb.amazonaws.com'
     DEFAULT_PORT = 443
@@ -115,11 +115,11 @@ module Aws
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
-    def request_info(request, parser, options={}) #:nodoc:
-#       request_info2(request, parser, :sdb_connection)
-      request_info3(self, request, parser, options)
-
-    end
+#    def request_info(request, parser, options={}) #:nodoc:
+##       request_info2(request, parser, :sdb_connection)
+#      request_info3(self, request, parser, options)
+#
+#    end
 
     # Prepare attributes for putting.
     # (used by put_attributes)

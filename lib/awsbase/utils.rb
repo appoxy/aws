@@ -63,7 +63,7 @@ module Aws
 
     # New signature for ses
     def self.signature_version3(aws_secret_key, now)
-      algorithm =  @@digest256 ? 'HmacSHA256' : 'HmacSHA1'
+      algorithm = @@digest256 ? 'HmacSHA256' : 'HmacSHA1'
       # select a digest
       digest = (algorithm == 'HmacSHA256' ? @@digest256 : @@digest1)
       signature = (Base64.encode64(OpenSSL::HMAC.digest(digest, aws_secret_key, now.httpdate)).strip)
@@ -222,32 +222,40 @@ module Aws
 
     def self.blank?(obj)
       case obj
-      when NilClass, FalseClass
-        true      
-      when TrueClass, Numeric
-        false
-      when Array, Hash
-        obj.empty?
-      when String
-        obj.empty? || obj.strip.empty?
-      else
-        # "", "   ", nil, [], and {} are blank
-        if obj.respond_to?(:empty?) && obj.respond_to?(:strip)
-          obj.empty? or obj.strip.empty?
-        elsif obj.respond_to?(:empty?)
+        when NilClass, FalseClass
+          true
+        when TrueClass, Numeric
+          false
+        when Array, Hash
           obj.empty?
+        when String
+          obj.empty? || obj.strip.empty?
         else
-          !obj
-        end
+          # "", "   ", nil, [], and {} are blank
+          if obj.respond_to?(:empty?) && obj.respond_to?(:strip)
+            obj.empty? or obj.strip.empty?
+          elsif obj.respond_to?(:empty?)
+            obj.empty?
+          else
+            !obj
+          end
       end
+    end
+
+    def self.present?(obj)
+      !blank?(obj)
+    end
+
+    def self.response_2xx(status)
+      status >= 200 && status < 300
     end
 
     def self.underscore(camel_cased_word)
       camel_cased_word.to_s.gsub(/::/, '/').
-        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-        gsub(/([a-z\d])([A-Z])/,'\1_\2').
-        tr("-", "_").
-        downcase
+          gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
+          gsub(/([a-z\d])([A-Z])/, '\1_\2').
+          tr("-", "_").
+          downcase
     end
 
 

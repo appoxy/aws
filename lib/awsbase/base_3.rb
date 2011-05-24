@@ -9,7 +9,7 @@ module Aws
         executor = @params[:executor]
         puts 'using executor ' + executor.inspect
 
-        params_to_send = {:timeout => options[:timeout], :headers => options[:headers]}
+        params_to_send = {:timeout => options[:timeout], :headers => request_data.headers || options[:headers]}
         params_to_send[:base_url] = request_data.base_url
         params_to_send[:path] = request_data.path
         params_to_send[:http_method] = request_data.http_method
@@ -21,7 +21,7 @@ module Aws
 
         f = executor.http_request(params_to_send) do |response|
           if options[:parser]
-            puts 'parsing ' + response.inspect
+            puts 'parsing=' + response.body
             res = parse_response(response, options[:parser])
           else
             raise "no parser yo"
@@ -29,51 +29,51 @@ module Aws
         end
         puts 'f=' + f.inspect
         return f
-      elsif @params[:eventmachine]
-        # This isn't actually that useful because you can't get the response, but is here for testing
-        require 'em-http'
-        require 'fiber'
-        EventMachine.run do
-          fiber = Fiber.new do
-            puts 'base_url=' + request_data.base_url
-            f = Fiber.current
-            req = EventMachine::HttpRequest.new(request_data.base_url)
-
-            opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
-
-            if request_data.http_method == :post
-              http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
-            else
-              http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
-            end
-            if http.error.empty?
-              http.errback {
-                puts 'Uh oh'
-                p http.response_header.status
-                p http.response_header
-                p http.response
-                EM.stop
-                f.resume(http) if f.alive?
-              }
-              http.callback {
-                puts 'success callback'
-                p options
-                p http.response_header.status
-                p http.response_header
-                http.response
-                if options[:parser]
-                  http = parse_response(http.response, options[:parser])
-                end
-                f.resume(http) if f.alive?
-              }
-              Fiber.yield
-            end
-            @result = http
-            EventMachine.stop
-          end
-          fiber.resume
-        end
-        @result
+#      elsif @params[:eventmachine]
+#        # This isn't actually that useful because you can't get the response, but is here for testing
+#        require 'em-http'
+#        require 'fiber'
+#        EventMachine.run do
+#          fiber = Fiber.new do
+#            puts 'base_url=' + request_data.base_url
+#            f = Fiber.current
+#            req = EventMachine::HttpRequest.new(request_data.base_url)
+#
+#            opts = {:timeout => options[:timeout], :head => options[:headers]} #, :ssl => true
+#
+#            if request_data.http_method == :post
+#              http = req.post opts.merge(:path=>request_data.path, :body=>request_data.body)
+#            else
+#              http = req.get opts.merge(:path=>request_data.path, :query=>request_data.body)
+#            end
+#            if http.error.empty?
+#              http.errback {
+#                puts 'Uh oh'
+#                p http.response_header.status
+#                p http.response_header
+#                p http.response
+#                EM.stop
+#                f.resume(http) if f.alive?
+#              }
+#              http.callback {
+#                puts 'success callback'
+#                p options
+#                p http.response_header.status
+#                p http.response_header
+#                http.response
+#                if options[:parser]
+#                  http = parse_response(http.response, options[:parser])
+#                end
+#                f.resume(http) if f.alive?
+#              }
+#              Fiber.yield
+#            end
+#            @result = http
+#            EventMachine.stop
+#          end
+#          fiber.resume
+#        end
+#        @result
       else
         # use straight up http
         conn = new_faraday_connection(request_data.host)
@@ -89,6 +89,8 @@ module Aws
           faraday_response = conn.get "#{request_data.path}?#{request_data.body}", request_data.headers
         end
         puts 'faraday_response = ' + faraday_response.inspect
+        p faraday_response.headers
+        p faraday_response.body
         @last_response = faraday_response
         parser = options[:parser]
         if parser
@@ -110,9 +112,9 @@ module Aws
 
     end
 
-    def parse_response(body, parser)
-      puts 'parsing'
-      parser.parse(body)
+    def parse_response(response, parser)
+      puts 'parsing=' + response.body.to_s
+      parser.parse(response)
       r = parser.result
       puts 'r=' + r.inspect
       r

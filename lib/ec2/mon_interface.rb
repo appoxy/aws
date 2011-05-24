@@ -5,7 +5,7 @@ module Aws
 
   class Mon < Aws::AwsBase
     include AwsBaseInterface
-    include Base3
+#    include Base3
 
     #Amazon EC2 API version being used
     API_VERSION      = "2009-05-15"
@@ -61,44 +61,44 @@ module Aws
     end
 
 
-    def generate_request_old(action, params={})
-      service_hash = {"Action"         => action,
-                      "AWSAccessKeyId" => @aws_access_key_id,
-                      "Version"        => @@api}
-      service_hash.update(params)
-      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-
-      # use POST method if the length of the query string is too large
-      if service_params.size > 2000
-        if signature_version == '2'
-          # resign the request because HTTP verb is included into signature
-          service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
-        end
-        request                 = Net::HTTP::Post.new(service)
-        request.body            = service_params
-        request['Content-Type'] = 'application/x-www-form-urlencoded'
-      else
-        request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
-      end
-
-      #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
-      #puts "#{@params[:service]}?#{service_params}\n\n"
-
-      # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
-       :protocol => @params[:protocol]}
-    end
+#    def generate_request_old(action, params={})
+#      service_hash = {"Action"         => action,
+#                      "AWSAccessKeyId" => @aws_access_key_id,
+#                      "Version"        => @@api}
+#      service_hash.update(params)
+#      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
+#
+#      # use POST method if the length of the query string is too large
+#      if service_params.size > 2000
+#        if signature_version == '2'
+#          # resign the request because HTTP verb is included into signature
+#          service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
+#        end
+#        request                 = Net::HTTP::Post.new(service)
+#        request.body            = service_params
+#        request['Content-Type'] = 'application/x-www-form-urlencoded'
+#      else
+#        request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
+#      end
+#
+#      #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
+#      #puts "#{@params[:service]}?#{service_params}\n\n"
+#
+#      # prepare output hash
+#      {:request  => request,
+#       :server   => @params[:server],
+#       :port     => @params[:port],
+#       :protocol => @params[:protocol]}
+#    end
 
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     # todo: remove this and switch to using request_info2
-    def request_info(request, parser, options={})
-      conn = get_conn(self.class.connection_name, @params, @logger)
-      request_info_impl(conn, @@bench, request, parser, options)
-    end
+#    def request_info(request, parser, options={})
+#      conn = get_conn(self.class.connection_name, @params, @logger)
+#      request_info_impl(conn, @@bench, request, parser, options)
+#    end
 
     #-----------------------------------------------------------------
     #      REQUESTS
@@ -163,11 +163,11 @@ module Aws
       #params['CustomUnit'] = customUnit always nil
       params['Namespace'] = namespace
 
-#      link                = generate_request("GetMetricStatistics", params)
-#      resp                = request_info(link, QMonGetMetricStatistics.new(:logger => @logger))
+      link                = generate_request("GetMetricStatistics", params)
+      resp                = request_info(link, QMonGetMetricStatistics.new(:logger => @logger))
       
-      request_data = generate_request("GetMetricStatistics", params, :just_data=>true)
-      return aws_execute(request_data, options.merge(:parser=>QMonGetMetricStatistics.new))
+#      request_data = generate_request("GetMetricStatistics", params, :just_data=>true)
+#      return aws_execute(request_data, options.merge(:parser=>QMonGetMetricStatistics.new))
 
 
     rescue Exception

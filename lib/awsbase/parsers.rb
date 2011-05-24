@@ -247,7 +247,8 @@ module Aws
 
   class RightHttp2xxParser < AwsParser # :nodoc:
     def parse(response)
-      @result = response.is_a?(Net::HTTPSuccess)||response.success?
+      # @result = response.is_a?(Net::HTTPSuccess)||Aws::Utils.response_2xx(response.status)
+      return true
     end
   end
 end

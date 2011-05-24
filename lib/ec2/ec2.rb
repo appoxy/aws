@@ -146,40 +146,40 @@ module Aws
       amazon_problems = ['InternalError']
     end
 
-
-    def generate_request(action, params={}) #:nodoc:
-      service_hash = {"Action"         => action,
-                      "AWSAccessKeyId" => @aws_access_key_id,
-                      "Version"        => @@api}
-      service_hash.update(params)
-      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
-
-      # use POST method if the length of the query string is too large
-      if service_params.size > 2000
-        if signature_version == '2'
-          # resign the request because HTTP verb is included into signature
-          service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
-        end
-        request                 = Net::HTTP::Post.new(@params[:service])
-        request.body            = service_params
-        request['Content-Type'] = 'application/x-www-form-urlencoded'
-      else
-        request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
-      end
-      # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
-       :protocol => @params[:protocol]}
-    end
+#
+#    def generate_request(action, params={}) #:nodoc:
+#      service_hash = {"Action"         => action,
+#                      "AWSAccessKeyId" => @aws_access_key_id,
+#                      "Version"        => @@api}
+#      service_hash.update(params)
+#      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], @params[:service])
+#
+#      # use POST method if the length of the query string is too large
+#      if service_params.size > 2000
+#        if signature_version == '2'
+#          # resign the request because HTTP verb is included into signature
+#          service_params = signed_service_params(@aws_secret_access_key, service_hash, :post, @params[:server], @params[:service])
+#        end
+#        request                 = Net::HTTP::Post.new(@params[:service])
+#        request.body            = service_params
+#        request['Content-Type'] = 'application/x-www-form-urlencoded'
+#      else
+#        request = Net::HTTP::Get.new("#{@params[:service]}?#{service_params}")
+#      end
+#      # prepare output hash
+#      {:request  => request,
+#       :server   => @params[:server],
+#       :port     => @params[:port],
+#       :protocol => @params[:protocol]}
+#    end
 
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
     # todo: remove this and switch to using request_info2
-    def request_info(request, parser, options={}) #:nodoc:
-      conn = get_conn(self.class.connection_name, @params, @logger)
-      request_info_impl(conn, @@bench, request, parser, options)
-    end
+#    def request_info(request, parser, options={}) #:nodoc:
+#      conn = get_conn(self.class.connection_name, @params, @logger)
+#      request_info_impl(conn, @@bench, request, parser, options)
+#    end
 
     def hash_params(prefix, list) #:nodoc:
       groups = {}

@@ -1,3 +1,4 @@
+gem 'test-unit'
 require File.dirname(__FILE__) + '/test_helper.rb'
 require_relative 's3_test_base'
 require File.dirname(__FILE__) + '/../test_credentials.rb'
@@ -21,6 +22,7 @@ class TestS3 < S3TestBase
   end
 
   def test_04_put
+    puts 'PUTS'
     assert @s3.put(@bucket, @key1, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo1!'), 'Put bucket fail'
     assert @s3.put(@bucket, @key2, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo2!'), 'Put bucket fail'
     assert @s3.put(@bucket, @key3, RIGHT_OBJECT_TEXT, 'x-amz-meta-family'=>'Woohoo3!'), 'Put bucket fail'

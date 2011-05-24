@@ -88,6 +88,8 @@ module Aws
 
   module AwsBaseInterface
 
+    include Base3
+
     DEFAULT_SIGNATURE_VERSION = '2'
 
     module ClassMethods
@@ -239,7 +241,7 @@ module Aws
       request_data.params = service_hash
       request_data.headers = headers
       request_data.body = service_params
-      if options[:just_data]
+      if true || options[:just_data]
         puts 'just_data'
         return request_data
       end
@@ -272,6 +274,14 @@ module Aws
        :server => lib_params[:server],
        :port => lib_params[:port],
        :protocol => lib_params[:protocol]}
+    end
+
+    def request_info(request_data, parser, options={})
+      if request_data.is_a?(RequestData)
+        return aws_execute(request_data, :parser=>parser)
+      end
+      conn = get_conn(self.class.connection_name, @params, @logger)
+      request_info_impl(conn, @@bench, request, parser, options)
     end
 
     def escape_params(service_hash)
@@ -673,10 +683,13 @@ module Aws
     end
 
     def response_2xx(status)
-      status >= 200 && status < 300
+      Aws::Utils.response_2xx(status)
     end
 
     def request_cache_or_info(method, link, parser_class, benchblock, use_cache=true) #:nodoc:
+      # short circuiting this, deprecated
+      return request_info(link, parser_class.new)
+
       # We do not want to break the logic of parsing hence will use a dummy parser to process all the standard
       # steps (errors checking etc). The dummy parser does nothig - just returns back the params it received.
       # If the caching is enabled and hit then throw  AwsNoChange.

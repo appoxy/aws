@@ -22,7 +22,7 @@ begin
     gem.add_dependency 'uuidtools'
     gem.add_dependency 'xml-simple'
     gem.add_dependency 'faraday'
-    gem.add_dependency 'concur', '>=0.0.6'
+    gem.add_dependency 'concur', '>=0.0.8'
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

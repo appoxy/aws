@@ -27,7 +27,7 @@ module Aws
 
     USE_100_CONTINUE_PUT_SIZE = 1_000_000
 
-    include Base3
+#    include Base3
     include AwsBaseInterface
     extend AwsBaseInterface::ClassMethods
 
@@ -140,12 +140,16 @@ module Aws
       # default server to use
       server = @params[:server]
       service = @params[:service].to_s
+      puts 'service=' + service.to_s
       service.chop! if service[%r{/$}] # remove trailing '/' from service
       # extract bucket name and check it's dns compatibility
       headers[:url].to_s[%r{^([a-z0-9._-]*)(/[^?]*)?(\?.+)?}i]
       bucket_name, key_path, params_list = $1, $2, $3
+      puts 'bucket_name=' + bucket_name
+      puts 'key_path=' + key_path.to_s
       # select request model
-      if is_dns_bucket?(bucket_name) and !@params[:virtual_hosting]
+      if is_dns_bucket?(bucket_name) && !@params[:virtual_hosting]
+        puts 'dns_bucket'
         # fix a path
         server   = "#{bucket_name}.#{server}"
         key_path ||= '/'
@@ -160,8 +164,12 @@ module Aws
     # Generates request hash for REST API.
     # Assumes that headers[:url] is URL encoded (use CGI::escape)
     def generate_rest_request(method, headers, params={}) # :nodoc:
+      # todo: can we replace this with generate_request? generate_request(method, headers)
       # calculate request data
       server, path, path_to_sign = fetch_request_params(headers)
+      puts 'server=' + server
+      puts 'path=' + path
+      puts 'path_to_+sign=' + path_to_sign
       data = headers[:data]
       # remove unset(==optional) and symbolyc keys
       headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
@@ -169,31 +177,31 @@ module Aws
       headers['content-type'] ||= ''
       headers['date'] = Time.now.httpdate
       # create request
-      request = Faraday::Request.create
-      request.path = path
+#      request = Faraday::Request.create
+#      request.path = path
       req_method = method.upcase
 #      request = "Net::HTTP::#{method.capitalize}".constantize.new(path)
-      request.body = data if data
+#      request.body = data if data
       # set request headers and meta headers
-      headers.each { |key, value| request[key.to_s] = value }
+#      headers.each { |key, value| request[key.to_s] = value }
       #generate auth strings
 #      auth_string = canonical_string(req_method, path_to_sign, request.to_hash)
-      auth_string = canonical_string(req_method, path_to_sign, request.headers)
+      auth_string = canonical_string(req_method, path_to_sign, headers)
       puts "auth_string START\n" + auth_string.to_s + "\nEND"
       signature = Aws::Utils::sign(@aws_secret_access_key, auth_string)
       # set other headers
-      request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
+#      request['Authorization'] = "AWS #{@aws_access_key_id}:#{signature}"
       # prepare output hash
       request_data = RequestData.new
       request_data.host = server
       request_data.port = @params[:port]
       request_data.protocol = @params[:protocol]
       request_data.http_method = req_method.downcase.to_sym
-      request_data.path = path
+      request_data.path = path # [1, path.size-1]
       #request_data.params = service_hash
       request_data.headers = headers.merge('Authorization'=>"AWS #{@aws_access_key_id}:#{signature}")
       request_data.body = data if data
-      return request_data if params[:just_data]
+      return request_data # if params[:just_data]
       {:request => request,
       :server => server,
       :req_method => req_method,
@@ -204,10 +212,10 @@ module Aws
 
     # Sends request to Amazon and parses the response.
     # Raises AwsError if any banana happened.
-    def request_info(request, parser, options={}, &block) # :nodoc:
-#      request_info2(request, parser, @params, :s3_connection, @logger, @@bench, options, &block)
-      request_info3(self, request, parser, options, &block)
-    end
+#    def request_info(request, parser, options={}, &block) # :nodoc:
+##      request_info2(request, parser, @params, :s3_connection, @logger, @@bench, options, &block)
+#      request_info3(self, request, parser, options, &block)
+#    end
 
 
     # Returns an array of customer's buckets. Each item is a +hash+.
@@ -235,13 +243,15 @@ module Aws
     #
     def create_bucket(bucket, headers={})
       data = nil
-      unless headers[:location] && headers[:location].blank?
+      if Aws::Utils.present?(headers[:location])
+        puts 'location=' + headers[:location].inspect
 #                data = "<CreateBucketConfiguration><LocationConstraint>#{headers[:location].to_s.upcase}</LocationConstraint></CreateBucketConfiguration>"
         location = headers[:location].to_s
         location.upcase! if location == 'eu'
         data = "<CreateBucketConfiguration><LocationConstraint>#{location}</LocationConstraint></CreateBucketConfiguration>"
       end
-      req_hash = generate_rest_request('PUT', headers.merge(:url=>bucket, :data => data),{:just_data=>true})
+      req_hash = generate_rest_request('PUT', headers.merge(:url=>bucket, :data => data), {:just_data=>true})
+      puts 'req_hash=' + req_hash.inspect
       aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
       #request_info(req_hash, RightHttp2xxParser.new)
     rescue Exception => e
@@ -464,8 +474,9 @@ module Aws
         headers['expect'] = '100-continue'
       end
       req_hash = generate_rest_request('PUT', headers.merge(:url =>"#{bucket}/#{CGI::escape key}",
-                                                            :data =>data.read,
-                                                            'Content-Length' => data_size.to_s),{:just_data=>true})
+                                                            :data =>data,
+                                                            'Content-Length' => data_size.to_s),
+                                       {:just_data=>true})
       aws_execute(req_hash, :parser=>(RightHttp2xxParser.new))
 
     rescue
@@ -1288,6 +1299,7 @@ module Aws
       attr_reader :result
 
       def parse(response)
+        puts 'in s3parser.parse'
         @result = response
       end
 
@@ -1303,6 +1315,7 @@ module Aws
 
     class S3HttpResponseBodyParser < S3HttpResponseParser # :nodoc:
       def parse(response)
+        puts 'in s3bodyparser.parse'
         x = response.body
         x= x.respond_to?(:force_encoding) ? x.force_encoding("UTF-8") : x
         puts 'INFO = ' + response.to_s
@@ -1315,6 +1328,7 @@ module Aws
 
     class S3HttpResponseHeadParser < S3HttpResponseParser # :nodoc:
       def parse(response)
+        puts 'in s3headparser.parse'
         @result = headers_to_string(response.headers.to_hash)
       end
     end

@@ -107,28 +107,28 @@ module Aws
     #-----------------------------------------------------------------
 
     # Generates a request hash for the query API
-    def generate_request(action, param={}) # :nodoc:
-      # For operation requests on a queue, the queue URI will be a parameter,
-      # so we first extract it from the call parameters.  Next we remove any
-      # parameters with no value or with symbolic keys.  We add the header
-      # fields required in all requests, and then the headers passed in as
-      # params.  We sort the header fields alphabetically and then generate the
-      # signature before URL escaping the resulting query and sending it.
-      service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
-      param.each { |key, value| param.delete(key) if (value.nil? || key.is_a?(Symbol)) }
-      service_hash = {"Action" => action,
-                      "Expires" => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                      "AWSAccessKeyId" => @aws_access_key_id,
-                      "Version" => API_VERSION}
-      service_hash.update(param)
-      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], service)
-      request        = Net::HTTP::Get.new("#{Utils.URLencode(service)}?#{service_params}")
-      # prepare output hash
-      {:request  => request,
-       :server   => @params[:server],
-       :port     => @params[:port],
-       :protocol => @params[:protocol]}
-    end
+#    def generate_request(action, param={}) # :nodoc:
+#      # For operation requests on a queue, the queue URI will be a parameter,
+#      # so we first extract it from the call parameters.  Next we remove any
+#      # parameters with no value or with symbolic keys.  We add the header
+#      # fields required in all requests, and then the headers passed in as
+#      # params.  We sort the header fields alphabetically and then generate the
+#      # signature before URL escaping the resulting query and sending it.
+#      service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
+#      param.each { |key, value| param.delete(key) if (value.nil? || key.is_a?(Symbol)) }
+#      service_hash = {"Action" => action,
+#                      "Expires" => (Time.now + REQUEST_TTL).utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+#                      "AWSAccessKeyId" => @aws_access_key_id,
+#                      "Version" => API_VERSION}
+#      service_hash.update(param)
+#      service_params = signed_service_params(@aws_secret_access_key, service_hash, :get, @params[:server], service)
+#      request        = Net::HTTP::Get.new("#{Utils.URLencode(service)}?#{service_params}")
+#      # prepare output hash
+#      {:request  => request,
+#       :server   => @params[:server],
+#       :port     => @params[:port],
+#       :protocol => @params[:protocol]}
+#    end
 
     def generate_post_request(action, param={}) # :nodoc:
       service = param[:queue_url] ? URI(param[:queue_url]).path : '/'
@@ -156,10 +156,10 @@ module Aws
     # Sends request to Amazon and parses the response
     # Raises AwsError if any banana happened
 # todo: remove this and switch to using request_info2
-    def request_info(request, parser, options={}) # :nodoc:
-      conn = get_conn(self.class.connection_name, @params, @logger)
-      request_info_impl(conn, @@bench, request, parser, options)
-    end
+#    def request_info(request, parser, options={}) # :nodoc:
+#      conn = get_conn(self.class.connection_name, @params, @logger)
+#      request_info_impl(conn, @@bench, request, parser, options)
+#    end
 
     # Creates a new queue, returning its URI.
     #
