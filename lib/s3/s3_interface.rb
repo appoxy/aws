@@ -334,7 +334,7 @@ module Aws
     #     ]
     #   }
     def incrementally_list_bucket(bucket, options={}, headers={}, &block)
-      internal_options = Hash[ options.map {|k,v| [k.to_sym, v] } ]
+      internal_options = (options.map {|k,v| [k.to_sym, v] }).inject({}) {|h, ar| h[ar[0]] = ar[1]; h}
       begin
         internal_bucket = bucket.dup
         unless internal_options.nil? || internal_options.empty?
