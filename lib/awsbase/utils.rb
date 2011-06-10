@@ -106,8 +106,8 @@ module Aws
     ]
     TO_REMEMBER = 'AZaz09 -_.!~*\'()'
     ASCII = {} # {'A'=>65, 'Z'=>90, 'a'=>97, 'z'=>122, '0'=>48, '9'=>57, ' '=>32, '-'=>45, '_'=>95, '.'=>}
-    TO_REMEMBER.each_char do |c| #unpack("c*").each do |c|
-      ASCII[c] = c.unpack("c")[0]
+    TO_REMEMBER.each_byte do |b|
+      ASCII[b.chr] = b.chr.unpack("c")[0]
     end
 #        puts 'ascii=' + ASCII.inspect
 

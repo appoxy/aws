@@ -882,6 +882,43 @@ module Aws
       on_exception
     end
 
+    # Authorize OR Revoke ingress for security group, depending on the value of the 'action' parameter.
+    # If you 'authorize' then you allow instances that are member of some other 
+    # security groups, or some range of ip addresses to open connections to instances in 
+    # my group. Can specify an array of ip addresses, source groups or mix of both in a single rule:
+    #
+    # ec2.manage_security_group_ingress('authorize', 'new_firewall', 80, 80, 'tcp', ['192.168.0.1/32', '10.0.0.1/24'],
+    #             [{'group_name'=>'default', 'owner'=>'297467797945'}, {'group_name'=>'test', 'owner'=>'123456789012'}])
+    #
+    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'revoke', [], 
+    #                             [{'group_name'=>'default', 'owner'=>'123456789012'}])
+    #
+    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'authorize', ['0.0.0.0/0']) 
+    #
+    # Similarly, if you specify 'revoke' as the action parameter then you will remove the specified 
+    # source ip addresses or source groups from access to instances in the named group:
+    #
+    def manage_security_group_ingress(name, from_port, to_port, protocol, action, source_ip_ranges, source_groups = [])
+      call_params = {  'GroupName'   => name.to_s,
+                      'IpPermissions.1.IpProtocol' => protocol.to_s,
+                       'IpPermissions.1.FromPort'   => from_port.to_s,
+                       'IpPermissions.1.ToPort'     => to_port.to_s  }
+      source_ip_ranges.each_index do |i| 
+        call_params.merge!({"IpPermissions.1.IpRanges.#{i+1}.CidrIp" => source_ip_ranges[i].to_s})
+      end
+      source_groups.each_index do |i|
+        call_params.merge!({"IpPermissions.1.Groups.#{i+1}.GroupName" => source_groups[i]['group_name'].to_s, 
+                            "IpPermissions.1.Groups.#{i+1}.UserId"=> source_groups[i]['owner'].to_s.gsub(/-/,'')})
+      end
+      unless ['Authorize', 'Revoke'].include?(action.capitalize)
+         raise AwsError.new("Invalid action #{action} - must be one of \'Authorize\' or \'Revoke\'")
+      end
+      link = generate_request("#{action.capitalize}SecurityGroupIngress", call_params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+      rescue Exception
+        on_exception  
+    end
+
     # Authorize named ingress for security group. Allows instances that are member of someone
     # else's security group to open connections to instances in my group.
     #
