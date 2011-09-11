@@ -1309,6 +1309,18 @@ module Aws
     rescue Exception
       on_exception
     end
+    
+    def describe_owned_snapshots(list=[])
+      params = {"Owner" => "self"}
+      snap_ids = hash_params('SnapshotId', list.to_a)
+      params.update(snap_ids)
+      link = generate_request("DescribeSnapshots",
+                              params)
+      request_cache_or_info :describe_owned_snapshots, link, QEc2DescribeSnapshotsParser, @@bench, list.nil? || list.empty?
+    rescue Exception
+      on_exception
+    end
+    
 
     # Create a snapshot of specified volume.
     #
