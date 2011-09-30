@@ -314,12 +314,12 @@ module Aws
           puts 'RETRYING QUERY due to QueryTimeout...' if count > 0
           begin
             ret = request_info_impl(http_conn, bench, request, parser, options, &block)
-            break
           rescue Aws::AwsError => ex
             if !ex.include?(/QueryTimeout/) || count == retry_count
               raise ex
             end
           end
+          break if ret
           count += 1
         end
       ensure
