@@ -183,7 +183,12 @@ module Aws
         if $1 # if escaped '\?' is found - replace it by '?' without backslash
           "?"
         else # well, if no backslash precedes '?' then replace it by next param from the list
-          ret = escape(params[i])
+          case params[i]
+          when Array
+            ret = "(#{params[i].map{|p| escape(p)}.join(",")})"
+          else
+            ret = escape(params[i])
+          end
           i   +=1
           ret
         end
