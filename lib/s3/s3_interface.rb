@@ -106,7 +106,11 @@ module Aws
         out_string << (key[/^#{AMAZON_HEADER_PREFIX}/o] ? "#{key}:#{value}\n" : "#{value}\n")
       end
       # ignore everything after the question mark...
-      out_string << path.gsub(/\?.*$/, '')
+      #out_string << path.gsub(/\?.*$/, '')
+      
+      # To allow passing query parameters such as response-content-disposition
+      out_string << path
+      
       # ...unless there is an acl or torrent parameter
       out_string << '?acl' if path[/[&?]acl($|&|=)/]
       out_string << '?policy' if path[/[&?]policy($|&|=)/]
