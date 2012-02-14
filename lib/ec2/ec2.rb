@@ -1612,6 +1612,12 @@ module Aws
             @image[:aws_kernel_id] = @text
           when 'ramdiskId' then
             @image[:aws_ramdisk_id] = @text
+          when 'rootDeviceType' then
+            @image[:aws_root_device_type] = @text
+          when 'rootDeviceName' then
+            @image[:aws_root_device_name] = @text
+          when 'hypervisor' then
+            @image[:aws_hypervisor] = @text
           when 'item' then
             @result << @image if @xmlpath[%r{.*/imagesSet$}]
         end
