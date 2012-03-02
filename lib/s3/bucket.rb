@@ -181,9 +181,9 @@ module Aws
     #  data = bucket.get('logs/today/1.log') #=>
     #  puts data #=> 'sasfasfasdf'
     #
-    def get(key, headers={})
+    def get(key, headers={}, &block)
       key = S3::Key.create(self, key.to_s) unless key.is_a?(S3::Key)
-      key.get(headers)
+      key.get(headers, &block)
     end
 
      # Retrieve object data from Amazon.

@@ -176,4 +176,26 @@ class TestS3Class < S3TestBase
     assert bucket.delete(true)
   end
 
+  # No streaming test should be captured in
+  # test_21_bucket_create_put_get_key
+  def test_61_get_bucket_key_via_streaming
+    bucket = Aws::S3::Bucket.create(@s, @bucket, true)
+    # check that the bucket exists
+    assert @s.buckets.map { |b| b.name }.include?(@bucket)
+    # put data
+    assert bucket.put(@key2, RIGHT_OBJECT_TEXT, {'family'=>'123456_61'})
+    # get data and compare via streaming
+    # stream data from S3
+    data = ""
+    bucket.get(@key2) do |chunk|
+      data += chunk
+    end
+    assert_equal RIGHT_OBJECT_TEXT, data
+    # get key object
+    key = bucket.key(@key2, true)
+    assert_equal Aws::S3::Key, key.class
+    assert key.exists?
+    assert_equal '123456_61', key.meta_headers['family']
+  end
+
 end
