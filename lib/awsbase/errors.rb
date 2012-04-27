@@ -214,7 +214,7 @@ module Aws
           last_errors_text     = @aws.last_errors.flatten.join("\n")
           # on redirect :
           if redirect_detected
-            location = response['location']
+            location = response['location'] ||  "#{request[:protocol]}://#{error_parser.instance_variable_get(:'@endpoint')}"
             # ... log information and ...
             @aws.logger.info("##### #{@aws.class.name} redirect requested: #{response.code} #{response.message} #####")
             @aws.logger.info("##### New location: #{location} #####")
