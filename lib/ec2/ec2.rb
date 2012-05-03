@@ -183,6 +183,12 @@ module Aws
       return groups
     end
 
+    def hash_params_with_suffix(prefix, suffix, list) #:nodoc:
+      groups = {}
+      list.each_index { |i| groups.update("#{prefix}.#{i+1}.suffix"=>list[i]) }
+      return groups
+    end
+
     #-----------------------------------------------------------------
     #      Images
     #-----------------------------------------------------------------
@@ -321,19 +327,18 @@ module Aws
     # instead of modify_image_attribute because the signature of
     # modify_image_attribute may change with EC2 service changes.
     #
-    #  attribute      : currently, only 'launchPermission' is supported.
-    #  operation_type : currently, only 'add' & 'remove' are supported.
+    #  operation_type : currently, only 'Add' & 'Remove' are supported.
     #  vars:
     #    :user_group  : currently, only 'all' is supported.
     #    :user_id
     #    :product_code
-    def modify_image_attribute(image_id, attribute, operation_type = nil, vars = {})
-      params = {'ImageId'   => image_id,
-                'Attribute' => attribute}
-      params['OperationType'] = operation_type if operation_type
-      params.update(hash_params('UserId', vars[:user_id].to_a)) if vars[:user_id]
-      params.update(hash_params('UserGroup', vars[:user_group].to_a)) if vars[:user_group]
+    #    :description
+    def modify_image_attribute(image_id, operation_type = nil, vars = {})
+      params = {'ImageId' => image_id }
+      params.update(hash_params_with_suffix("LaunchPermission.#{operation_type}", 'UserId', vars[:user_id].to_a)) if vars[:user_id]
+      params.update(hash_params_with_suffix("LaunchPermission.#{operation_type}", 'Group', vars[:user_group].to_a)) if vars[:user_group]
       params.update(hash_params('ProductCode', vars[:product_code])) if vars[:product_code]
+      params.update('Description.Value' => vars[:description].to_s) if vars[:description]
       link = generate_request("ModifyImageAttribute", params)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
     rescue Exception
@@ -346,7 +351,7 @@ module Aws
     #
     #  ec2.modify_image_launch_perm_add_users('ami-e444444d',['000000000777','000000000778']) #=> true
     def modify_image_launch_perm_add_users(image_id, user_id=[])
-      modify_image_attribute(image_id, 'launchPermission', 'add', :user_id => user_id.to_a)
+      modify_image_attribute(image_id, 'Add', :user_id => user_id.to_a)
     end
 
     # Revokes image launch permissions for users. +userId+ is a list of users AWS accounts ids. Returns +true+ or an exception.
@@ -354,7 +359,7 @@ module Aws
     #  ec2.modify_image_launch_perm_remove_users('ami-e444444d',['000000000777','000000000778']) #=> true
     #
     def modify_image_launch_perm_remove_users(image_id, user_id=[])
-      modify_image_attribute(image_id, 'launchPermission', 'remove', :user_id => user_id.to_a)
+      modify_image_attribute(image_id, 'Remove', :user_id => user_id.to_a)
     end
 
     # Add image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions).
@@ -363,7 +368,7 @@ module Aws
     #  ec2.modify_image_launch_perm_add_groups('ami-e444444d') #=> true
     #
     def modify_image_launch_perm_add_groups(image_id, user_group=['all'])
-      modify_image_attribute(image_id, 'launchPermission', 'add', :user_group => user_group.to_a)
+      modify_image_attribute(image_id, 'Add', :user_group => user_group.to_a)
     end
 
     # Remove image launch permissions for users groups (currently only 'all' is supported, which gives public launch permissions).
@@ -371,7 +376,7 @@ module Aws
     #  ec2.modify_image_launch_perm_remove_groups('ami-e444444d') #=> true
     #
     def modify_image_launch_perm_remove_groups(image_id, user_group=['all'])
-      modify_image_attribute(image_id, 'launchPermission', 'remove', :user_group => user_group.to_a)
+      modify_image_attribute(image_id, 'Remove', :user_group => user_group.to_a)
     end
 
     # Add product code to image
@@ -379,7 +384,15 @@ module Aws
     #  ec2.modify_image_product_code('ami-e444444d','0ABCDEF') #=> true
     #
     def modify_image_product_code(image_id, product_code=[])
-      modify_image_attribute(image_id, 'productCodes', nil, :product_code => product_code.to_a)
+      modify_image_attribute(image_id, nil, :product_code => product_code.to_a)
+    end
+
+    # Change image description
+    #
+    #  ec2.modify_image_description('ami-e444444d','My new AMI') #=> true
+    #
+    def modify_image_description(image_id, description='')
+      modify_image_attribute(image_id, nil, :description => description)
     end
 
     #-----------------------------------------------------------------
