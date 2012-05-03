@@ -196,9 +196,9 @@ module Aws
           @code = @text
         when 'Message';
           @message = @text
-#       when 'Endpoint'  ; @endpoint  = @text
-#       when 'HostId'    ; @host_id   = @text
-#       when 'Bucket'    ; @bucket    = @text
+        when 'Endpoint'  ; @endpoint  = @text
+        when 'HostId'    ; @host_id   = @text
+        when 'Bucket'    ; @bucket    = @text
         when 'Error';
           @errors << [@code, @message]
       end
