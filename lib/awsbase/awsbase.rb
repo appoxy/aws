@@ -507,6 +507,15 @@ module Aws
       connection = connection
       @last_request = request[:request]
       @last_response = nil
+
+      #deal with s3 bucket redirects - if we have a saved location/endpoint
+      if is_s3_request(request[:server]) and @params[:bucket_locations]
+        name, endpoint = grab_bucket_name_and_server(request[:server])
+        if @params[:bucket_locations][name] and @params[:bucket_locations][name] != endpoint
+          request[:server] = "#{name}.#{@params[:bucket_locations][name]}"
+        end
+      end
+
       response =nil
       blockexception = nil
 
@@ -526,6 +535,12 @@ module Aws
             begin
               @last_response = response
               if response.is_a?(Net::HTTPSuccess)
+                #if s3 request - save bucket location for dealing with redirects
+                if is_s3_request(request[:server])
+                  bucket_name, bucket_location = grab_bucket_name_and_server(request[:server])
+                  @params[:bucket_locations]={bucket_name=>bucket_location}
+                end
+
                 @error_handler = nil
                 response.read_body(&block)
               else
@@ -558,6 +573,12 @@ module Aws
         # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
+          #save bucket location if s3 request, for dealing with bucket redirection later
+          if is_s3_request(request[:server])
+            bucket_name, bucket_location = grab_bucket_name_and_server(request[:server])
+            @params[:bucket_locations]={bucket_name=>bucket_location}
+          end
+
           @error_handler = nil
           benchblock.xml.add! { parser.parse(response) }
           return parser.result
@@ -575,6 +596,14 @@ module Aws
     rescue
       @error_handler = nil
       raise
+    end
+
+    def is_s3_request(server)
+      server.match(/s3.*\.amazonaws\.com$/)
+    end
+
+    def grab_bucket_name_and_server(request_server)
+     return [request_server.gsub(/.s3.*\.amazonaws\.com/, ''), request_server.match(/s3.*\.amazonaws\.com$/).to_s]
     end
 
     def request_cache_or_info(method, link, parser_class, benchblock, use_cache=true) #:nodoc:
