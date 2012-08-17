@@ -123,7 +123,7 @@ class TestEc2 < Test::Unit::TestCase
     def test_13a_create_describe_delete_tag
       images = describe_images
       resource_id = images.first[:aws_id]
-      
+
       assert @ec2.create_tag(resource_id, 'testkey', 'testvalue').inspect, "Could not add a tag to #{resource_id}"
       assert_equal(
         [{:aws_resource_id=>resource_id, :aws_resource_type=>"image", :aws_key=>"testkey", :aws_value=>"testvalue"}],
@@ -133,7 +133,7 @@ class TestEc2 < Test::Unit::TestCase
         [],
         @ec2.describe_tags('Filter.1.Name' => 'resource-id', 'Filter.1.Value.1' => '__blah__')
       )
-      
+
       assert @ec2.delete_tag(resource_id, 'testkey').inspect, "Could not delete tag 'testkey' from #{resource_id}"
       sleep 1 # :(
       assert_equal(
@@ -145,7 +145,7 @@ class TestEc2 < Test::Unit::TestCase
     def test_13b_create_describe_delete_tag_by_value
       images = describe_images
       resource_id = images.first[:aws_id]
-      
+
       assert @ec2.create_tag(resource_id, 'testkey', 'testvalue').inspect, "Could not add a tag to #{resource_id}"
       assert_equal(
         [{:aws_resource_id=>resource_id, :aws_resource_type=>"image", :aws_key=>"testkey", :aws_value=>"testvalue"}],
@@ -155,7 +155,7 @@ class TestEc2 < Test::Unit::TestCase
         [],
         @ec2.describe_tags('Filter.1.Name' => 'resource-id', 'Filter.1.Value.1' => resource_id, 'Filter.2.Name' => 'key', 'Filter.2.Value.1' => '__blah__')
       )
-      
+
       assert @ec2.delete_tag(resource_id, 'testkey', 'testvalue').inspect, "Could not delete tag 'testkey' from #{resource_id}"
       sleep 1 # :(
       assert_equal(
@@ -167,13 +167,13 @@ class TestEc2 < Test::Unit::TestCase
     def test_13c_delete_tag_with_empty_or_nil_value
       images = describe_images
       resource_id = images.first[:aws_id]
-      
+
       assert @ec2.create_tag(resource_id, 'testkey', 'testvalue').inspect, "Could not add a tag to #{resource_id}"
       assert_equal(
         [{:aws_resource_id=>resource_id, :aws_resource_type=>"image", :aws_key=>"testkey", :aws_value=>"testvalue"}],
         @ec2.describe_tags('Filter.1.Name' => 'resource-id', 'Filter.1.Value.1' => resource_id)
       )
-      
+
       # Delete a tag with an empty string value...
       assert @ec2.delete_tag(resource_id, 'testkey', '').inspect, "Could not delete tag 'testkey' from #{resource_id}"
       sleep 1 # :(
@@ -182,7 +182,7 @@ class TestEc2 < Test::Unit::TestCase
         [{:aws_resource_id=>resource_id, :aws_resource_type=>"image", :aws_key=>"testkey", :aws_value=>"testvalue"}],
         @ec2.describe_tags('Filter.1.Name' => 'resource-id', 'Filter.1.Value.1' => resource_id)
       )
-      
+
       # Delete a tag with value = nil...
       assert @ec2.delete_tag(resource_id, 'testkey', nil).inspect, "Could not delete tag 'testkey' from #{resource_id}"
       sleep 1 # :(
