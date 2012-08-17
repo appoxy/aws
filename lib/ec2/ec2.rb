@@ -1456,6 +1456,102 @@ module Aws
     end
 
     #-----------------------------------------------------------------
+    #      VPC related
+    #-----------------------------------------------------------------
+
+    # Create VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-CreateVpc.html
+    #
+    # ec2.create_vpc("10.0.0.0/16")
+    # FIXME: EVen though the EC2 docs describe the parameter instanceTenancy,
+    # I could not get it to recognize that
+    def create_vpc(cidr_block = "10.0.0.0/16")
+      params = { "CidrBlock" => cidr_block }
+      link = generate_request("CreateVpc", params)
+      request_info(link, QEc2VpcsParser.new("vpc", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+
+    # Describe  VPC's
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DescribeVpcs.html
+    #
+    # ec2.describe_vpcs
+    # ec2.describe_vpcs(vpcId1, vpcId2, 'Filter.1.Name' => 'state', 'Filter.1.Value' = > 'pending', ...)
+    def describe_vpcs(*args)
+      if args.last.is_a?(Hash)
+        params = args.pop.dup
+      else
+        params = {}
+      end
+      1.upto(args.size) { |i| params["VpcId.#{i}"] = args[i-1] }
+      link = generate_request("DescribeVpcs", params)
+      request_info(link, QEc2VpcsParser.new("item", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Delete VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DeleteVpc.html
+    #
+    # ec2.delete_vpc(vpc_id)
+    def delete_vpc(vpc_id)
+      params = { "VpcId" => vpc_id }
+      link = generate_request("DeleteVpc", params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Create subnet in a VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-CreateSubnet.html
+    #
+    # ec2.create_subnet(vpc_id, cidr_block)
+    # ec2.create_subnet(vpc_id, cidr_block, availability_zone))
+    def create_subnet(vpc_id, cidr_block, availability_zone = nil)
+      params = { "VpcId" => vpc_id, "CidrBlock" => cidr_block }
+      params["AvailabilityZone"] = availability_zone if availability_zone
+      link = generate_request("CreateSubnet", params)
+      request_info(link, QEc2SubnetsParser.new("subnet", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Describe subnets
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DescribeSubnets.html
+    #
+    # ec2.describe_subnets
+    # ecs.describe_subnets(subnetId1, SubnetId2, ...,
+    #                      'Filter.1.Name' => 'state',
+    #                      'Filter.1.Value.1' => 'pending',
+    #                      'Filter.2.Name' => ...)
+    def describe_subnets(*args)
+      if args.last.is_a?(Hash)
+        params = args.pop.dup
+      else
+        params = {}
+      end
+      1.upto(args.size) { |i| params["SubnetId.#{i}"] = args[i-1] }
+      link = generate_request("DescribeSubnets", params)
+      request_info(link, QEc2SubnetsParser.new("item", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Delete Subnet
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DeleteSubnet.html
+    #
+    # ec2.delete_subnet(subnet_id)
+    def delete_subnet(subnet_id)
+      params = { "SubnetId" => subnet_id }
+      link = generate_request("DeleteSubnet", params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    #-----------------------------------------------------------------
     #      PARSERS: Boolean Response Parser
     #-----------------------------------------------------------------
 
@@ -2306,6 +2402,73 @@ module Aws
       end
     end
 
+    #-----------------------------------------------------------------
+    #      PARSERS: Vpc
+    #-----------------------------------------------------------------
+
+    class QEc2VpcsParser < AwsParser #:nodoc:
+      def initialize(wrapper, opts = {})
+        super(opts)
+        @wrapper = wrapper
+      end
+
+      def tagstart(name, attribute)
+        @vpc = {} if name == @wrapper
+      end
+
+      def tagend(name)
+        case name
+          when 'vpcId' then
+            @vpc[:vpc_id] = @text
+          when 'state' then
+            @vpc[:state] = @text
+          when 'cidrBlock' then
+            @vpc[:cidr_block] = @text
+          when 'dhcpOptionsId' then
+            @vpc[:dhcp_options_id] = @text
+          when @wrapper
+            @result << @vpc
+        end
+      end
+
+      def reset
+        @result = []
+      end
+    end
+
+    class QEc2SubnetsParser < AwsParser #:nodoc
+      def initialize(wrapper, opts = {})
+        super(opts)
+        @wrapper = wrapper
+      end
+
+      def tagstart(name, attribute)
+        @subnet = {} if name == @wrapper
+      end
+
+      def tagend(name)
+        case name
+          when 'subnetId' then
+            @subnet[:subnet_id] = @text
+          when 'state' then
+            @subnet[:state] = @text
+          when 'vpcId' then
+            @subnet[:vpc_id] = @text
+          when 'cidrBlock' then
+            @subnet[:cidr_block] = @text
+          when 'availableIpAddressCount' then
+            @subnet[:available_ip_address_count] = @text
+          when 'availabilityZone' then
+            @subnet[:availability_zone] = @text
+          when @wrapper
+            @result << @subnet
+        end
+      end
+
+      def reset
+        @result = []
+      end
+    end
   end
 
 end

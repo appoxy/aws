@@ -193,6 +193,42 @@ class TestEc2 < Test::Unit::TestCase
       )
     end
 
+    def test_14_vpc
+      @vpc = @ec2.create_vpc("172.16.0.0/16").first
+      assert_equal "172.16.0.0/16", @vpc[:cidr_block]
+      assert @vpc.key?(:state)
+
+      vpcs = @ec2.describe_vpcs
+      assert vpcs.find { |v| v[:vpc_id] == @vpc[:vpc_id] }
+
+      vpcs = @ec2.describe_vpcs(@vpc[:vpc_id])
+      assert_equal 1, vpcs.size
+      assert_equal @vpc[:vpc_id], vpcs.first[:vpc_id]
+
+      @subnet = @ec2.create_subnet(@vpc[:vpc_id], "172.16.3.0/24", "us-east-1b").first
+      assert       @subnet[:subnet_id]
+      assert_equal @vpc[:vpc_id], @subnet[:vpc_id]
+      assert_equal "172.16.3.0/24", @subnet[:cidr_block]
+      assert_equal "251", @subnet[:available_ip_address_count]
+      assert_equal "us-east-1b", @subnet[:availability_zone]
+      assert       @subnet.key?(:state)
+      subnets = @ec2.describe_subnets
+      assert subnets.find { |s| s[:subnet_id] = @subnet[:subnet_id] }
+
+      subnets = @ec2.describe_subnets('Filter.1.Name' => 'vpc-id',
+                                      'Filter.1.Value' => @vpc[:vpc_id])
+      assert_equal 1, subnets.size
+      assert_equal @subnet[:subnet_id], subnets.first[:subnet_id]
+
+      assert @ec2.delete_subnet(@subnet[:subnet_id])
+      @subnet = nil
+      assert @ec2.delete_vpc(@vpc[:vpc_id])
+      @vpc = nil
+    ensure
+      @ec2.delete_subnet(@subnet[:subnet_id]) if @subnet
+      @ec2.delete_vpc(@vpc[:vpc_id]) if @vpc
+    end
+
   private
 
     # Memoize the images to speed up the tests
