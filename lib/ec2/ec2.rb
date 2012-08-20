@@ -1813,6 +1813,8 @@ module Aws
                        :root_device_type  => '',
                        :root_device_name  => '',
                        :architecture      => '',
+                       :subnet_id         => '',
+                       :vpc_id            => '',
                        :block_device_mappings => [],
                        :aws_product_codes => [],
                        :tags              => {}}
@@ -1869,6 +1871,10 @@ module Aws
             @instance[:aws_availability_zone] = @text
           when 'privateIpAddress' then
             @instance[:aws_private_ip_address] = @text
+          when 'subnetId' then
+            @instance[:subnet_id] = @text
+          when 'vpcId' then
+            @instance[:vpc_id] = @text
           when 'key' then
             @tag_key = @text
           when 'value' then
