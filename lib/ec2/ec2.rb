@@ -575,13 +575,13 @@ module Aws
       unless Aws::Utils.blank?(options[:block_device_mappings])
         options[:block_device_mappings].size.times do |n|
           if options[:block_device_mappings][n][:virtual_name]
-            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name] 
+            params["BlockDeviceMapping.#{n+1}.VirtualName"] = options[:block_device_mappings][n][:virtual_name]
           end
           if options[:block_device_mappings][n][:device_name]
-            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]  
+            params["BlockDeviceMapping.#{n+1}.DeviceName"] = options[:block_device_mappings][n][:device_name]
           end
           if options[:block_device_mappings][n][:ebs_snapshot_id]
-            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]  
+            params["BlockDeviceMapping.#{n+1}.Ebs.SnapshotId"] = options[:block_device_mappings][n][:ebs_snapshot_id]
           end
         end
       end
@@ -620,7 +620,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Stop EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
     #
     #  ec2.stop_instances(['i-f222222d', 'i-f222222e']) #=>
@@ -641,7 +641,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Start EBS-backed EC2 instances. Returns a list of instance state changes or an exception.
     #
     #  ec2.start_instances(['i-f222222d', 'i-f222222e']) #=>
@@ -662,7 +662,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     # Retreive EC2 instance OS logs. Returns a hash of data or an exception.
     #
     #  ec2.get_console_output('i-f222222d') =>
@@ -819,23 +819,23 @@ module Aws
     #      :aws_owner       => "000000000888",
     #      :aws_description => "a default security group",
     #      :aws_perms       =>
-    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000", 
+    #        [ {:protocol => "tcp", :from_port=>"1000", :to_port=>"2000",
     #           :ip_ranges=>[{cidr_ip=>"10.1.2.3/32"}, {cidr_ip=>"192.168.1.10/24"}],
     #           :groups =>  [{:owner=>"123456789012", :group_name="default"}] },
-    #    
+    #
     #          {:protocol ="icmp", :from_port="-1", :to_port=>"-1",
-    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}], 
+    #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
     #           :groups=>[] },
-    #      
-    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535", 
-    #           :ip_ranges=>[], 
-    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}], 
-    #          
+    #
+    #          {:protocol=>"udp", :from_port=>"0", :to_port=>"65535",
+    #           :ip_ranges=>[],
+    #           :groups=>[{:owner=>"123456789012", :group_name=>"newgroup"}, {:owner=>"123456789012", :group_name=>"default"}],
+    #
     #          {:protocol=>"tcp", :from_port="22", :to_port=>"22",
     #           :ip_ranges=>[{:cidr_ip=>"0.0.0.0/0"}],
     #           :groups=>[{:owner=>"", :group_name=>"default"}] },
-    #   
-    #         ..., {...} 
+    #
+    #         ..., {...}
     #        ]
     #
     def describe_security_groups(list=[])
@@ -896,19 +896,19 @@ module Aws
     end
 
     # Authorize OR Revoke ingress for security group, depending on the value of the 'action' parameter.
-    # If you 'authorize' then you allow instances that are member of some other 
-    # security groups, or some range of ip addresses to open connections to instances in 
+    # If you 'authorize' then you allow instances that are member of some other
+    # security groups, or some range of ip addresses to open connections to instances in
     # my group. Can specify an array of ip addresses, source groups or mix of both in a single rule:
     #
     # ec2.manage_security_group_ingress('authorize', 'new_firewall', 80, 80, 'tcp', ['192.168.0.1/32', '10.0.0.1/24'],
     #             [{'group_name'=>'default', 'owner'=>'297467797945'}, {'group_name'=>'test', 'owner'=>'123456789012'}])
     #
-    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'revoke', [], 
+    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'revoke', [],
     #                             [{'group_name'=>'default', 'owner'=>'123456789012'}])
     #
-    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'authorize', ['0.0.0.0/0']) 
+    # ec2.manage_security_group_ingress('new_firewall', 0, 1000, 'udp', 'authorize', ['0.0.0.0/0'])
     #
-    # Similarly, if you specify 'revoke' as the action parameter then you will remove the specified 
+    # Similarly, if you specify 'revoke' as the action parameter then you will remove the specified
     # source ip addresses or source groups from access to instances in the named group:
     #
     def manage_security_group_ingress(name, from_port, to_port, protocol, action, source_ip_ranges, source_groups = [])
@@ -916,11 +916,11 @@ module Aws
                       'IpPermissions.1.IpProtocol' => protocol.to_s,
                        'IpPermissions.1.FromPort'   => from_port.to_s,
                        'IpPermissions.1.ToPort'     => to_port.to_s  }
-      source_ip_ranges.each_index do |i| 
+      source_ip_ranges.each_index do |i|
         call_params.merge!({"IpPermissions.1.IpRanges.#{i+1}.CidrIp" => source_ip_ranges[i].to_s})
       end
       source_groups.each_index do |i|
-        call_params.merge!({"IpPermissions.1.Groups.#{i+1}.GroupName" => source_groups[i]['group_name'].to_s, 
+        call_params.merge!({"IpPermissions.1.Groups.#{i+1}.GroupName" => source_groups[i]['group_name'].to_s,
                             "IpPermissions.1.Groups.#{i+1}.UserId"=> source_groups[i]['owner'].to_s.gsub(/-/,'')})
       end
       unless ['Authorize', 'Revoke'].include?(action.capitalize)
@@ -929,7 +929,7 @@ module Aws
       link = generate_request("#{action.capitalize}SecurityGroupIngress", call_params)
       request_info(link, RightBoolResponseParser.new(:logger => @logger))
       rescue Exception
-        on_exception  
+        on_exception
     end
 
     # Authorize named ingress for security group. Allows instances that are member of someone
@@ -1322,7 +1322,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
     def describe_owned_snapshots(list=[])
       params = {"Owner" => "self"}
       snap_ids = hash_params('SnapshotId', list.to_a)
@@ -1333,7 +1333,7 @@ module Aws
     rescue Exception
       on_exception
     end
-    
+
 
     # Create a snapshot of specified volume.
     #
@@ -1456,6 +1456,102 @@ module Aws
     end
 
     #-----------------------------------------------------------------
+    #      VPC related
+    #-----------------------------------------------------------------
+
+    # Create VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-CreateVpc.html
+    #
+    # ec2.create_vpc("10.0.0.0/16")
+    # FIXME: EVen though the EC2 docs describe the parameter instanceTenancy,
+    # I could not get it to recognize that
+    def create_vpc(cidr_block = "10.0.0.0/16")
+      params = { "CidrBlock" => cidr_block }
+      link = generate_request("CreateVpc", params)
+      request_info(link, QEc2VpcsParser.new("vpc", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+
+    # Describe  VPC's
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DescribeVpcs.html
+    #
+    # ec2.describe_vpcs
+    # ec2.describe_vpcs(vpcId1, vpcId2, 'Filter.1.Name' => 'state', 'Filter.1.Value' = > 'pending', ...)
+    def describe_vpcs(*args)
+      if args.last.is_a?(Hash)
+        params = args.pop.dup
+      else
+        params = {}
+      end
+      1.upto(args.size) { |i| params["VpcId.#{i}"] = args[i-1] }
+      link = generate_request("DescribeVpcs", params)
+      request_info(link, QEc2VpcsParser.new("item", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Delete VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DeleteVpc.html
+    #
+    # ec2.delete_vpc(vpc_id)
+    def delete_vpc(vpc_id)
+      params = { "VpcId" => vpc_id }
+      link = generate_request("DeleteVpc", params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Create subnet in a VPC
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-CreateSubnet.html
+    #
+    # ec2.create_subnet(vpc_id, cidr_block)
+    # ec2.create_subnet(vpc_id, cidr_block, availability_zone))
+    def create_subnet(vpc_id, cidr_block, availability_zone = nil)
+      params = { "VpcId" => vpc_id, "CidrBlock" => cidr_block }
+      params["AvailabilityZone"] = availability_zone if availability_zone
+      link = generate_request("CreateSubnet", params)
+      request_info(link, QEc2SubnetsParser.new("subnet", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Describe subnets
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DescribeSubnets.html
+    #
+    # ec2.describe_subnets
+    # ecs.describe_subnets(subnetId1, SubnetId2, ...,
+    #                      'Filter.1.Name' => 'state',
+    #                      'Filter.1.Value.1' => 'pending',
+    #                      'Filter.2.Name' => ...)
+    def describe_subnets(*args)
+      if args.last.is_a?(Hash)
+        params = args.pop.dup
+      else
+        params = {}
+      end
+      1.upto(args.size) { |i| params["SubnetId.#{i}"] = args[i-1] }
+      link = generate_request("DescribeSubnets", params)
+      request_info(link, QEc2SubnetsParser.new("item", :logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Delete Subnet
+    # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-DeleteSubnet.html
+    #
+    # ec2.delete_subnet(subnet_id)
+    def delete_subnet(subnet_id)
+      params = { "SubnetId" => subnet_id }
+      link = generate_request("DeleteSubnet", params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    #-----------------------------------------------------------------
     #      PARSERS: Boolean Response Parser
     #-----------------------------------------------------------------
 
@@ -1518,7 +1614,7 @@ module Aws
 
     class QEc2IpRangeItemType #:nodoc:
       attr_accessor :cidrIp
-    end  
+    end
 
     class QEc2IpPermissionType #:nodoc:
       attr_accessor :ipProtocol
@@ -1717,6 +1813,8 @@ module Aws
                        :root_device_type  => '',
                        :root_device_name  => '',
                        :architecture      => '',
+                       :subnet_id         => '',
+                       :vpc_id            => '',
                        :block_device_mappings => [],
                        :aws_product_codes => [],
                        :tags              => {}}
@@ -1773,6 +1871,10 @@ module Aws
             @instance[:aws_availability_zone] = @text
           when 'privateIpAddress' then
             @instance[:aws_private_ip_address] = @text
+          when 'subnetId' then
+            @instance[:subnet_id] = @text
+          when 'vpcId' then
+            @instance[:vpc_id] = @text
           when 'key' then
             @tag_key = @text
           when 'value' then
@@ -1871,12 +1973,12 @@ module Aws
         @result = []
       end
     end
-    
+
     class QEc2StopInstancesParser < AwsParser #:nodoc:
       def tagstart(name, attributes)
         @instance = {} if name == 'item'
       end
-      
+
       def tagend(name)
         case name
           when 'instanceId' then
@@ -1897,7 +1999,7 @@ module Aws
             @result << @instance
         end
       end
-      
+
       def reset
         @result = []
       end
@@ -1907,7 +2009,7 @@ module Aws
       def tagstart(name, attributes)
         @instance = {} if name == 'item'
       end
-      
+
       def tagend(name)
         case name
           when 'instanceId' then
@@ -1928,12 +2030,12 @@ module Aws
             @result << @instance
         end
       end
-      
+
       def reset
         @result = []
       end
     end
-   
+
 
     #-----------------------------------------------------------------
     #      PARSERS: Console
@@ -2207,12 +2309,12 @@ module Aws
     #-----------------------------------------------------------------
 
     class QEc2DescribeSnapshotsParser < AwsParser #:nodoc:
-      
+
       def initialize (params={})
         @inside_tagset = false
         super(params)
       end
-     
+
       def tagstart(name, attributes)
         case name
           when 'tagSet'
@@ -2306,8 +2408,73 @@ module Aws
       end
     end
 
+    #-----------------------------------------------------------------
+    #      PARSERS: Vpc
+    #-----------------------------------------------------------------
+
+    class QEc2VpcsParser < AwsParser #:nodoc:
+      def initialize(wrapper, opts = {})
+        super(opts)
+        @wrapper = wrapper
+      end
+
+      def tagstart(name, attribute)
+        @vpc = {} if name == @wrapper
+      end
+
+      def tagend(name)
+        case name
+          when 'vpcId' then
+            @vpc[:vpc_id] = @text
+          when 'state' then
+            @vpc[:state] = @text
+          when 'cidrBlock' then
+            @vpc[:cidr_block] = @text
+          when 'dhcpOptionsId' then
+            @vpc[:dhcp_options_id] = @text
+          when @wrapper
+            @result << @vpc
+        end
+      end
+
+      def reset
+        @result = []
+      end
+    end
+
+    class QEc2SubnetsParser < AwsParser #:nodoc
+      def initialize(wrapper, opts = {})
+        super(opts)
+        @wrapper = wrapper
+      end
+
+      def tagstart(name, attribute)
+        @subnet = {} if name == @wrapper
+      end
+
+      def tagend(name)
+        case name
+          when 'subnetId' then
+            @subnet[:subnet_id] = @text
+          when 'state' then
+            @subnet[:state] = @text
+          when 'vpcId' then
+            @subnet[:vpc_id] = @text
+          when 'cidrBlock' then
+            @subnet[:cidr_block] = @text
+          when 'availableIpAddressCount' then
+            @subnet[:available_ip_address_count] = @text
+          when 'availabilityZone' then
+            @subnet[:availability_zone] = @text
+          when @wrapper
+            @result << @subnet
+        end
+      end
+
+      def reset
+        @result = []
+      end
+    end
   end
 
 end
-
-
