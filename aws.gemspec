@@ -4,14 +4,14 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{aws}
-  s.version = "2.5.6"
+  s.name = "aws"
+  s.version = "2.5.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = [%q{Travis Reeder}, %q{Chad Arimura}, %q{RightScale}]
-  s.date = %q{2011-07-04}
-  s.description = %q{AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com}
-  s.email = %q{travis@appoxy.com}
+  s.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
+  s.date = "2012-09-09"
+  s.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
+  s.email = "travis@appoxy.com"
   s.extra_rdoc_files = [
     "README.markdown"
   ]
@@ -42,10 +42,10 @@ Gem::Specification.new do |s|
     "lib/sqs/sqs.rb",
     "lib/sqs/sqs_interface.rb"
   ]
-  s.homepage = %q{http://github.com/appoxy/aws/}
-  s.require_paths = [%q{lib}]
-  s.rubygems_version = %q{1.8.5}
-  s.summary = %q{AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com}
+  s.homepage = "http://github.com/appoxy/aws/"
+  s.require_paths = ["lib"]
+  s.rubygems_version = "1.8.24"
+  s.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
