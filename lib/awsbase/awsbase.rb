@@ -164,7 +164,7 @@ module Aws
       @logger = Rails.logger if !@logger && defined?(Rails) && defined?(Rails.logger)
       @logger = ::Rails.logger if !@logger && defined?(::Rails.logger)
       @logger = Logger.new(STDOUT) if !@logger
-      @logger.info "New #{self.class.name} using #{@params[:connection_mode].to_s}-connection mode"
+      @logger.debug "New #{self.class.name} using #{@params[:connection_mode].to_s}-connection mode"
       @error_handler = nil
       @cache = {}
       @signature_version = (params[:signature_version] || service_info[:signature_version] || DEFAULT_SIGNATURE_VERSION).to_s
