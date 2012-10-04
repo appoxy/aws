@@ -11,7 +11,7 @@ require 'lib/right_aws.rb'
 testglobs = ["test/ts_right_aws.rb"]
 
 begin
-    require 'jeweler'
+    require 'jeweler2'
     Jeweler::Tasks.new do |gem|
         gem.name = "aws"
         gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
@@ -26,7 +26,7 @@ begin
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
-    puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+    puts "Jeweler not available. Install it with: sudo gem install jeweler2"
 end
 
 #desc "Analyze code coverage of the unit tests."
