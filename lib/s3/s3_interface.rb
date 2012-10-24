@@ -113,6 +113,14 @@ module Aws
       out_string << '?torrent' if path[/[&?]torrent($|&|=)/]
       out_string << '?location' if path[/[&?]location($|&|=)/]
       out_string << '?logging' if path[/[&?]logging($|&|=)/] # this one is beta, no support for now
+      #... also deal with params for multipart uploads API
+      out_string << '?uploads' if path[/\?uploads$/]
+      if path[/\?uploadId=(\w*)$/]
+        out_string << "?uploadId=#{$1}"
+      end
+      if path[/\?partNumber=(\w*)&uploadId=(\w*)$/]
+        out_string << "?partNumber=#{$1}&uploadId=#{$2}"
+      end
       out_string
     end
 
@@ -516,6 +524,87 @@ module Aws
       Utils.mandatory_arguments([:md5], params)
       r = store_object(params)
       r[:verified_md5] ? (return r) : (raise AwsError.new("Uploaded object failed MD5 checksum verification: #{r.inspect}"))
+    end
+
+    # Initiates a multipart upload and returns an upload ID or an exception
+    # http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadInitiate.html
+    #
+    # s3.initiate_multipart('my_awesome_bucket', 'hugeObject') => WL7dk8sqbtk3Rg641HHWaNeG6RxI4fzS8V0YvuQAfs5Hbk6WNZOU1z_AhGv
+    #
+    # The returned uploadId must be retained for use in uploading parts; see
+    # http://docs.amazonwebservices.com/AmazonS3/latest/dev/mpuoverview.html
+    #
+    def initiate_multipart(bucket, key, headers={})
+      req_hash = generate_rest_request('POST', headers.merge(:url =>"#{bucket}/#{CGI::escape key}?uploads"))
+      request_info(req_hash, S3InitiateMultipartUploadParser.new)
+      rescue
+        on_exception
+    end
+
+    # Uploads a part in a multipart upload - returns an Etag for the part or an exception
+    # http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    #
+    # Among the parameters required, clients must supply the uploadId (obtained from the initiate_multipart method call) as
+    # well as the partNumber for this part (user-specified, determining the sequence for reassembly).
+    #
+    # s3.upload_part('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI", "2", File.open('localfilename.dat')) 
+    #     => "b54357faf0632cce46e942fa68356b38"
+    #
+    # The return Etag must be retained for use in the completion of the multipart upload; see
+    # http://docs.amazonwebservices.com/AmazonS3/latest/dev/mpuoverview.html
+    #
+    def upload_part(bucket, key, uploadId, partNumber, data, headers={})
+      if (data.respond_to?(:binmode))
+        data.binmode
+      end
+      if data.is_a?(String)
+        data = StringIO.new(data)
+      end
+      data_size = data.respond_to?(:lstat) ? data.lstat.size :
+      (data.respond_to?(:size) ? data.size : 0)
+      if (data_size >= USE_100_CONTINUE_PUT_SIZE)
+        headers['expect'] = '100-continue'
+      end
+      req_hash = generate_rest_request('PUT', headers.merge(:url =>"#{bucket}/#{CGI::escape key}?partNumber=#{partNumber}&uploadId=#{uploadId}",
+                                                            :data  => data,
+                                                            'Content-Length' => data_size.to_s))
+      request_info(req_hash, S3UploadPartParser.new)
+      rescue
+        on_exception
+    end
+
+
+    # Completes a multipart upload, returning true or an exception
+    # http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadComplete.html
+    #
+    # Clients must specify the uploadId (obtained from the initiate_multipart call) and the reassembly manifest hash
+    # which specifies the each partNumber corresponding etag (obtained from the upload_part call):
+    #
+    # s3.complete_multipart('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI", 
+    #                       {"1"=>"a54357aff0632cce46d942af68356b38", "2"=>"0c78aef83f66abc1fa1e8477f296d394"}) => true
+    # 
+    # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/mpuoverview.html
+    #
+    def complete_multipart(bucket, key, uploadId, manifest_hash, headers={})
+      parts_string = manifest_hash.inject("") do |res, (part,etag)|
+       res<< <<END_PARTS
+        <Part>
+          <PartNumber>#{part}</PartNumber>
+          <ETag>"#{etag}"</ETag>
+        </Part>
+END_PARTS
+       res
+      end
+      data = <<EOS
+      <CompleteMultipartUpload>
+        #{parts_string}
+      </CompleteMultipartUpload>
+EOS
+      req_hash = generate_rest_request('POST', headers.merge(:url  => "#{bucket}/#{CGI::escape key}?uploadId=#{uploadId}",
+                                                             :data => data))
+      request_info(req_hash, RightHttp2xxParser.new)
+      rescue
+        on_exception
     end
 
     # Retrieves object data from Amazon. Returns a +hash+  or an exception.
@@ -1234,6 +1323,29 @@ module Aws
         end
       end
     end
+
+    class S3InitiateMultipartUploadParser < AwsParser # :nodoc:
+      def reset
+        @result = ""
+      end
+
+      def tagend(name)
+        @result = @text if name == 'UploadId'
+      end
+
+    end
+
+    class S3UploadPartParser < AwsParser # :nodoc:
+      def reset
+        @result = ""
+      end
+
+      def tagend(name)
+        @result = @text if name == 'ETag'
+      end
+
+    end
+
 
     #-----------------------------------------------------------------
     #      PARSERS: Non XML
