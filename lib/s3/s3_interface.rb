@@ -115,10 +115,10 @@ module Aws
       out_string << '?logging' if path[/[&?]logging($|&|=)/] # this one is beta, no support for now
       #... also deal with params for multipart uploads API
       out_string << '?uploads' if path[/\?uploads$/]
-      if path[/\?uploadId=(\w*)$/]
+      if path[/\?uploadId=(.*)$/]
         out_string << "?uploadId=#{$1}"
       end
-      if path[/\?partNumber=(\w*)&uploadId=(\w*)$/]
+      if path[/\?partNumber=(\d*)&uploadId=(.*)$/]
         out_string << "?partNumber=#{$1}&uploadId=#{$2}"
       end
       out_string
