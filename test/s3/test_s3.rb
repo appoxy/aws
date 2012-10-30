@@ -126,9 +126,27 @@ class TestS3 < S3TestBase
     assert_equal 1, @s3.delete_folder(@bucket, 'test').size, "Only one key(#{@key1}) must be deleted!"
   end
 
+  def test_14_multipart_upload
+    segmented_object = TestCredentials.config['amazon']['my_prefix']+"segmented"
+    uploadId = @s3.initiate_multipart(@bucket, segmented_object)
+    assert(uploadId.instance_of?(String))
+    part1_etag = @s3.upload_part(@bucket, segmented_object, uploadId, "1", File.open(TestCredentials.config['amazon']['multipart_segment1']))
+    assert(part1_etag.instance_of?(String))
+    part2_etag = @s3.upload_part(@bucket, segmented_object, uploadId, "2", File.open(TestCredentials.config['amazon']['multipart_segment2']))
+    assert(part2_etag.instance_of?(String))
+    parts = @s3.list_parts(@bucket, segmented_object, uploadId)
+    part_etags = parts[:parts].collect{|part| part[:etag].gsub!("\"", "")}
+    assert(part_etags.include?(part1_etag))
+    assert(part_etags.include?(part2_etag))
+    assert(@s3.complete_multipart(@bucket, segmented_object, uploadId, {"1"=>part1_etag, "2"=>part2_etag}))
+    object_data = @s3.head(@bucket, segmented_object)
+    combined_size = File.size(TestCredentials.config['amazon']['multipart_segment1'])+ File.size(TestCredentials.config['amazon']['multipart_segment2'])
+    assert_equal object_data["content-length"].to_i, combined_size
+  end
+
   # idle timeout is 20 seconds
   # https://forums.aws.amazon.com/thread.jspa?threadID=58038
-  def test_14_idle_timeout
+  def test_15_idle_timeout
     @s3 = Aws::S3Interface.new(TestCredentials.aws_access_key_id, TestCredentials.aws_secret_access_key,
                                :connection_mode=>:single)
     # Disable connection retrying

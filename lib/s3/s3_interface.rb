@@ -346,7 +346,7 @@ module Aws
       begin
         internal_bucket = bucket.dup
         unless internal_options.nil? || internal_options.empty?
-          internal_bucket << '?' 
+          internal_bucket << '?'
           internal_bucket << internal_options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
         end
         req_hash            = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
@@ -547,7 +547,7 @@ module Aws
     # Among the parameters required, clients must supply the uploadId (obtained from the initiate_multipart method call) as
     # well as the partNumber for this part (user-specified, determining the sequence for reassembly).
     #
-    # s3.upload_part('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI", "2", File.open('localfilename.dat')) 
+    # s3.upload_part('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI", "2", File.open('localfilename.dat'))
     #     => "b54357faf0632cce46e942fa68356b38"
     #
     # The return Etag must be retained for use in the completion of the multipart upload; see
@@ -580,9 +580,9 @@ module Aws
     # Clients must specify the uploadId (obtained from the initiate_multipart call) and the reassembly manifest hash
     # which specifies the each partNumber corresponding etag (obtained from the upload_part call):
     #
-    # s3.complete_multipart('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI", 
+    # s3.complete_multipart('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI",
     #                       {"1"=>"a54357aff0632cce46d942af68356b38", "2"=>"0c78aef83f66abc1fa1e8477f296d394"}) => true
-    # 
+    #
     # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/mpuoverview.html
     #
     def complete_multipart(bucket, key, uploadId, manifest_hash, headers={})
@@ -606,6 +606,31 @@ EOS
       rescue
         on_exception
     end
+
+    # List parts of a multipart upload, returning a hash or an exception
+    # http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadListParts.html
+    #
+    # response looks like: 
+    #
+    #   { :bucket=>"mariosFoo_awesome_test_bucket_000A1", 
+    #     :key=>"mariosFoosegmented", 
+    #     :upload_id=>"jQKX7JdJBTrbvLn9apUPIXkt14FHdp6nMZVg--" 
+    #     :parts=>  [   {:part_number=>"1", :last_modified=>"2012-10-30T15:06:28.000Z", 
+    #                       :etag=>"\"78f871f6f01673a4aca05b1f8e26df08\"", :size=>"6276589"}, 
+    #                   {:part_number=>"2", :last_modified=>"2012-10-30T15:08:22.000Z", 
+    #                       :etag=>"\"e7b94a1e959ca066026da3ec63aad321\"", :size=>"7454095"}] }          
+    #
+    # Clients must specify the uploadId (obtained from the initiate_multipart call) 
+    #
+    # s3.list_parts('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI",
+    #
+    # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/mpuoverview.html
+    #
+    def list_parts(bucket, key, uploadId, headers={})
+      req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}/#{CGI::escape key}?uploadId=#{uploadId}"))
+      request_info(req_hash, S3ListMultipartPartsParser.new)
+    end
+
 
     # Retrieves object data from Amazon. Returns a +hash+  or an exception.
     #
@@ -633,7 +658,6 @@ EOS
     # end
     # foo.close
     #
-
     def get(bucket, key, headers={}, &block)
       req_hash = generate_rest_request('GET', headers.merge(:url=>"#{bucket}/#{CGI::escape key}"))
       request_info(req_hash, S3HttpResponseBodyParser.new, &block)
@@ -1335,16 +1359,40 @@ EOS
 
     end
 
-    class S3UploadPartParser < AwsParser # :nodoc:
+    class S3ListMultipartPartsParser < AwsParser # :nodoc:
       def reset
-        @result = ""
+        @result = {}
+        @result[:parts] = []
+        @current_part={}
+      end
+
+      def tagstart(name, attributes)
+        @current_part={} if name=='Part'
       end
 
       def tagend(name)
-        @result = @text if name == 'ETag'
+        case name
+          when 'PartNumber'
+            @current_part[:part_number] = @text
+          when 'ETag'
+            @current_part[:etag] = @text
+          when 'Size'
+            @current_part[:size] = @text
+          when 'LastModified'
+            @current_part[:last_modified] = @text
+          when 'Bucket'
+            @result[:bucket] = @text
+          when 'Key'
+            @result[:key] = @text
+          when 'UploadId'
+            @result[:upload_id] = @text
+          when 'Part'
+            @result[:parts] << @current_part
+        end
       end
 
     end
+
 
 
     #-----------------------------------------------------------------
@@ -1383,6 +1431,12 @@ EOS
     class S3HttpResponseHeadParser < S3HttpResponseParser # :nodoc:
       def parse(response)
         @result = headers_to_string(response.to_hash)
+      end
+    end
+
+    class S3UploadPartParser < S3HttpResponseParser # :nodoc:
+      def parse(response)
+        @result = headers_to_string(response.to_hash)["etag"].gsub!("\"", "")
       end
     end
 
