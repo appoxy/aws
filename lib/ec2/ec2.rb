@@ -1028,6 +1028,23 @@ module Aws
       on_exception
     end
 
+    # Import existing SSH key. Returns a hash of the key's data or an exception.
+    #
+    #  ec2.import_key_pair('my_awesome_key',
+    #                      'ssh-rsa AABB3NzaC1yc2FSAAADAQABAAABAQCntvz2Cpx8EE4lBRjQKOtwNaGeJXjgnFLaxnQH4HB+dRTinjlew+153KLCjAMbbanD9Wym/b1FfSHywP299RdTPpBZ2QD7Hh7qKp8penGszFQbaSewYQTBP9Htjn7NDg3VeVcIx0LP3lmp4ZNnYDZGLKCGJJ+ldT/cljW3FAA2/xwco98BujLlKUcU/BZlZ4zvESM3S0gF3pgOjuz2UKAEbsbuuaEQP88NZ/GXXIUgGNFoJSpxDrNCHA7pap/3gdyPq3zTkt4YK/bSxSJ24FMfYtehB36V9rqV8RsIro+yrzRBW4XcA976OKQbh5pS75rp herp@derp')
+    #  #=>
+    #    {:aws_key_name    => "my_awesome_key",
+    #     :aws_fingerprint => "01:02:03:f4:25:e6:97:e8:9b:02:1a:26:32:4e:58:6b:7a:8c:9f:03"}
+    #
+    def import_key_pair(name, public_key)
+      link = generate_request("ImportKeyPair",
+                              "KeyName" => name.to_s,
+                              "PublicKeyMaterial"=>Base64.encode64(public_key.to_s))
+      request_info(link, QEc2ImportPublicKeyParser.new(:logger => @logger))
+      rescue Exception
+        on_exception
+    end
+
     # Delete a key pair. Returns +true+ or an exception.
     #
     #  ec2.delete_key_pair('my_awesome_key') #=> true
@@ -1600,6 +1617,12 @@ module Aws
           when 'keyMaterial' then
             @result[:aws_material] = @text
         end
+      end
+    end
+
+    class QEc2ImportPublicKeyParser < QEc2CreateKeyPairParser #:nodoc:
+      def tagstart(name, attributes)
+        @result = {} if name == 'ImportKeyPairResponse'
       end
     end
 
