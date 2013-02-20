@@ -157,13 +157,16 @@ module Aws
       if !@params[:multi_thread].nil? && @params[:connection_mode].nil? # user defined this
         @params[:connection_mode] = @params[:multi_thread] ? :per_thread : :single
       end
-#      @params[:multi_thread] ||= defined?(AWS_DAEMON)
+      #      @params[:multi_thread] ||= defined?(AWS_DAEMON)
       @params[:connection_mode] ||= :default
       @params[:connection_mode] = :per_request if @params[:connection_mode] == :default
       @logger = @params[:logger]
       @logger = Rails.logger if !@logger && defined?(Rails) && defined?(Rails.logger)
       @logger = ::Rails.logger if !@logger && defined?(::Rails.logger)
-      @logger = Logger.new(STDOUT) if !@logger
+      if !@logger
+        @logger = Logger.new(STDOUT)
+        @logger.level = Logger::INFO
+      end
       @logger.debug "New #{self.class.name} using #{@params[:connection_mode].to_s}-connection mode"
       @error_handler = nil
       @cache = {}
@@ -189,13 +192,13 @@ module Aws
 
     # FROM SDB
     def generate_request2(aws_access_key, aws_secret_key, action, api_version, lib_params, user_params={}, options={}) #:nodoc:
-      # remove empty params from request
+                                                                                                                       # remove empty params from request
       user_params.delete_if { |key, value| value.nil? }
 #            user_params.each_pair do |k,v|
 #                user_params[k] = v.force_encoding("UTF-8")
 #            end
-      #params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
-      # prepare service data
+#params_string  = params.to_a.collect{|key,val| key + "=#{CGI::escape(val.to_s)}" }.join("&")
+# prepare service data
       service = lib_params[:service]
 
       now = Time.now.getutc
@@ -232,7 +235,7 @@ module Aws
       headers.each_pair do |k, v|
         request[k] = v
       end
-#      puts "header=" + request['X-Amzn-Authorization']
+      #      puts "header=" + request['X-Amzn-Authorization']
 
       #puts "\n\n --------------- QUERY REQUEST TO AWS -------------- \n\n"
       #puts "#{@params[:service]}?#{service_params}\n\n"
@@ -259,12 +262,12 @@ module Aws
       http_conn = nil
       conn_mode = lib_params[:connection_mode]
 
-      params = { :exception => AwsError, :logger => logger }
-      
+      params = {:exception => AwsError, :logger => logger}
+
       # Adds all parameters accepted by Rightscale::HttpConnection#new
-      [ :user_agent, :ca_file, :http_connection_retry_count, 
-        :http_connection_open_timeout, :http_connection_read_timeout, 
-        :http_connection_retry_delay 
+      [:user_agent, :ca_file, :http_connection_retry_count,
+       :http_connection_open_timeout, :http_connection_read_timeout,
+       :http_connection_retry_delay
       ].each do |key|
         params[key] = lib_params[key] if lib_params.has_key?(key)
       end
@@ -353,7 +356,7 @@ module Aws
 
         response = connection.request(request)
         #       puts "response=" + response.body
-#            benchblock.service.add!{ response = connection.request(request) }
+        #            benchblock.service.add!{ response = connection.request(request) }
         # check response for errors...
         @last_response = response
         if response.is_a?(Net::HTTPSuccess)
@@ -361,20 +364,20 @@ module Aws
 #                benchblock.xml.add! { parser.parse(response) }
 #                return parser.result
           force_array = params[:force_array] || false
-          # Force_array and group_tags don't work nice together so going to force array manually
-          xml_simple_options = {"KeyToSymbol"=>false, 'ForceArray' => false}
+# Force_array and group_tags don't work nice together so going to force array manually
+          xml_simple_options = {"KeyToSymbol" => false, 'ForceArray' => false}
           xml_simple_options["GroupTags"] = params[:group_tags] if params[:group_tags]
 
 #                { 'GroupTags' => { 'searchpath' => 'dir' }
 #                'ForceArray' => %r(_list$)
           parsed = XmlSimple.xml_in(response.body, xml_simple_options)
-          # todo: we may want to consider stripping off a couple of layers when doing this, for instance:
-          # <DescribeDBInstancesResponse xmlns="http://rds.amazonaws.com/admin/2009-10-16/">
-          #  <DescribeDBInstancesResult>
-          #    <DBInstances>
-          # <DBInstance>....
-          # Strip it off and only return an array or hash of <DBInstance>'s (hash by identifier).
-          # would have to be able to make the RequestId available somehow though, perhaps some special array subclass which included that?
+# todo: we may want to consider stripping off a couple of layers when doing this, for instance:
+# <DescribeDBInstancesResponse xmlns="http://rds.amazonaws.com/admin/2009-10-16/">
+#  <DescribeDBInstancesResult>
+#    <DBInstances>
+# <DBInstance>....
+# Strip it off and only return an array or hash of <DBInstance>'s (hash by identifier).
+# would have to be able to make the RequestId available somehow though, perhaps some special array subclass which included that?
           unless force_array.is_a? Array
             force_array = []
           end
@@ -389,7 +392,7 @@ module Aws
             if level_hash.is_a? Hash # When there's only one
               ret << level_hash
             else # should be array
-#                            puts 'level_hash=' + level_hash.inspect
+                 #                            puts 'level_hash=' + level_hash.inspect
               level_hash.each do |x|
                 ret << x
               end
@@ -492,7 +495,7 @@ module Aws
       (@cache[function.to_sym] ||= {}).merge!(hash) if caching?
     end
 
-    def on_exception(options={:raise=>true, :log=>true}) # :nodoc:
+    def on_exception(options={:raise => true, :log => true}) # :nodoc:
       raise if $!.is_a?(AwsNoChange)
       AwsError::on_aws_exception(self, options)
     end
@@ -578,11 +581,11 @@ module Aws
     end
 
     def request_cache_or_info(method, link, parser_class, benchblock, use_cache=true) #:nodoc:
-      # We do not want to break the logic of parsing hence will use a dummy parser to process all the standard
-      # steps (errors checking etc). The dummy parser does nothig - just returns back the params it received.
-      # If the caching is enabled and hit then throw  AwsNoChange.
-      # P.S. caching works for the whole images list only! (when the list param is blank)
-      # check cache
+                                                                                      # We do not want to break the logic of parsing hence will use a dummy parser to process all the standard
+                                                                                      # steps (errors checking etc). The dummy parser does nothig - just returns back the params it received.
+                                                                                      # If the caching is enabled and hit then throw  AwsNoChange.
+                                                                                      # P.S. caching works for the whole images list only! (when the list param is blank)
+                                                                                      # check cache
       response, params = request_info(link, RightDummyParser.new)
       cache_hits?(method.to_sym, response.body) if use_cache
       parser = parser_class.new(:logger => @logger)
@@ -600,7 +603,7 @@ module Aws
 
     def hash_params(prefix, list) #:nodoc:
       groups = {}
-      list.each_index { |i| groups.update("#{prefix}.#{i+1}"=>list[i]) } if list
+      list.each_index { |i| groups.update("#{prefix}.#{i+1}" => list[i]) } if list
       return groups
     end
 
