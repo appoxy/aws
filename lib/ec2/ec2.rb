@@ -1521,6 +1521,95 @@ module Aws
       on_exception
     end
 
+    # Describe network interfaces in a VPC
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-DescribeNetworkInterfaces.html
+    #
+    # ec2.describe_network_interfaces
+    # ec2.describe_network_interfaces(ifaceId1, ifaceId2, ...,
+    #                                 'Filter.1.Name' => 'addresses.primary',
+    #                                 'Filter.1.Value.1' => true,
+    #                                 'Filter.2.Name' => ...)
+    def describe_network_interfaces(*args)
+      if args.last.is_a?(Hash)
+        filters = args.pop.dup
+      else
+        filters = {}
+      end
+      ids = hash_params('NetworkInterfaceId', args)
+      params = filters.merge(ids)
+      params['Version'] = "2013-02-01"
+      link = generate_request('DescribeNetworkInterfaces', params)
+      request_info(link, QEc2NetworkInterfacesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Create a new network interface in a VPC
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-CreateNetworkInterface.html
+    #
+    # ec2.create_network_interface("subnet-a61dafcf")
+    def create_network_interface(subnet_id, *args)
+      if args.last.is_a?(Hash)
+        params = args.pop.dup
+      else
+        params = {}
+      end
+      params.merge!({'SubnetId' => subnet_id, 'Version' => "2013-02-01"})
+      link = generate_request('CreateNetworkInterface', params)
+      request_info(link, QEc2NetworkInterfacesParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Attach a network interface to an instance
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-AttachNetworkInterface.html
+    #
+    # ec2.attach_network_interface("eni-ffda3197", "i-9cc316fe", 1)
+    def attach_network_interface(network_interface_id, instance_id, device_index)
+      params = {
+        "NetworkInterfaceId" => network_interface_id,
+        "InstanceId" => instance_id,
+        "DeviceIndex" => device_index,
+        "Version" => "2013-02-01",
+      }
+      link = generate_request('AttachNetworkInterface', params)
+      request_info(link, QEc2AttachNetworkInterfaceParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Detach a network interface from an instance
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-DetachNetworkInterface.html
+    #
+    # ec2.detach_network_interface("eni-attach-d94b09b0")
+    # ec2.detach_network_interface("eni-attach-d94b09b0", true)
+    def detach_network_interface(attachment_id, force=false)
+      params = {
+        "AttachmentId" => attachment_id,
+        "Force" => force,
+        "Version" => "2013-02-01",
+      }
+      link = generate_request('DetachNetworkInterface', params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
+    # Delete a network interface from a VPC
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-DeleteNetworkInterface.html
+    #
+    # ec2.delete_network_interface("eni-ffda3197")
+    def delete_network_interface(network_interface_id)
+      params = {
+        "NetworkInterfaceId" => network_interface_id,
+        "Version" => "2013-02-01",
+      }
+      link = generate_request('DeleteNetworkInterface', params)
+      request_info(link, RightBoolResponseParser.new(:logger => @logger))
+    rescue Exception
+      on_exception
+    end
+
     # Create subnet in a VPC
     # http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/ApiReference-query-CreateSubnet.html
     #
@@ -2462,6 +2551,179 @@ module Aws
 
       def reset
         @result = []
+      end
+    end
+
+    class QEc2NetworkInterfacesParser < AwsParser #:nodoc:
+      def initialize(opts = {})
+        super(opts)
+        @level = ['top']
+      end
+
+      def tagstart(name, attribute)
+        case name
+        when 'groupSet'
+          @level.push(name)
+          @iface[:group_set] = []
+          @group_item = {}
+        when 'attachment'
+          @level.push(name)
+          @iface[:attachment] = {}
+        when 'tagSet'
+          @level.push(name)
+          @iface[:tag_set] = []
+          @tag_set_item = {}
+        when 'association'
+          @level.push(name)
+          @association = {}
+        when 'privateIpAddressesSet'
+          @level.push(name)
+          @iface[:private_ip_addresses_set] = []
+          @ip_address_item = {}
+        when 'networkInterface'
+          @iface = {}
+        when 'item'
+          @iface = {} if @level.last == 'top'
+        end
+      end
+
+      def tagend(name)
+        wrapper = @level.last
+        case wrapper
+        when 'top'  # parse top level
+          case name
+          when 'networkInterfaceId'
+            @iface[:network_interface_id] = @text
+          when 'subnetId'
+            @iface[:subnet_id] = @text
+          when 'vpcId'
+            @iface[:vpc_id] = @text
+          when 'availabilityZone'
+            @iface[:availability_zone] = @text
+          when 'description'
+            @iface[:description] = @text
+          when 'ownerId'
+            @iface[:owner_id] = @text
+          when 'requesterId'
+            @iface[:requester_id] = @text
+          when 'requesterManaged'
+            @iface[:requester_managed] = @text
+          when 'status'
+            @iface[:status] = @text
+          when 'macAddress'
+            @iface[:mac_address] = @text
+          when 'privateIpAddress'
+            @iface[:private_ip_address] = @text
+          when 'privateDnsName'
+            @iface[:private_dns_name] = @text
+          when 'sourceDestCheck'
+            @iface[:source_dest_check] = @text
+          when 'networkInterface'
+            @result = @iface
+          when 'item'
+            @result << @iface
+          end
+        when 'groupSet'  # parse gorupset
+          case name
+          when 'groupId'
+            @group_item[:group_id] = @text
+          when 'groupName'
+            @group_item[:group_name] = @text
+          when 'item'
+            @iface[:group_set] << @group_item
+            @group_item = {}
+          when 'groupSet'
+            @level.pop
+          end
+        when 'attachment'  # parse attachment
+          case name
+          when 'attachmentId'
+            @iface[:attachment][:attachment_id] = @text
+          when 'instanceId'
+            @iface[:attachment][:instance_id] = @text
+          when 'instanceOwnerId'
+            @iface[:attachment][:instance_owner_id] = @text
+          when 'deviceIndex'
+            @iface[:attachment][:device_index] = @text
+          when 'status'
+            @iface[:attachment][:status] = @text
+          when 'attachTime'
+            @iface[:attachment][:attach_time] = @text
+          when 'deleteOnTermination'
+            @iface[:attachment][:delete_on_termination] = @text
+          when 'attachment'
+            @level.pop
+          end
+        when 'tagSet'  # parse tagset
+          case name
+          when 'key'
+            @tag_set_item[:key] = @text
+          when 'value'
+            @tag_set_item[:value] = @text
+          when 'item'
+            @iface[:tag_set] << @tag_set_item
+            @tag_set_item = {}
+          when 'tagSet'
+            @level.pop
+          end
+        when 'association'  # parse assoc
+          case name
+          when 'publicIp'
+            @association[:public_ip] = @text
+          when 'publicDnsName'
+            @association[:public_dns_name] = @text
+          when 'ipOwnerId'
+            @association[:ip_owner_id] = @text
+          when 'allocationID'
+            @association[:allocation_id] = @text
+          when 'associationID'
+            @association[:association_id] = @text
+          when 'association'
+            @level.pop
+
+            # `association` can belong both to `NetworkInterfaceType` and `NetworkInterfacePrivateIpAddressesSetItemType`
+            if @level.last == 'top'
+              @iface[:association] = @association
+            else
+              @ip_address_item[:association] = @association
+            end
+          end
+        when 'privateIpAddressesSet'  # parse pirvate addresses set
+          case name
+          when 'privateIpAddress'
+            @ip_address_item[:private_ip_address] = @text
+          when 'privateDnsName'
+            @ip_address_item[:private_dns_name] = @text
+          when 'primary'
+            @ip_address_item[:primary] = @text
+          when 'item'
+            @iface[:private_ip_addresses_set] << @ip_address_item
+            @ip_address_item = {}
+          when 'privateIpAddressesSet'
+            @level.pop
+          end
+        end
+      end
+
+      def reset
+        @result = []
+      end
+    end
+
+    class QEc2AttachNetworkInterfaceParser < AwsParser #:nodoc:
+      def initialize(opts = {})
+        super(opts)
+      end
+
+      def tagend(name)
+        case name
+        when 'attachmentId'
+          @result['attachment_id'] = @text
+        end
+      end
+
+      def reset
+        @result = {}
       end
     end
 
