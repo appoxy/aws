@@ -1,39 +1,24 @@
-# -*- ruby -*-
-
 require 'rubygems'
-#require 'psych'
-#require "rake/testtask"
-#require 'rcov/rcovtask'
-$: << File.dirname(__FILE__)
-require 'lib/awsbase/require_relative'
-require 'lib/right_aws.rb'
+require 'rake'
 
-testglobs = ["test/ts_right_aws.rb"]
-
-begin
-    require 'jeweler2'
-    Jeweler::Tasks.new do |gem|
-        gem.name = "aws"
-        gem.summary = "AWS Ruby Library for interfacing with Amazon Web Services. By http://www.appoxy.com"
-        gem.email = "travis@appoxy.com"
-        gem.homepage = "http://github.com/appoxy/aws/"
-        gem.description = "AWS Ruby Library for interfacing with Amazon Web Services including EC2, S3, SQS, SimpleDB and most of their other services as well. By http://www.appoxy.com"
-        gem.authors = ["Travis Reeder", "Chad Arimura", "RightScale"]
-        gem.files = FileList['lib/**/*.rb']
-        gem.add_dependency 'uuidtools'
-        gem.add_dependency 'http_connection'
-        gem.add_dependency 'xml-simple'
-    end
-    Jeweler::GemcutterTasks.new
-rescue LoadError
-    puts "Jeweler not available. Install it with: sudo gem install jeweler2"
+require 'rake/testtask'
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = 'test/**/test_*.rb'
+  test.verbose = true
 end
 
-#desc "Analyze code coverage of the unit tests."
-#Rcov::RcovTask.new do |t|
-#  t.test_files = FileList[testglobs]
-#  t.verbose = true     # uncomment to see the executed command
-#end
+task :default => :test
+
+require 'rdoc/task'
+Rake::RDocTask.new do |rdoc|
+  version = File.exist?('VERSION') ? File.read('VERSION') : ""
+
+  rdoc.rdoc_dir = 'doc'
+  rdoc.title = "iron_mq #{version}"
+  rdoc.rdoc_files.include('README*')
+  rdoc.rdoc_files.include('lib/**/*.rb')
+end
 
 desc "Test just the SQS interface"
 task :testsqs do
@@ -79,5 +64,3 @@ task :testacf do
     TestCredentials.get_credentials
     require 'test/acf/test_acf.rb'
 end
-
-# vim: syntax=Ruby
