@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
 
   gem.required_rubygems_version = ">= 1.3.6"
   gem.required_ruby_version = Gem::Requirement.new(">= 1.8")
-  gem.add_runtime_dependency "uuidtoolds", ">= 0"
+  gem.add_runtime_dependency "uuidtools", ">= 0"
   gem.add_runtime_dependency "xml-simple", ">= 0"
   gem.add_runtime_dependency "http_connection", ">= 0"
 
