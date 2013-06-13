@@ -304,11 +304,12 @@ module Aws
     #                  'max-keys'     => "5"}, ..., {...}]
     #
     def list_bucket(bucket, options={}, headers={})
+      internal_bucket = bucket.dup
       unless options.nil? || options.empty?
-        bucket << '?'
-        bucket << options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
+        internal_bucket << '?'
+        internal_bucket << options.map { |k, v| "#{k.to_s}=#{CGI::escape v.to_s}" }.join('&')
       end
-      req_hash = generate_rest_request('GET', headers.merge(:url=>bucket))
+      req_hash = generate_rest_request('GET', headers.merge(:url=>internal_bucket))
       request_info(req_hash, S3ListBucketParser.new(:logger => @logger))
     rescue
       on_exception
