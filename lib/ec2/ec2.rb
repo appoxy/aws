@@ -544,7 +544,7 @@ module Aws
     #     }]
     #
     def launch_instances(image_id, options={})
-      @logger.info("Launching instance of image #{image_id} for #{@aws_access_key_id}, " +
+      @logger.info("Launching instance of image #{image_id}, " +
                        "key: #{options[:key_name]}, groups: #{(options[:group_ids]).to_a.join(',')}")
       # careful: keyName and securityGroups may be nil
       params = hash_params('SecurityGroup', options[:group_ids].to_a)
