@@ -611,17 +611,17 @@ EOS
     # List parts of a multipart upload, returning a hash or an exception
     # http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadListParts.html
     #
-    # response looks like: 
+    # response looks like:
     #
-    #   { :bucket=>"mariosFoo_awesome_test_bucket_000A1", 
-    #     :key=>"mariosFoosegmented", 
-    #     :upload_id=>"jQKX7JdJBTrbvLn9apUPIXkt14FHdp6nMZVg--" 
-    #     :parts=>  [   {:part_number=>"1", :last_modified=>"2012-10-30T15:06:28.000Z", 
-    #                       :etag=>"\"78f871f6f01673a4aca05b1f8e26df08\"", :size=>"6276589"}, 
-    #                   {:part_number=>"2", :last_modified=>"2012-10-30T15:08:22.000Z", 
-    #                       :etag=>"\"e7b94a1e959ca066026da3ec63aad321\"", :size=>"7454095"}] }          
+    #   { :bucket=>"mariosFoo_awesome_test_bucket_000A1",
+    #     :key=>"mariosFoosegmented",
+    #     :upload_id=>"jQKX7JdJBTrbvLn9apUPIXkt14FHdp6nMZVg--"
+    #     :parts=>  [   {:part_number=>"1", :last_modified=>"2012-10-30T15:06:28.000Z",
+    #                       :etag=>"\"78f871f6f01673a4aca05b1f8e26df08\"", :size=>"6276589"},
+    #                   {:part_number=>"2", :last_modified=>"2012-10-30T15:08:22.000Z",
+    #                       :etag=>"\"e7b94a1e959ca066026da3ec63aad321\"", :size=>"7454095"}] }
     #
-    # Clients must specify the uploadId (obtained from the initiate_multipart call) 
+    # Clients must specify the uploadId (obtained from the initiate_multipart call)
     #
     # s3.list_parts('my_awesome_bucket', 'hugeObject', "WL7dk8sqbtk3Rg641HHWaNeG6RxI",
     #
@@ -987,7 +987,7 @@ EOS
       headers.each { |key, value| headers.delete(key) if (value.nil? || key.is_a?(Symbol)) }
       #generate auth strings
       auth_string = canonical_string(method, path_to_sign, headers, expires)
-      signature   = CGI::escape(Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new("sha1"), @aws_secret_access_key, auth_string)).strip)
+      signature   = CGI::escape(Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new("sha1"), @aws_secret_access_key, auth_string)).strip)
       # path building
       addon       = "Signature=#{signature}&Expires=#{expires}&AWSAccessKeyId=#{@aws_access_key_id}"
       path        += path[/\?/] ? "&#{addon}" : "?#{addon}"
