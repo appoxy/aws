@@ -1,10 +1,10 @@
 module Aws
 
   class Utils #:nodoc:
-    @@digest1 = OpenSSL::Digest::Digest.new("sha1")
+    @@digest1 = OpenSSL::Digest.new("sha1")
     @@digest256 = nil
     if OpenSSL::OPENSSL_VERSION_NUMBER > 0x00908000
-      @@digest256 = OpenSSL::Digest::Digest.new("sha256") rescue nil # Some installation may not support sha256
+      @@digest256 = OpenSSL::Digest.new("sha256") rescue nil # Some installation may not support sha256
     end
 
     def self.sign(aws_secret_access_key, auth_string)
@@ -223,7 +223,7 @@ module Aws
     def self.blank?(obj)
       case obj
       when NilClass, FalseClass
-        true      
+        true
       when TrueClass, Numeric
         false
       when Array, Hash
