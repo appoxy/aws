@@ -145,6 +145,7 @@ module Aws
         @params[:port] = URI.parse(@params[:endpoint_url]).port
         @params[:service] = URI.parse(@params[:endpoint_url]).path
         @params[:protocol] = URI.parse(@params[:endpoint_url]).scheme
+        @params[:api_version] ||= service_info[:api_version]
         @params[:region] = nil
       else
         @params[:server] ||= service_info[:default_host]
