@@ -112,7 +112,7 @@ module Aws
 
       p params
 
-      resp = do_request("UploadServerCertificate", params, :pull_out_array=>[:list_server_certificates_result, :server_certificate_metadata_list])
+      resp = do_request("UploadServerCertificate", params, :pull_out_array=>[:upload_server_certificate_result, :server_certificate_metadata])
 
 
     rescue Exception

@@ -95,6 +95,7 @@ module Aws
         params["Listeners.member.#{i}.Protocol"]         = "#{l[:protocol]}"
         params["Listeners.member.#{i}.LoadBalancerPort"] = "#{l[:load_balancer_port]}"
         params["Listeners.member.#{i}.InstancePort"]     = "#{l[:instance_port]}"
+        params["Listeners.member.#{i}.SSLCertificateId"] = "#{l[:ssl_certificate_id]}"
         i                                                += 1
       end
       params['LoadBalancerName'] = name
