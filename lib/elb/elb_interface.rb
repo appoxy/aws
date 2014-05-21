@@ -8,7 +8,7 @@ module Aws
 
 
     #Amazon ELB API version being used
-    API_VERSION      = "2009-05-15"
+    API_VERSION      = "2012-06-01"
     DEFAULT_HOST     = "elasticloadbalancing.amazonaws.com"
     DEFAULT_PATH     = '/'
     DEFAULT_PROTOCOL = 'https'
@@ -108,6 +108,52 @@ module Aws
       on_exception
     end
 
+    #
+    # name: name of load balancer
+    # listeners: array of hashes containing :load_balancer_port, :instance_port, :protocol
+    #       eg: {:load_balancer_port=>80, :instance_port=>8080, :protocol=>"HTTP"}
+    #
+    def create_load_balancer_listeners(name, listeners)
+      params = {}
+      params['LoadBalancerName'] = name
+      i = 1
+      listeners.each do |l|
+        params["Listeners.member.#{i}.Protocol"]         = "#{l[:protocol]}"
+        params["Listeners.member.#{i}.LoadBalancerPort"] = "#{l[:load_balancer_port]}"
+        params["Listeners.member.#{i}.InstancePort"]     = "#{l[:instance_port]}"
+        i                                                += 1
+      end
+
+      @logger.info("Creating Listeners for LoadBalancer #{name}")
+
+      link = generate_request("CreateLoadBalancerListeners", params)
+      resp = request_info(link, QElbEmptyResponseParser.new(:logger => @logger))
+
+    rescue Exception
+      on_exception
+    end
+
+    #
+    # name: name of load balancer
+    # ports: array of client port number(s) of the load balancer listener(s) to be removed.
+    #
+    def delete_load_balancer_listeners(name, ports)
+      params = {}
+      params['LoadBalancerName'] = name
+      i = 1
+      ports.each do |l|
+        params["LoadBalancerPorts.member.#{i}"] = "#{l}"
+        i                                       += 1
+      end
+
+      @logger.info("Deleting Listeners for LoadBalancer #{name}")
+
+      link = generate_request("DeleteLoadBalancerListeners", params)
+      resp = request_info(link, QElbEmptyResponseParser.new(:logger => @logger))
+
+    rescue Exception
+      on_exception
+    end
 
     # name: name of load balancer
     # instance_ids: array of instance_id's to add to load balancer
@@ -144,6 +190,30 @@ module Aws
 
       link = generate_request("DeregisterInstancesFromLoadBalancer", params) # Same response as register I believe
       resp = request_info(link, QElbRegisterInstancesParser.new(:logger => @logger))
+
+    rescue Exception
+      on_exception
+    end
+
+    # name: name of load balancer
+    # healthy_threshold: number of successful probes required to enter Healthy state.
+    # unhealthy_threshold: number of unsuccessful probes required to enter Unhealthy state.
+    # interval: interval between probes (seconds)
+    # target: probe target (protocol:port[/path])
+    # timeout: probe response timeout
+    def configure_health_check(name, healthy_threshold, unhealthy_threshold, interval, target, timeout )
+      params                                   = {}
+      params['LoadBalancerName']               = name
+      params['HealthCheck.HealthyThreshold']   = "#{healthy_threshold}"
+      params['HealthCheck.UnhealthyThreshold'] = "#{unhealthy_threshold}"
+      params['HealthCheck.Interval']           = "#{interval}"
+      params['HealthCheck.Target']             = target
+      params['HealthCheck.Timeout']            = "#{timeout}"
+
+      @logger.info("Configuring health check for Load Balancer '#{name}'")
+
+      link = generate_request("ConfigureHealthCheck", params)
+      resp = request_info(link, QElbConfigureHealthCheckParser.new(:logger => @logger))
 
     rescue Exception
       on_exception
@@ -196,7 +266,7 @@ module Aws
 
       link                       = generate_request("DeleteLoadBalancer", params)
 
-      resp                       = request_info(link, QElbDeleteParser.new(:logger => @logger))
+      resp                       = request_info(link, QElbEmptyResponseParser.new(:logger => @logger))
 
     rescue Exception
       on_exception
@@ -231,7 +301,7 @@ module Aws
 
       def tagstart(name, attributes)
 #                puts 'tagstart ' + name + ' -- ' + @xmlpath
-        if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/Listeners')
+        if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/ListenerDescriptions')
           @listener = {}
         end
         if (name == 'member' && @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/AvailabilityZones')
@@ -280,7 +350,7 @@ module Aws
             @member[:health_check][:unhealthy_threshold] = @text.to_i
           # AvailabilityZones
           when 'member' then
-            if @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/Listeners'
+            if @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/ListenerDescriptions'
               @member[:listeners] << @listener
             elsif @xmlpath == 'DescribeLoadBalancersResponse/DescribeLoadBalancersResult/LoadBalancerDescriptions/member/AvailabilityZones'
               @availability_zone = @text
@@ -323,6 +393,35 @@ module Aws
 #
     end
 
+    class QElbConfigureHealthCheckParser < AwsParser
+
+      def reset
+        @result = {}
+      end
+
+      def tagstart(name, attributes)
+        if name == 'HealthCheck'
+          @result[:health_check] = {}
+        end
+      end
+
+      def tagend(name)
+        case name
+          when 'HealthyThreshold' then
+            @result[:health_check][:healthy_threshold] = @text.to_i
+          when 'UnhealthyThreshold' then
+            @result[:health_check][:unhealthy_threshold] = @text.to_i
+          when 'Interval' then
+            @result[:health_check][:interval] = @text.to_i
+          when 'Target' then
+            @result[:health_check][:target] = @text
+          when 'Timeout' then
+            @result[:health_check][:timeout] = @text.to_i
+        end
+      end
+#
+    end
+
     class QElbDescribeInstancesHealthParser < AwsParser
 
       def reset
@@ -353,7 +452,7 @@ module Aws
 #
     end
 
-    class QElbDeleteParser < AwsParser
+    class QElbEmptyResponseParser < AwsParser
       def reset
         @result = true
       end
@@ -364,3 +463,4 @@ module Aws
 
 
 end
+
