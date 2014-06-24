@@ -554,7 +554,7 @@ module Aws
                      'AddressingType' => options[:addressing_type] || DEFAULT_ADDRESSING_TYPE,
                      'InstanceType'   => options[:instance_type] || DEFAULT_INSTANCE_TYPE})
       # optional params
-      params['SecurityGroupId'] = options[:SecurityGroupId].to_a unless Aws::Utils.blank?(options[:SecurityGroupId])
+      params.merge!(hash_params('SecurityGroupId',options[:SecurityGroupId].to_a)) unless Aws::Utils.blank?(options[:SecurityGroupId])
       params['KeyName'] = options[:key_name] unless Aws::Utils.blank?(options[:key_name])
       params['KernelId'] = options[:kernel_id] unless Aws::Utils.blank?(options[:kernel_id])
       params['RamdiskId'] = options[:ramdisk_id] unless Aws::Utils.blank?(options[:ramdisk_id])
