@@ -114,6 +114,8 @@ module Aws
     # affect on the bucket's ACL if the bucket already exists.
     # Returns a Aws::S3::Bucket instance or +nil+ if the bucket does not exist
     # and +create+ is not set.
+    # If +create+ is true, false will be returned if an error occurs. Such as the
+    # bucket already exists
     #
     #  s3 = Aws::S3.new(aws_access_key_id, aws_secret_access_key)
     #  bucket1 = s3.bucket('my_awesome_bucket_1')
@@ -129,7 +131,10 @@ module Aws
     #
     def bucket(name, create=false, perms=nil, headers={})
       headers['x-amz-acl'] = perms if perms
-      @interface.create_bucket(name, headers) if create
+      if create
+        created_bucket = @interface.create_bucket(name, headers)
+        return false unless created_bucket
+      end
       return Bucket.new(self, name)
       # The old way below was too slow and unnecessary because it retreived all the buckets every time.
       #            owner = Owner.new(entry[:owner_id], entry[:owner_display_name])
