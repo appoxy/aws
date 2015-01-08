@@ -206,7 +206,8 @@ module Aws
       on_exception
     end
 
-    # Creates new bucket. Returns +true+ or an exception.
+    # Creates new bucket. Returns +true+ or an exception, will return false if
+    # the exception includes 'BucketAlreadyOwnedByYou'
     #
     #  # create a bucket at American server
     #  s3.create_bucket('my-awesome-bucket-us') #=> true
@@ -225,7 +226,7 @@ module Aws
       request_info(req_hash, RightHttp2xxParser.new)
     rescue Exception => e
       # if the bucket exists AWS returns an error for the location constraint interface. Drop it
-      e.is_a?(Aws::AwsError) && e.message.include?('BucketAlreadyOwnedByYou') ? true : on_exception
+      e.is_a?(Aws::AwsError) && e.message.include?('BucketAlreadyOwnedByYou') ? false : on_exception
     end
 
     # Retrieve bucket location
