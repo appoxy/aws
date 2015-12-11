@@ -185,7 +185,7 @@ module Aws
 
     def hash_params_with_suffix(prefix, suffix, list) #:nodoc:
       groups = {}
-      list.each_index { |i| groups.update("#{prefix}.#{i+1}.suffix"=>list[i]) }
+      list.each_index { |i| groups.update("#{prefix}.#{i+1}.#{suffix}"=>list[i]) }
       return groups
     end
 
