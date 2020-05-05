@@ -1,3 +1,7 @@
+# DEPRECATED
+
+Please use this gem now: https://rubygems.org/gems/aws-sdk
+
 # Appoxy AWS Library
 
 A Ruby gem for all Amazon Web Services.
