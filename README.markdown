@@ -1,10 +1,10 @@
 # DEPRECATED
-
+i have added merge request for tea repository
 Please use this gem now: https://rubygems.org/gems/aws-sdk
 
 # Appoxy AWS Library
 
-A Ruby gem for all Amazon Web Services.
+A Ruby gem for all AWS.
 
 Brought to you by: [![Appoxy](https://lh5.googleusercontent.com/_-J9DSaseOX8/TX2Bq564w-I/AAAAAAAAxYU/xjeReyoxa8o/s800/appoxy-small%20%282%29.png)](http://www.appoxy.com)
 
